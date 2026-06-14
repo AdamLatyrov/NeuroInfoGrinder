@@ -6,6 +6,7 @@ import com.larbcorp.neuroinfogrinder.infrastructure.persistence.repository.Messa
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessResourceFailureException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.CannotCreateTransactionException;
@@ -76,16 +77,15 @@ public class QueueProcessor {
         for (MessageEntity msg : queued) {
             try {
                 pipelineService.processMessage(msg.getId());
+            } catch (DataIntegrityViolationException exception) {
+                log.warn("QueueProcessor: non-transient persistence error for message {}; marking skipped", msg.getId());
+                markMessageSkipped(msg.getId(), "Persistence error: " + rootCauseMessage(exception));
             } catch (CannotCreateTransactionException | DataAccessResourceFailureException exception) {
                 log.warn("QueueProcessor: DB pressure while processing queue; stopping current cycle");
                 return;
-            } catch (Exception e) {
-                log.error("QueueProcessor: failed to process message {}: {}", msg.getId(), e.getMessage(), e);
-                messageRepository.findById(msg.getId()).ifPresent(message -> {
-                    message.setProcessingStatus("SKIPPED");
-                    message.setClassifierReason("Ошибка конвейера: " + e.getMessage());
-                    messageRepository.save(message);
-                });
+            } catch (Exception exception) {
+                log.error("QueueProcessor: failed to process message {}: {}", msg.getId(), exception.getMessage(), exception);
+                markMessageSkipped(msg.getId(), "Ошибка конвейера: " + exception.getMessage());
             }
         }
     }
@@ -97,5 +97,28 @@ public class QueueProcessor {
 
     public boolean isEnabled() {
         return enabled;
+    }
+
+    private void markMessageSkipped(Long messageId, String reason) {
+        messageRepository.findById(messageId).ifPresent(message -> {
+            message.setProcessingStatus("SKIPPED");
+            message.setClassifierReason(truncate(reason, 512));
+            messageRepository.save(message);
+        });
+    }
+
+    private String rootCauseMessage(Throwable throwable) {
+        Throwable current = throwable;
+        while (current.getCause() != null) {
+            current = current.getCause();
+        }
+        return current.getMessage() != null ? current.getMessage() : throwable.getMessage();
+    }
+
+    private String truncate(String text, int max) {
+        if (text == null) {
+            return null;
+        }
+        return text.length() <= max ? text : text.substring(0, max) + "...";
     }
 }

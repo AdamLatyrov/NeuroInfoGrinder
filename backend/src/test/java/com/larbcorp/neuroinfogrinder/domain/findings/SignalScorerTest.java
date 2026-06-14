@@ -66,6 +66,22 @@ class SignalScorerTest {
         assertNotUseful("Сайт");
     }
 
+    @Test
+    void keepsContextOnlyChatterOutOfUsefulSignals() {
+        MessageEntity message = new MessageEntity();
+        message.setText("гигакодер спит");
+        message.setIsBot(false);
+        message.setReplyToMessageId(11L);
+        message.setTopicId(7L);
+
+        SignalScore score = signalScorer.score(message);
+
+        assertThat(score.score()).isLessThan(0.3);
+        assertThat(score.labels()).isEmpty();
+        assertThat(score.matchedSignals()).isEmpty();
+        assertThat(score.classificationReason()).isEqualTo("No AI access/payment/provider demand signals");
+    }
+
     private void assertUsefulLead(String text, String... expectedLabels) {
         MessageEntity message = new MessageEntity();
         message.setText(text);

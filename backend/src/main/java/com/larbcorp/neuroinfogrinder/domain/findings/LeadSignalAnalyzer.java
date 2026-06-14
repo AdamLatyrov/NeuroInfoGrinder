@@ -91,7 +91,6 @@ final class LeadSignalAnalyzer {
         boolean leadCandidate = labels.contains("AI_ACCESS_DEMAND")
             || labels.contains("PAYMENT_WORKAROUND")
             || labels.contains("PAIN_LIMITS")
-            || (labels.contains("PROVIDER_MENTION") && !labels.contains("NOT_USEFUL"))
             || (labels.contains("OFFER_OR_SPAM") && (providerMention || paymentMention));
 
         String reason = labels.isEmpty()

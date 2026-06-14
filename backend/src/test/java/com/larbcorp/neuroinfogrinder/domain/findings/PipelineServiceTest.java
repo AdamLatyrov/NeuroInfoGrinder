@@ -16,6 +16,7 @@ import com.larbcorp.neuroinfogrinder.infrastructure.persistence.repository.Promp
 import com.larbcorp.neuroinfogrinder.infrastructure.persistence.repository.SettingsRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.Instant;
@@ -24,8 +25,10 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -167,6 +170,86 @@ class PipelineServiceTest {
 
         assertThat(result).isNull();
         assertThat(message.getProcessingStatus()).isEqualTo("SKIPPED");
+    }
+
+    @Test
+    void keepsContextOnlyMessageSkipped() {
+        MessageEntity message = buildMessage(104L, "гигакодер спит");
+        message.setReplyToMessageId(999L);
+        message.setTopicId(55L);
+        GroupEntity group = buildGroup(7L);
+        SettingsEntity settings = buildSettings();
+        settings.setFilterMinMessageLength(1);
+
+        when(messageRepository.findById(104L)).thenReturn(Optional.of(message));
+        when(groupRepository.findById(7L)).thenReturn(Optional.of(group));
+        when(settingsRepository.findFirstByOrderByIdAsc()).thenReturn(Optional.of(settings));
+        when(ruleRunner.evaluate(message)).thenReturn(new RuleResult(true, "pass", List.of()));
+
+        var result = pipelineService.processMessage(104L);
+
+        assertThat(result).isNull();
+        assertThat(message.getProcessingStatus()).isEqualTo("SKIPPED");
+    }
+
+    @Test
+    void skipsBareProviderMentionEvenWhenClassifierMatched() {
+        MessageEntity message = buildMessage(105L, "это опенроутер?");
+        GroupEntity group = buildGroup(7L);
+        SettingsEntity settings = buildSettings();
+        settings.setFilterMinMessageLength(1);
+        ClassifierEntity classifier = activeClassifier();
+        MessageContextBundle contextBundle = new MessageContextBundle(message, List.of(message), "hash-3", 4, List.of("provider"), 24);
+        ClassifierResult classifierResult = new ClassifierResult(
+            0.75,
+            true,
+            List.of(ClassificationLabels.AI_TOOL_OR_PROVIDER),
+            false,
+            List.of(message.getId()),
+            "Short provider mention only"
+        );
+
+        when(messageRepository.findById(105L)).thenReturn(Optional.of(message));
+        when(groupRepository.findById(7L)).thenReturn(Optional.of(group));
+        when(settingsRepository.findFirstByOrderByIdAsc()).thenReturn(Optional.of(settings));
+        when(ruleRunner.evaluate(message)).thenReturn(new RuleResult(true, "pass", List.of()));
+        when(messageContextBuilder.buildContext(message)).thenReturn(contextBundle);
+        when(messageContextBuilder.isAnchorCandidate(message)).thenReturn(true);
+        when(classifierRepository.findByStatusOrderByClassifierOrderAsc("ACTIVE")).thenReturn(List.of(classifier));
+        when(classifierRunner.classify(List.of(message), classifier)).thenReturn(classifierResult);
+
+        var result = pipelineService.processMessage(105L);
+
+        assertThat(result).isNull();
+        assertThat(message.getProcessingStatus()).isEqualTo("SKIPPED");
+        assertThat(message.getClassifierReason()).contains("Bare provider mention");
+    }
+
+    @Test
+    void retriesPersistenceWithCompactedFallbackOnDataIntegrityViolation() {
+        MessageEntity message = buildMessage(106L, "подскажите, где купить Claude Plus подешевле?");
+        GroupEntity group = buildGroup(7L);
+        SettingsEntity settings = buildSettings();
+        settings.setFilterMinMessageLength(1);
+
+        when(messageRepository.findById(106L)).thenReturn(Optional.of(message));
+        when(groupRepository.findById(7L)).thenReturn(Optional.of(group));
+        when(settingsRepository.findFirstByOrderByIdAsc()).thenReturn(Optional.of(settings));
+        when(ruleRunner.evaluate(message)).thenReturn(new RuleResult(true, "pass", List.of()));
+        when(messageContextBuilder.buildContext(message)).thenReturn(new MessageContextBundle(message, List.of(message), "hash-4", 5, List.of("question"), 48));
+        when(messageContextBuilder.isAnchorCandidate(message)).thenReturn(true);
+        when(classifierRepository.findByStatusOrderByClassifierOrderAsc("ACTIVE")).thenReturn(List.of());
+        when(messageRepository.save(argThat(saved ->
+            saved.getClassifierReason() != null && saved.getClassifierReason().contains("No active classifiers found"))))
+            .thenThrow(new DataIntegrityViolationException("value too long"))
+            .thenAnswer(invocation -> invocation.getArgument(0));
+
+        var result = pipelineService.processMessage(106L);
+
+        assertThat(result).isNull();
+        assertThat(message.getProcessingStatus()).isEqualTo("CLASSIFIED");
+        verify(messageRepository, atLeast(2)).save(argThat(saved ->
+            saved.getClassifierReason() != null && !saved.getClassifierReason().isBlank()));
     }
 
     private MessageEntity buildMessage(Long id, String text) {

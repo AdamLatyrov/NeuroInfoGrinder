@@ -53,7 +53,7 @@ public class MessageEntity extends BaseEntity {
     private Double classifierScore;
 
     /** Reason from classifier (why it passed/failed). */
-    @Column(length = 1024)
+    @Column(columnDefinition = "TEXT")
     private String classifierReason;
 
     /** Full classifier result JSON including labels/evidence/guide_candidate. */

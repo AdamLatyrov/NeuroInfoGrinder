@@ -22,6 +22,7 @@ import com.larbcorp.neuroinfogrinder.infrastructure.persistence.repository.Setti
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
@@ -29,6 +30,8 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.LinkedHashSet;
+import java.util.Set;
 import java.util.UUID;
 
 @Slf4j
@@ -40,6 +43,24 @@ public class PipelineService {
     private static final double AUTO_PUBLISH_CONFIDENCE = 0.85;
     private static final double COST_PER_TOKEN_USD = 0.00002;
     private static final int TRACE_DATA_MAX_LEN = 2000;
+    private static final int MAX_REASON_LEN = 4000;
+    private static final int PREVIEW_LEN = 160;
+    private static final Set<String> MEANINGFUL_SIGNAL_LABELS = Set.of(
+        "AI_ACCESS_DEMAND",
+        "PAYMENT_WORKAROUND",
+        "PAIN_LIMITS",
+        "OFFER_OR_SPAM"
+    );
+    private static final Set<String> MEANINGFUL_CLASSIFIER_LABELS = Set.of(
+        ClassificationLabels.DEMAND_SIGNAL,
+        ClassificationLabels.SOLUTION_MENTION,
+        ClassificationLabels.VENDOR_OR_SOURCE,
+        ClassificationLabels.BUG_OR_LIMITATION,
+        ClassificationLabels.PAYMENT_WORKAROUND,
+        ClassificationLabels.PRACTICAL_GUIDE_CANDIDATE,
+        ClassificationLabels.OPPORTUNITY,
+        ClassificationLabels.SPAM_OR_AD
+    );
 
     private final MessageRepository messageRepository;
     private final GroupRepository groupRepository;
@@ -87,13 +108,13 @@ public class PipelineService {
 
         if (!Boolean.TRUE.equals(group.getEnabled())) {
             message.setProcessingStatus("SKIPPED");
-            messageRepository.save(message);
+            saveMessage(message, "group-disabled");
             recordProgress("PROCESSING", "SKIPPED", "Group " + group.getId() + " is disabled");
             return null;
         }
 
         message.setProcessingStatus("PROCESSING");
-        messageRepository.save(message);
+        saveMessage(message, "processing-start");
         recordProgress("PROCESSING", "STARTED", "Message " + messageId + " entered pipeline");
 
         SettingsEntity settings = getSettings();
@@ -101,14 +122,14 @@ public class PipelineService {
 
         if (Boolean.TRUE.equals(settings.getFilterSkipBots()) && Boolean.TRUE.equals(message.getIsBot())) {
             message.setProcessingStatus("SKIPPED");
-            messageRepository.save(message);
+            saveMessage(message, "pre-filter-bot");
             recordProgress("PRE_FILTER", "SKIPPED", "Bot message filtered");
             return null;
         }
 
         if (settings.getFilterMinMessageLength() != null && text.length() < settings.getFilterMinMessageLength()) {
             message.setProcessingStatus("SKIPPED");
-            messageRepository.save(message);
+            saveMessage(message, "pre-filter-short");
             recordProgress("PRE_FILTER", "SKIPPED", "Message too short");
             return null;
         }
@@ -119,7 +140,7 @@ public class PipelineService {
                 String trimmed = word.trim().toLowerCase();
                 if (!trimmed.isEmpty() && lowerText.contains(trimmed)) {
                     message.setProcessingStatus("SKIPPED");
-                    messageRepository.save(message);
+                    saveMessage(message, "pre-filter-blacklist");
                     recordProgress("PRE_FILTER", "SKIPPED", "Blacklisted word: " + trimmed);
                     return null;
                 }
@@ -153,7 +174,7 @@ public class PipelineService {
 
         if (!ruleResult.passes()) {
             message.setProcessingStatus("SKIPPED");
-            messageRepository.save(message);
+            saveMessage(message, "rules-rejected");
             return null;
         }
 
@@ -184,12 +205,9 @@ public class PipelineService {
 
         if (signalScore.score() < signalThreshold) {
             message.setProcessingStatus("SKIPPED");
-            messageRepository.save(message);
+            saveMessage(message, "signal-below-threshold");
             return null;
         }
-
-        message.setProcessingStatus("CLASSIFIED");
-        messageRepository.save(message);
         recordProgress("SIGNAL_SCORING", "PASSED",
             "Score " + signalScore.score() + " above threshold " + signalThreshold);
 
@@ -199,7 +217,7 @@ public class PipelineService {
                 messageId, contextBundle.anchorScore(), contextBundle.anchorSignals());
             message.setProcessingStatus("SKIPPED");
             message.setClassifierReason("Anchor score below threshold; anchorScore=" + contextBundle.anchorScore());
-            messageRepository.save(message);
+            saveMessage(message, "anchor-rejected");
             return null;
         }
 
@@ -216,7 +234,7 @@ public class PipelineService {
             log.info("Classification context dedup skipped: messageId={} existingMessageId={} contextHash={}",
                 messageId, dedupMessage.getId(), contextBundle.contextHash());
             copyClassificationResult(message, dedupMessage, "Context dedup reused previous classification");
-            messageRepository.save(message);
+            saveMessage(message, "context-dedup");
             return null;
         }
 
@@ -227,14 +245,14 @@ public class PipelineService {
                 message.setClassifierScore(Math.max(signalScore.score(), CLASSIFIER_THRESHOLD));
                 message.setClassifierReason(buildLeadReason(signalScore, "No active classifiers found"));
                 message.setClassifierResultJson(buildClassifierFallbackJson(signalScore, chain));
-                messageRepository.save(message);
+                saveMessage(message, "no-active-classifiers-preserve");
                 recordProgress("CLASSIFICATION", "COMPLETED", "Lead preserved by signal classifier");
                 return null;
             }
 
             message.setProcessingStatus("SKIPPED");
             message.setClassifierReason("No active classifiers found");
-            messageRepository.save(message);
+            saveMessage(message, "no-active-classifiers-skip");
             recordProgress("CLASSIFICATION", "SKIPPED", "No active classifiers found");
             pipelineTraceService.createTrace(
                 traceId, messageId, message.getGroupId(),
@@ -313,7 +331,7 @@ public class PipelineService {
             ? (classifier != null ? classifier.getName() + ": " : "") + classifierResult.reasoning()
                 + (signalScore.labels().isEmpty() ? "" : " | Signal labels=" + String.join(", ", signalScore.labels()))
             : null);
-        message.setClassifierResultJson(classifierResult != null ? truncate(safeToJson(classifierResult), 4000) : null);
+        message.setClassifierResultJson(classifierResult != null ? safeToJson(classifierResult) : null);
 
         if (selectedClassifierResult == null || selectedClassifier == null) {
             if (shouldPreserveAsLead(signalScore)) {
@@ -323,7 +341,7 @@ public class PipelineService {
                     "No classifier passed threshold; best score="
                         + (bestObservedResult != null ? bestObservedResult.score() : 0.0)));
                 message.setClassifierResultJson(buildClassifierFallbackJson(signalScore, chain));
-                messageRepository.save(message);
+                saveMessage(message, "no-classifier-passed-preserve");
                 recordProgress("CLASSIFICATION", "COMPLETED",
                     "Lead preserved by signal classifier; best classifier score="
                         + (bestObservedResult != null ? bestObservedResult.score() : 0.0));
@@ -332,16 +350,25 @@ public class PipelineService {
 
             message.setProcessingStatus("SKIPPED");
             message.setClassifierReason("No classifier passed threshold; " + signalScore.classificationReason());
-            messageRepository.save(message);
+            saveMessage(message, "no-classifier-passed-skip");
             recordProgress("CLASSIFICATION", "SKIPPED",
                 "No classifier passed threshold; best score="
                     + (bestObservedResult != null ? bestObservedResult.score() : 0.0));
             return null;
         }
 
+        if (!hasMeaningfulClassifierResult(classifierResult, signalScore)) {
+            message.setProcessingStatus("SKIPPED");
+            message.setClassifierReason(buildSkippedReason(classifierResult, signalScore));
+            saveMessage(message, "classifier-not-meaningful");
+            recordProgress("CLASSIFICATION", "SKIPPED",
+                "Matched classifier output lacked meaningful AI/access/payment signal");
+            return null;
+        }
+
         if (!classifierResult.guideCandidate()) {
             message.setProcessingStatus("CLASSIFIED");
-            messageRepository.save(message);
+            saveMessage(message, "classified-non-guide");
             recordProgress("CLASSIFICATION", "COMPLETED",
                 "Matched useful context without guide candidate; labels=" + classifierResult.labels());
             return null;
@@ -397,7 +424,7 @@ public class PipelineService {
             );
             message.setProcessingStatus("ERROR");
             message.setGuideId(failedGuide.getId());
-            messageRepository.save(message);
+            saveMessage(message, "guide-provider-missing");
             return failedGuide;
         }
 
@@ -478,7 +505,7 @@ public class PipelineService {
         if (guideFailed) {
             message.setProcessingStatus("ERROR");
             message.setGuideId(guide.getId());
-            messageRepository.save(message);
+            saveMessage(message, "guide-generation-failed");
             recordProgress("MESSAGE_STATUS_UPDATED", "COMPLETED", "Root message set to ERROR");
             log.info("Pipeline completed with failure for message {} -> guide {} (traceId={})",
                 messageId, guide.getId(), traceId);
@@ -500,13 +527,13 @@ public class PipelineService {
 
         message.setProcessingStatus("GUIDE_FOUND");
         message.setGuideId(guide.getId());
-        messageRepository.save(message);
+        saveMessage(message, "guide-found-root");
 
         for (MessageEntity chainMsg : chain) {
             if ("UNPROCESSED".equals(chainMsg.getProcessingStatus())) {
                 chainMsg.setProcessingStatus("GUIDE_FOUND");
                 chainMsg.setGuideId(guide.getId());
-                messageRepository.save(chainMsg);
+                saveMessage(chainMsg, "guide-found-chain");
             }
         }
         recordProgress("MESSAGE_STATUS_UPDATED", "COMPLETED",
@@ -744,11 +771,7 @@ public class PipelineService {
         if (signalScore == null) {
             return false;
         }
-        return signalScore.score() >= signalThreshold
-            && signalScore.labels().stream().anyMatch(label -> switch (label) {
-                case "AI_ACCESS_DEMAND", "PAYMENT_WORKAROUND", "PROVIDER_MENTION", "PAIN_LIMITS", "OFFER_OR_SPAM" -> true;
-                default -> false;
-            });
+        return signalScore.score() >= signalThreshold && hasMeaningfulSignal(signalScore);
     }
 
     private String buildLeadReason(SignalScore signalScore, String prefix) {
@@ -758,7 +781,7 @@ public class PipelineService {
         String matchedSignals = signalScore.matchedSignals().isEmpty()
             ? ""
             : " | matchedSignals=" + String.join(", ", signalScore.matchedSignals());
-        return truncate(prefix + " | " + signalScore.classificationReason() + labels + matchedSignals, 1024);
+        return truncate(prefix + " | " + signalScore.classificationReason() + labels + matchedSignals, MAX_REASON_LEN);
     }
 
     private boolean shouldSelectAnchor(SignalScore signalScore, MessageContextBundle contextBundle) {
@@ -778,7 +801,7 @@ public class PipelineService {
 
     private void copyClassificationResult(MessageEntity target, MessageEntity source, String reasonPrefix) {
         target.setClassifierScore(source.getClassifierScore());
-        target.setClassifierReason(truncate(reasonPrefix + "; " + source.getClassifierReason(), 1024));
+        target.setClassifierReason(truncate(reasonPrefix + "; " + source.getClassifierReason(), MAX_REASON_LEN));
         target.setClassifierResultJson(source.getClassifierResultJson());
         target.setClassificationContextHash(source.getClassificationContextHash());
         target.setGuideId(source.getGuideId());
@@ -816,6 +839,93 @@ public class PipelineService {
             chain.stream().map(MessageEntity::getId).limit(3).toList(),
             signalScore.classificationReason()
         );
-        return truncate(safeToJson(fallback), 4000);
+        return safeToJson(fallback);
+    }
+
+    private boolean hasMeaningfulSignal(SignalScore signalScore) {
+        if (signalScore == null || signalScore.labels().isEmpty()) {
+            return false;
+        }
+        Set<String> labels = new LinkedHashSet<>(signalScore.labels());
+        if (labels.stream().anyMatch(MEANINGFUL_SIGNAL_LABELS::contains)) {
+            return true;
+        }
+        return labels.contains("PROVIDER_MENTION") && labels.size() > 1;
+    }
+
+    private boolean hasMeaningfulClassifierResult(ClassifierResult classifierResult, SignalScore signalScore) {
+        if (classifierResult == null || !classifierResult.matched()) {
+            return false;
+        }
+        if (classifierResult.labels().stream().anyMatch(MEANINGFUL_CLASSIFIER_LABELS::contains)) {
+            return true;
+        }
+        if (classifierResult.labels().contains(ClassificationLabels.AI_TOOL_OR_PROVIDER)) {
+            return hasMeaningfulSignal(signalScore);
+        }
+        return false;
+    }
+
+    private String buildSkippedReason(ClassifierResult classifierResult, SignalScore signalScore) {
+        if (classifierResult != null
+            && classifierResult.labels().equals(List.of(ClassificationLabels.AI_TOOL_OR_PROVIDER))
+            && !hasMeaningfulSignal(signalScore)) {
+            return "Bare provider mention without demand, payment, pain, offer, link, or practical context";
+        }
+        return "Matched output had no meaningful AI/access/payment signal for CLASSIFIED";
+    }
+
+    private MessageEntity saveMessage(MessageEntity message, String stage) {
+        compactMessageForPersistence(message);
+        try {
+            return messageRepository.save(message);
+        } catch (DataIntegrityViolationException exception) {
+            logMessagePersistenceFailure(message, stage, exception);
+            compactMessageForFallback(message, stage);
+            return messageRepository.save(message);
+        }
+    }
+
+    private void compactMessageForPersistence(MessageEntity message) {
+        message.setClassifierReason(truncate(message.getClassifierReason(), MAX_REASON_LEN));
+        message.setSenderName(truncate(message.getSenderName(), 128));
+        message.setTopicName(truncate(message.getTopicName(), 256));
+    }
+
+    private void compactMessageForFallback(MessageEntity message, String stage) {
+        compactMessageForPersistence(message);
+        message.setClassifierReason(truncate("Persistence fallback after " + stage + " | status="
+            + message.getProcessingStatus(), 512));
+        message.setClassifierResultJson(truncate(message.getClassifierResultJson(), 2000));
+        message.setRuleResultJson(truncate(message.getRuleResultJson(), 2000));
+        message.setSignalBreakdown(truncate(message.getSignalBreakdown(), 2000));
+    }
+
+    private void logMessagePersistenceFailure(MessageEntity message, String stage, DataIntegrityViolationException exception) {
+        log.warn(
+            "Message persistence failed at stage={} messageId={} status={} lengths={{reason={}, resultJson={}, ruleJson={}, breakdown={}, text={}, topicName={}, senderName={}}} previews={{reason='{}', topic='{}', text='{}'}} cause={}",
+            stage,
+            message.getId(),
+            message.getProcessingStatus(),
+            lengthOf(message.getClassifierReason()),
+            lengthOf(message.getClassifierResultJson()),
+            lengthOf(message.getRuleResultJson()),
+            lengthOf(message.getSignalBreakdown()),
+            lengthOf(message.getText()),
+            lengthOf(message.getTopicName()),
+            lengthOf(message.getSenderName()),
+            preview(message.getClassifierReason()),
+            preview(message.getTopicName()),
+            preview(message.getText()),
+            exception.getMostSpecificCause() != null ? exception.getMostSpecificCause().getMessage() : exception.getMessage()
+        );
+    }
+
+    private int lengthOf(String value) {
+        return value == null ? 0 : value.length();
+    }
+
+    private String preview(String value) {
+        return truncate(value, PREVIEW_LEN);
     }
 }
