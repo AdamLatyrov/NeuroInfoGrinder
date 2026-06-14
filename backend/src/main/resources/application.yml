@@ -9,6 +9,9 @@ spring:
     username: ${DB_USERNAME:postgres}
     password: ${DB_PASSWORD:postgres}
     driver-class-name: ${DB_DRIVER:org.postgresql.Driver}
+    hikari:
+      maximum-pool-size: ${SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE:10}
+      minimum-idle: ${SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE:2}
   jpa:
     open-in-view: false
     hibernate:
@@ -28,6 +31,7 @@ spring:
 
 server:
   port: ${SERVER_PORT:8080}
+  forward-headers-strategy: framework
   servlet:
     encoding:
       charset: UTF-8
@@ -49,17 +53,31 @@ springdoc:
 app:
   api-version: v1
   jwt:
-    secret: neuroinfogrinder-dev-secret-key-must-be-at-least-256-bits-long-for-hs256
-    expiration-ms: 86400000
+    secret: ${JWT_SECRET:neuroinfogrinder-dev-secret-key-must-be-at-least-256-bits-long-for-hs256}
+    expiration-ms: ${JWT_EXPIRATION_MS:86400000}
 
 neuroinfogrinder:
   pipeline:
     signal-threshold: ${PIPELINE_SIGNAL_THRESHOLD:0.30}
     local-guide-fallback: ${PIPELINE_LOCAL_GUIDE_FALLBACK:false}
+    classification-context-enabled: ${CLASSIFICATION_CONTEXT_ENABLED:true}
+    classification-context-window-minutes: ${CLASSIFICATION_CONTEXT_WINDOW_MINUTES:10}
+    classification-context-max-messages: ${CLASSIFICATION_CONTEXT_MAX_MESSAGES:80}
+    classification-context-max-chars: ${CLASSIFICATION_CONTEXT_MAX_CHARS:20000}
+    classification-context-reply-depth: ${CLASSIFICATION_CONTEXT_REPLY_DEPTH:1}
+    classification-anchor-min-score: ${CLASSIFICATION_ANCHOR_MIN_SCORE:3}
+    classification-context-dedup-ttl-hours: ${CLASSIFICATION_CONTEXT_DEDUP_TTL_HOURS:24}
 
 telegram:
   tdlib:
     enabled: ${TDLIB_ENABLED:true}
+    sync:
+      enabled: ${TDLIB_SYNC_ENABLED:true}
+      fixed-delay-ms: ${TDLIB_SYNC_FIXED_DELAY_MS:15000}
+      initial-delay-ms: ${TDLIB_SYNC_INITIAL_DELAY_MS:5000}
+      max-parallelism: ${TDLIB_SYNC_MAX_PARALLELISM:2}
+      batch-size: ${TDLIB_SYNC_BATCH_SIZE:2}
+      queue-capacity: ${TDLIB_SYNC_QUEUE_CAPACITY:4}
     library-name: ${TDLIB_LIBRARY_NAME:tdjni}
     library-path: ${TDLIB_LIBRARY_PATH:./native}
     api-id: ${TDLIB_API_ID:38702302}

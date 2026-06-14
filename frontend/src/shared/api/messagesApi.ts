@@ -18,10 +18,13 @@ interface MessageDto {
   guideId: number | null;
   topicName: string | null;
   topicId: number | null;
+  telegramMessageUrl: string | null;
   date: string | null;
   signalScore: number | null;
   classifierScore: number | null;
   classifierReason: string | null;
+  classifierResultJson: string | null;
+  classificationContextHash: string | null;
   signalBreakdown: string | null;
   ruleResultJson: string | null;
 }
@@ -53,10 +56,13 @@ function normalizeMessage(dto: MessageDto): Message {
     guideId: dto.guideId != null ? String(dto.guideId) : undefined,
     topicName: dto.topicName ?? undefined,
     topicId: dto.topicId != null ? String(dto.topicId) : undefined,
+    telegramMessageUrl: dto.telegramMessageUrl,
     hasMedia: false,
     signalScore: dto.signalScore,
     classifierScore: dto.classifierScore,
     classifierReason: dto.classifierReason ?? undefined,
+    classifierResultJson: dto.classifierResultJson ?? undefined,
+    classificationContextHash: dto.classificationContextHash ?? undefined,
     signalBreakdown: dto.signalBreakdown ?? undefined,
     ruleResultJson: dto.ruleResultJson ?? undefined,
   };

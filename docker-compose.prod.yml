@@ -1,0 +1,109 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-neuroinfogrinder}
+      POSTGRES_USER: ${DB_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-change_me}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-postgres} -d ${DB_NAME:-neuroinfogrinder}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--save", "60", "1"]
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      args:
+        TDLIB_RELEASE_URL: ${TDLIB_RELEASE_URL:-https://github.com/all4fun/build-tdlib/releases/download/v1.2.1/tdlib-v1.2.1-linux-amd64.tar.gz}
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
+      SERVER_PORT: 8080
+      DB_URL: ${DB_URL:-jdbc:postgresql://postgres:5432/neuroinfogrinder}
+      DB_USERNAME: ${DB_USERNAME:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-change_me}
+      REDIS_HOST: ${REDIS_HOST:-redis}
+      REDIS_PORT: ${REDIS_PORT:-6379}
+      JWT_SECRET: ${JWT_SECRET:-change_me_change_me_change_me_change_me}
+      JWT_EXPIRATION_MS: ${JWT_EXPIRATION_MS:-86400000}
+      JAVA_OPTS: ${JAVA_OPTS:--Xms256m -Xmx768m}
+      LOG_DIR: /app/logs
+      APP_LOG_FILE: /app/logs/application.log
+      TDLIB_LOG_FILE: /app/logs/tdlib.log
+      TDLIB_ENABLED: ${TDLIB_ENABLED:-true}
+      TDLIB_SYNC_ENABLED: ${TDLIB_SYNC_ENABLED:-true}
+      TDLIB_SYNC_MAX_PARALLELISM: ${TDLIB_SYNC_MAX_PARALLELISM:-1}
+      TDLIB_SYNC_BATCH_SIZE: ${TDLIB_SYNC_BATCH_SIZE:-1}
+      TDLIB_SYNC_QUEUE_CAPACITY: ${TDLIB_SYNC_QUEUE_CAPACITY:-2}
+      TDLIB_SYNC_FIXED_DELAY_MS: ${TDLIB_SYNC_FIXED_DELAY_MS:-60000}
+      TDLIB_SYNC_INITIAL_DELAY_MS: ${TDLIB_SYNC_INITIAL_DELAY_MS:-30000}
+      TDLIB_API_ID: ${TDLIB_API_ID:-0}
+      TDLIB_API_HASH: ${TDLIB_API_HASH:-}
+      TDLIB_LIBRARY_PATH: /opt/tdlib/libtdjni.so
+      TDLIB_DATABASE_DIRECTORY: /app/tdlib-data/db
+      TDLIB_FILES_DIRECTORY: /app/tdlib-data/files
+      TDLIB_DATABASE_ENCRYPTION_KEY: ${TDLIB_DATABASE_ENCRYPTION_KEY:-change_me}
+      CLASSIFICATION_CONTEXT_ENABLED: ${CLASSIFICATION_CONTEXT_ENABLED:-true}
+      CLASSIFICATION_CONTEXT_WINDOW_MINUTES: ${CLASSIFICATION_CONTEXT_WINDOW_MINUTES:-10}
+      CLASSIFICATION_CONTEXT_MAX_MESSAGES: ${CLASSIFICATION_CONTEXT_MAX_MESSAGES:-30}
+      CLASSIFICATION_CONTEXT_MAX_CHARS: ${CLASSIFICATION_CONTEXT_MAX_CHARS:-8000}
+      CLASSIFICATION_CONTEXT_REPLY_DEPTH: ${CLASSIFICATION_CONTEXT_REPLY_DEPTH:-1}
+      CLASSIFICATION_ANCHOR_MIN_SCORE: ${CLASSIFICATION_ANCHOR_MIN_SCORE:-3}
+      CLASSIFICATION_CONTEXT_DEDUP_TTL_HOURS: ${CLASSIFICATION_CONTEXT_DEDUP_TTL_HOURS:-24}
+      SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: ${SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE:-5}
+      SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: ${SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE:-1}
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - tdlib-data:/app/tdlib-data
+      - backend-logs:/app/logs
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8080/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "80:80"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/ || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres-data:
+  redis-data:
+  tdlib-data:
+  backend-logs:

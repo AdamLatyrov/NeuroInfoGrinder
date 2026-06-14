@@ -16,10 +16,13 @@ public record MessageResponse(
         Long guideId,
         String topicName,
         Long topicId,
+        String telegramMessageUrl,
         Instant date,
         Double signalScore,
         Double classifierScore,
         String classifierReason,
+        String classifierResultJson,
+        String classificationContextHash,
         String signalBreakdown,
         String ruleResultJson
 ) {

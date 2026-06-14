@@ -144,6 +144,9 @@ public class GuideGenerator {
         sb.append("Классификация сообщения:\n");
         sb.append("- score: ").append(String.format(Locale.US, "%.3f", classifierResult.score())).append("\n");
         sb.append("- matched: ").append(classifierResult.matched()).append("\n");
+        sb.append("- labels: ").append(classifierResult.labels()).append("\n");
+        sb.append("- guide_candidate: ").append(classifierResult.guideCandidate()).append("\n");
+        sb.append("- evidence_message_ids: ").append(classifierResult.evidenceMessageIds()).append("\n");
         sb.append("- reasoning: ").append(classifierResult.reasoning()).append("\n\n");
 
         if (root != null) {

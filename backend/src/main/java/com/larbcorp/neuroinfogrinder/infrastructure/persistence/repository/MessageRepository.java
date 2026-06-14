@@ -29,11 +29,18 @@ public interface MessageRepository extends JpaRepository<MessageEntity, Long> {
 
     List<MessageEntity> findByGroupIdAndMessageDateAfter(Long groupId, Instant since);
 
+    List<MessageEntity> findByGroupIdAndMessageDateBetweenOrderByMessageDateAsc(Long groupId, Instant from, Instant to);
+
     List<MessageEntity> findByProcessingStatus(String status);
 
     Optional<MessageEntity> findByGroupIdAndTelegramMessageId(Long groupId, Long telegramMessageId);
 
     Optional<MessageEntity> findByIdAndGroupId(Long id, Long groupId);
+
+    Optional<MessageEntity> findFirstByClassificationContextHashAndUpdatedAtAfterOrderByUpdatedAtDesc(
+        String classificationContextHash,
+        Instant updatedAfter
+    );
 
     List<MessageEntity> findByGuideId(Long guideId);
 

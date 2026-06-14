@@ -44,4 +44,50 @@ class SignalScorerTest {
 
         assertThat(questionScore.score()).isGreaterThanOrEqualTo(0.3);
     }
+
+    @Test
+    void keepsAiAccessDemandMessagesAboveSkipThreshold() {
+        assertUsefulLead("где покупать гифты клода по норм цене", "AI_ACCESS_DEMAND", "PROVIDER_MENTION");
+        assertUsefulLead("никто не знает где можно безлимитный апи клауда купить?", "AI_ACCESS_DEMAND", "PAIN_LIMITS");
+        assertUsefulLead("подскажите, где сейчас дешевле всего купить чат гпт плюс?", "AI_ACCESS_DEMAND", "PROVIDER_MENTION");
+        assertUsefulLead("Вот эту попробуй, она пока что бесплатная https://openrouter.ai/nex-agi/nex-n2-pro:free",
+            "PROVIDER_MENTION", "OFFER_OR_SPAM");
+        assertUsefulLead("На фанпее купи ак за 300 на год", "PAYMENT_WORKAROUND", "OFFER_OR_SPAM");
+        assertUsefulLead("Сторонние китайские сервисы пополнения берут от 148 до 238 юаней в месяц",
+            "PAYMENT_WORKAROUND");
+        assertUsefulLead("я очень быстро эти лимиты убиваю", "PAIN_LIMITS");
+    }
+
+    @Test
+    void keepsShortNoiseLowAndMarkedNotUseful() {
+        assertNotUseful("Всем");
+        assertNotUseful("Да");
+        assertNotUseful("ок");
+        assertNotUseful("Сайт");
+    }
+
+    private void assertUsefulLead(String text, String... expectedLabels) {
+        MessageEntity message = new MessageEntity();
+        message.setText(text);
+        message.setIsBot(false);
+
+        SignalScore score = signalScorer.score(message);
+
+        assertThat(score.score()).isGreaterThanOrEqualTo(0.3);
+        assertThat(score.classificationReason()).isNotBlank();
+        assertThat(score.matchedSignals()).isNotEmpty();
+        assertThat(score.labels()).contains(expectedLabels);
+        assertThat(score.labels()).doesNotContain("NOT_USEFUL");
+    }
+
+    private void assertNotUseful(String text) {
+        MessageEntity message = new MessageEntity();
+        message.setText(text);
+        message.setIsBot(false);
+
+        SignalScore score = signalScorer.score(message);
+
+        assertThat(score.score()).isLessThan(0.3);
+        assertThat(score.labels()).contains("NOT_USEFUL");
+    }
 }

@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ArrowSquareOut,
+  ArrowsClockwise,
   BookOpen,
   CaretDown,
   CaretUp,
@@ -18,12 +19,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import {
-  type PipelineQueueItem,
   type PipelineResultItem,
   usePausePipelineMutation,
-  usePipelineQueueQuery,
+  useRequeueMessageMutation,
   usePipelineResultsQuery,
   usePipelineStatusQuery,
   useResumePipelineMutation,
@@ -84,7 +85,7 @@ const KEY_LABELS: Record<string, string> = {
   status: "Статус",
 };
 
-type PipelineView = "QUEUE" | "SKIPPED" | "GUIDE_FOUND";
+type PipelineView = "ALL" | "GUIDE_FOUND" | "CLASSIFIED" | "SKIPPED";
 type TimePreset = "all" | "live" | "5m" | "15m" | "1h" | "custom";
 
 function toDateTimeLocal(date: Date | null) {
@@ -156,6 +157,97 @@ function parsePipeData(value: string) {
 function normalizeData(value: string | null) {
   if (!value) return null;
   return tryParseJson<unknown>(value) ?? parsePipeData(value);
+}
+
+function classifierSummary(value: string | null) {
+  const parsed = tryParseJson<{
+    score?: number;
+    labels?: string[];
+    guideCandidate?: boolean;
+    guide_candidate?: boolean;
+    evidenceMessageIds?: number[];
+    evidence_message_ids?: number[];
+    reasoning?: string;
+  }>(value);
+  if (!parsed) return null;
+  return {
+    score: parsed.score ?? null,
+    labels: parsed.labels ?? [],
+    guideCandidate: parsed.guideCandidate ?? parsed.guide_candidate ?? false,
+    evidenceMessageIds: parsed.evidenceMessageIds ?? parsed.evidence_message_ids ?? [],
+    reasoning: parsed.reasoning ?? "",
+  };
+}
+
+function classifierMessages(
+  message: PipelineResultItem,
+  classifierInfo: ReturnType<typeof classifierSummary>,
+) {
+  if (!classifierInfo) return [];
+
+  const labels = new Set(classifierInfo.labels);
+  const hints: string[] = [];
+
+  if (message.status === "CLASSIFIED" && classifierInfo.guideCandidate === false) {
+    hints.push(
+      "Это полезный сигнал, но не гайд: не хватает ответа, инструкции, ссылки, цены, способа или подтверждения.",
+    );
+  }
+
+  if (message.status === "CLASSIFIED" && classifierInfo.guideCandidate && !message.guideId) {
+    hints.push("Кандидат в гайд.");
+  }
+
+  if (labels.has("DEMAND_SIGNAL") && !labels.has("SOLUTION_MENTION")) {
+    hints.push("Есть спрос/вопрос, но нет решения.");
+  }
+
+  if (labels.has("SPAM_OR_AD")) {
+    hints.push("Оффер/реклама: сохранено как источник, не как гайд.");
+  }
+
+  return hints;
+}
+
+
+type TraceRun = {
+  traceId: string;
+  traces: PipelineTrace[];
+  startedAt: string | null;
+};
+
+function groupTraceRuns(traces: PipelineTrace[]): TraceRun[] {
+  const grouped = new Map<string, PipelineTrace[]>();
+  traces.forEach((trace) => {
+    const key = trace.traceId || trace.id;
+    const bucket = grouped.get(key) ?? [];
+    bucket.push(trace);
+    grouped.set(key, bucket);
+  });
+
+  return Array.from(grouped.entries())
+    .map(([traceId, items]) => ({
+      traceId,
+      traces: items,
+      startedAt: items[0]?.startedAt ?? null,
+    }))
+    .sort((left, right) => new Date(left.startedAt ?? 0).getTime() - new Date(right.startedAt ?? 0).getTime());
+}
+
+function statusCallout(message: PipelineResultItem, classifierInfo: ReturnType<typeof classifierSummary>) {
+  if (message.status === "CLASSIFIED") {
+    if (classifierInfo?.guideCandidate && !message.guideId) {
+      return "Кандидат в гайд";
+    }
+    return "Полезный сигнал";
+  }
+  if (message.status === "GUIDE_FOUND") {
+    return "Гайд";
+  }
+  if (message.status === "SKIPPED") {
+    return "Отсеяно";
+  }
+  return STATUS_LABELS[message.status] ?? message.status;
 }
 
 function DataValue({ value }: { value: unknown }) {
@@ -343,8 +435,16 @@ function ResultRow({
   onToggle: () => void;
 }) {
   const navigate = useNavigate();
+  const requeueMessage = useRequeueMessageMutation();
+  const [showHistory, setShowHistory] = useState(false);
   const traceQuery = useMessageTraceQuery(expanded ? String(message.id) : undefined);
   const traces = traceQuery.data ?? [];
+  const traceRuns = groupTraceRuns(traces);
+  const latestRun = traceRuns[traceRuns.length - 1] ?? null;
+  const classifierInfo = classifierSummary(message.classifierResultJson);
+  const callout = statusCallout(message, classifierInfo);
+  const hints = classifierMessages(message, classifierInfo);
+  const displayScore = classifierInfo?.score ?? message.classifierScore ?? message.signalScore;
 
   return (
     <div className="border-b border-border-subtle last:border-0">
@@ -355,17 +455,37 @@ function ResultRow({
               {message.text || "Сообщение без текста"}
             </span>
             <Badge variant={statusVariant(message.status)}>{STATUS_LABELS[message.status] ?? message.status}</Badge>
+            {callout !== (STATUS_LABELS[message.status] ?? message.status) && <Badge variant="outline">{callout}</Badge>}
           </div>
           <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-text-muted">
             <span>{message.author || "Автор неизвестен"}</span>
             <span>{formatDate(message.messageDate)}</span>
             {message.signalScore != null && <span>Полезность {message.signalScore.toFixed(2)}</span>}
             {message.classifierScore != null && <span>Классификация {message.classifierScore.toFixed(2)}</span>}
+            {displayScore != null && <span>Score {formatNumber(displayScore, 2)}</span>}
           </div>
           {message.classifierReason && (
             <p className="mt-2 line-clamp-2 whitespace-pre-wrap break-words text-xs text-text-weak">
               {message.classifierReason}
             </p>
+          )}
+          {classifierInfo && (
+            <div className="mt-2 flex flex-wrap gap-2 text-[11px] text-text-weak">
+              {classifierInfo.labels.length > 0 && <span>Labels: {classifierInfo.labels.join(", ")}</span>}
+              <span>guideCandidate: {classifierInfo.guideCandidate ? "true" : "false"}</span>
+              {classifierInfo.evidenceMessageIds.length > 0 && (
+                <span>Evidence: {classifierInfo.evidenceMessageIds.join(", ")}</span>
+              )}
+            </div>
+          )}
+          {hints.length > 0 && (
+            <div className="mt-3 flex flex-col gap-2">
+              {hints.map((hint) => (
+                <div key={hint} className="rounded-lg border border-border-subtle bg-bg-app px-3 py-2 text-xs text-text-muted">
+                  {hint}
+                </div>
+              ))}
+            </div>
           )}
         </button>
 
@@ -378,6 +498,20 @@ function ResultRow({
         >
           <ArrowSquareOut size={17} />
         </Button>
+        {message.status === "CLASSIFIED" && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="shrink-0"
+            disabled={requeueMessage.isPending}
+            onClick={(event) => {
+              event.stopPropagation();
+              requeueMessage.mutate(message.id);
+            }}
+          >
+            {requeueMessage.isPending ? "Отправляю..." : "На перепроверку"}
+          </Button>
+        )}
         <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={onToggle}>
           {expanded ? <CaretUp size={17} /> : <CaretDown size={17} />}
         </Button>
@@ -385,6 +519,64 @@ function ResultRow({
 
       {expanded && (
         <div className="border-t border-border-subtle bg-bg-card px-4 py-4">
+          {classifierInfo && (
+            <div className="mb-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <div className="rounded-lg bg-bg-app px-3 py-3">
+                <div className="text-[11px] text-text-weak">Статус</div>
+                <div className="mt-1 text-xs font-medium text-text-strong">{callout}</div>
+              </div>
+              <div className="rounded-lg bg-bg-app px-3 py-3">
+                <div className="text-[11px] text-text-weak">Score</div>
+                <div className="mt-1 text-xs font-medium text-text-strong">
+                  {displayScore != null ? formatNumber(displayScore, 2) : "—"}
+                </div>
+              </div>
+              <div className="rounded-lg bg-bg-app px-3 py-3">
+                <div className="text-[11px] text-text-weak">Labels</div>
+                <div className="mt-1 text-xs font-medium text-text-strong">
+                  {classifierInfo.labels.length > 0 ? classifierInfo.labels.join(", ") : "—"}
+                </div>
+              </div>
+              <div className="rounded-lg bg-bg-app px-3 py-3">
+                <div className="text-[11px] text-text-weak">Guide candidate</div>
+                <div className="mt-1 text-xs font-medium text-text-strong">
+                  {classifierInfo.guideCandidate ? "true" : "false"}
+                </div>
+              </div>
+              <div className="rounded-lg bg-bg-app px-3 py-3">
+                <div className="text-[11px] text-text-weak">Evidence IDs</div>
+                <div className="mt-1 text-xs font-medium text-text-strong">
+                  {classifierInfo.evidenceMessageIds.length > 0 ? classifierInfo.evidenceMessageIds.join(", ") : "—"}
+                </div>
+              </div>
+              <div className="rounded-lg bg-bg-app px-3 py-3">
+                <div className="text-[11px] text-text-weak">Context hash</div>
+                <div className="mt-1 break-all text-xs font-medium text-text-strong">
+                  {message.classificationContextHash || "—"}
+                </div>
+              </div>
+              {classifierInfo.reasoning && (
+                <div className="rounded-lg bg-bg-app px-3 py-3 sm:col-span-2 xl:col-span-4">
+                  <div className="text-[11px] text-text-weak">Reasoning</div>
+                  <div className="mt-1 whitespace-pre-wrap break-words text-xs font-medium text-text-strong">
+                    {classifierInfo.reasoning}
+                  </div>
+                </div>
+              )}
+              {hints.length > 0 && (
+                <div className="rounded-lg bg-bg-app px-3 py-3 sm:col-span-2 xl:col-span-4">
+                  <div className="text-[11px] text-text-weak">Пояснение</div>
+                  <div className="mt-2 flex flex-col gap-2">
+                    {hints.map((hint) => (
+                      <div key={hint} className="text-xs font-medium text-text-strong">
+                        {hint}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
             <h4 className="text-sm font-semibold text-text-strong">Путь сообщения</h4>
             <Badge variant="outline">{traces.length} этапов</Badge>
@@ -410,42 +602,8 @@ function ResultRow({
   );
 }
 
-function QueueRow({ message }: { message: PipelineQueueItem }) {
-  const navigate = useNavigate();
-
-  return (
-    <div className="border-b border-border-subtle px-4 py-4 last:border-0">
-      <div className="flex items-start gap-3">
-        <div className="min-w-0 flex-1">
-          <div className="flex items-start gap-2">
-            <span className="line-clamp-2 flex-1 text-sm font-medium text-text-strong">
-              {message.text || "Сообщение без текста"}
-            </span>
-            <Badge variant={statusVariant(message.status)}>{STATUS_LABELS[message.status] ?? message.status}</Badge>
-          </div>
-          <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-text-muted">
-            <span>{message.author || "Автор неизвестен"}</span>
-            <span>{message.groupTitle || `Группа #${message.groupId}`}</span>
-            <span>{formatDate(message.messageDate)}</span>
-            {message.topicName && <span>Тема: {message.topicName}</span>}
-          </div>
-        </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8 shrink-0"
-          title="Открыть сообщение"
-          onClick={() => navigate(`/groups?group=${message.groupId}&message=${message.id}`)}
-        >
-          <ArrowSquareOut size={17} />
-        </Button>
-      </div>
-    </div>
-  );
-}
-
 export function PipelinePage() {
-  const [view, setView] = useState<PipelineView>("QUEUE");
+  const [view, setView] = useState<PipelineView>("ALL");
   const [expandedMessageId, setExpandedMessageId] = useState<number | null>(null);
   const [timePreset, setTimePreset] = useState<TimePreset>("all");
   const [fromLocal, setFromLocal] = useState(() => toDateTimeLocal(presetDate("15m")));
@@ -459,20 +617,37 @@ export function PipelinePage() {
   const pausePipeline = usePausePipelineMutation();
   const resumePipeline = useResumePipelineMutation();
 
-  const queueQuery = usePipelineQueueQuery(["QUEUED", "UNPROCESSED", "PROCESSING"], 0, 100, view === "QUEUE");
+  const allResultsQuery = usePipelineResultsQuery(undefined, 0, 100, fromIso, view === "ALL");
+  const classifiedQuery = usePipelineResultsQuery("CLASSIFIED", 0, 100, fromIso, view === "CLASSIFIED");
   const skippedQuery = usePipelineResultsQuery("SKIPPED", 0, 100, fromIso, view === "SKIPPED");
   const guideQuery = usePipelineResultsQuery("GUIDE_FOUND", 0, 100, fromIso, view === "GUIDE_FOUND");
 
-  const queueItems = queueQuery.data?.content ?? [];
+  const allItems =
+    allResultsQuery.data?.content.filter((message) =>
+      ["CLASSIFIED", "GUIDE_FOUND", "SKIPPED"].includes(message.status),
+    ) ?? [];
+  const classifiedItems = classifiedQuery.data?.content ?? [];
   const skippedItems = skippedQuery.data?.content ?? [];
   const guideItems = guideQuery.data?.content ?? [];
   const pipelineStatus = pipelineStatusQuery.data;
 
   const currentLoading =
-    view === "QUEUE" ? queueQuery.isLoading : view === "SKIPPED" ? skippedQuery.isLoading : guideQuery.isLoading;
+    view === "ALL"
+      ? allResultsQuery.isLoading
+      : view === "CLASSIFIED"
+        ? classifiedQuery.isLoading
+        : view === "SKIPPED"
+          ? skippedQuery.isLoading
+          : guideQuery.isLoading;
 
   const currentListLength =
-    view === "QUEUE" ? queueItems.length : view === "SKIPPED" ? skippedItems.length : guideItems.length;
+    view === "ALL"
+      ? allItems.length
+      : view === "CLASSIFIED"
+        ? classifiedItems.length
+        : view === "SKIPPED"
+          ? skippedItems.length
+          : guideItems.length;
 
   const applyPreset = (preset: TimePreset) => {
     setTimePreset(preset);
@@ -535,7 +710,7 @@ export function PipelinePage() {
         </div>
       </PageHeaderCard>
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
         <div className="rounded-xl border border-border-subtle bg-bg-card px-4 py-3">
           <div className="text-xs text-text-muted">Очередь</div>
           <div className="mt-1 font-mono-value text-2xl font-semibold text-warning">{pipelineStatus?.queued ?? 0}</div>
@@ -544,6 +719,12 @@ export function PipelinePage() {
           <div className="text-xs text-text-muted">В обработке</div>
           <div className="mt-1 font-mono-value text-2xl font-semibold text-warning">
             {pipelineStatus?.processing ?? 0}
+          </div>
+        </div>
+        <div className="rounded-xl border border-border-subtle bg-bg-card px-4 py-3">
+          <div className="text-xs text-text-muted">Классифицировано {timePreset === "all" ? "за все время" : "в окне"}</div>
+          <div className="mt-1 font-mono-value text-2xl font-semibold text-success">
+            {pipelineStatus?.classified ?? classifiedQuery.data?.totalElements ?? 0}
           </div>
         </div>
         <div className="rounded-xl border border-border-subtle bg-bg-card px-4 py-3">
@@ -564,9 +745,10 @@ export function PipelinePage() {
         <CardContent className="p-0">
           <div className="flex flex-wrap items-center gap-2 border-b border-border-subtle px-4 py-4">
             {[
-              { value: "QUEUE", label: "В очереди" },
+              { value: "ALL", label: "Все" },
+              { value: "GUIDE_FOUND", label: "Гайды" },
+              { value: "CLASSIFIED", label: "Классифицировано" },
               { value: "SKIPPED", label: "Отсеяно" },
-              { value: "GUIDE_FOUND", label: "С гайдом" },
             ].map((item) => (
               <Button
                 key={item.value}
@@ -578,38 +760,36 @@ export function PipelinePage() {
               </Button>
             ))}
 
-            {view !== "QUEUE" && (
-              <div className="ml-auto flex flex-wrap items-center gap-2">
-                <Clock size={15} className="text-text-muted" />
-                {[
-                  { value: "all", label: "За все время" },
-                  { value: "live", label: "Сейчас" },
-                  { value: "5m", label: "5 мин" },
-                  { value: "15m", label: "15 мин" },
-                  { value: "1h", label: "1 час" },
-                ].map((item) => (
-                  <Button
-                    key={item.value}
-                    variant={timePreset === item.value ? "secondary" : "ghost"}
-                    size="sm"
-                    onClick={() => applyPreset(item.value as TimePreset)}
-                  >
-                    {item.label}
-                  </Button>
-                ))}
-                <Input
-                  type="datetime-local"
-                  value={fromLocal}
-                  onChange={(event) => {
-                    setTimePreset("custom");
-                    setFromLocal(event.target.value);
-                  }}
-                  className="h-9 w-[220px]"
-                  title="Показать сообщения начиная с выбранной даты и времени"
-                  disabled={timePreset === "all"}
-                />
-              </div>
-            )}
+            <div className="ml-auto flex flex-wrap items-center gap-2">
+              <Clock size={15} className="text-text-muted" />
+              {[
+                { value: "all", label: "За все время" },
+                { value: "live", label: "Сейчас" },
+                { value: "5m", label: "5 мин" },
+                { value: "15m", label: "15 мин" },
+                { value: "1h", label: "1 час" },
+              ].map((item) => (
+                <Button
+                  key={item.value}
+                  variant={timePreset === item.value ? "secondary" : "ghost"}
+                  size="sm"
+                  onClick={() => applyPreset(item.value as TimePreset)}
+                >
+                  {item.label}
+                </Button>
+              ))}
+              <Input
+                type="datetime-local"
+                value={fromLocal}
+                onChange={(event) => {
+                  setTimePreset("custom");
+                  setFromLocal(event.target.value);
+                }}
+                className="h-9 w-[220px]"
+                title="Показать сообщения начиная с выбранной даты и времени"
+                disabled={timePreset === "all"}
+              />
+            </div>
           </div>
 
           {currentLoading ? (
@@ -619,8 +799,24 @@ export function PipelinePage() {
             </div>
           ) : currentListLength === 0 ? (
             <div className="py-12 text-center text-sm text-text-muted">Для текущего режима пока ничего нет.</div>
-          ) : view === "QUEUE" ? (
-            queueItems.map((message) => <QueueRow key={message.id} message={message} />)
+          ) : view === "ALL" ? (
+            allItems.map((message) => (
+              <ResultRow
+                key={message.id}
+                message={message}
+                expanded={expandedMessageId === message.id}
+                onToggle={() => setExpandedMessageId((current) => (current === message.id ? null : message.id))}
+              />
+            ))
+          ) : view === "CLASSIFIED" ? (
+            classifiedItems.map((message) => (
+              <ResultRow
+                key={message.id}
+                message={message}
+                expanded={expandedMessageId === message.id}
+                onToggle={() => setExpandedMessageId((current) => (current === message.id ? null : message.id))}
+              />
+            ))
           ) : view === "SKIPPED" ? (
             skippedItems.map((message) => (
               <ResultRow

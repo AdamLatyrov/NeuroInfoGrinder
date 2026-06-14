@@ -80,10 +80,13 @@ export interface Message {
   guideId?: string;
   topicName?: string;
   topicId?: string;
+  telegramMessageUrl?: string | null;
   hasMedia: boolean;
   signalScore?: number | null;
   classifierScore?: number | null;
   classifierReason?: string | null;
+  classifierResultJson?: string | null;
+  classificationContextHash?: string | null;
   signalBreakdown?: string | null;
   ruleResultJson?: string | null;
 }

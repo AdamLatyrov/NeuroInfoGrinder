@@ -55,6 +55,7 @@ public class SignalScorer {
         Map<String, Double> breakdown = new LinkedHashMap<>();
         String text = message.getText() != null ? message.getText().trim() : "";
         String lowerText = text.toLowerCase();
+        LeadSignalAnalysis leadSignals = LeadSignalAnalyzer.analyze(text);
 
         boolean hasGuideMarkers = GUIDE_PATTERN.matcher(text).find();
         boolean hasQuestionMarkers = QUESTION_PATTERN.matcher(text).find();
@@ -74,16 +75,35 @@ public class SignalScorer {
         total += add(breakdown, "topicContext", message.getTopicId() != null ? 0.08 : 0.0);
         total += add(breakdown, "length", scoreLength(text.length()));
         total += add(breakdown, "humanAuthored", !Boolean.TRUE.equals(message.getIsBot()) ? 0.04 : -0.18);
+        total += add(breakdown, "providerMention", leadSignals.labels().contains("PROVIDER_MENTION") ? 0.18 : 0.0);
+        total += add(breakdown, "accessDemand", leadSignals.labels().contains("AI_ACCESS_DEMAND") ? 0.28 : 0.0);
+        total += add(breakdown, "paymentWorkaround", leadSignals.labels().contains("PAYMENT_WORKAROUND") ? 0.22 : 0.0);
+        total += add(breakdown, "painLimits", leadSignals.labels().contains("PAIN_LIMITS") ? 0.24 : 0.0);
+        total += add(breakdown, "offerOrSpam", leadSignals.labels().contains("OFFER_OR_SPAM") ? 0.10 : 0.0);
+        total += add(
+            breakdown,
+            "leadSynergy",
+            leadSignals.labels().contains("AI_ACCESS_DEMAND")
+                && (leadSignals.labels().contains("PROVIDER_MENTION") || leadSignals.labels().contains("PAYMENT_WORKAROUND"))
+                ? 0.12
+                : 0.0
+        );
 
-        if (ACK_MESSAGES.contains(lowerText)) {
+        if (ACK_MESSAGES.contains(lowerText) && !leadSignals.leadCandidate()) {
             total += add(breakdown, "ackPenalty", -0.60);
-        } else if (text.length() > 0 && text.length() < 8 && !hasShortValuableSignal) {
+        } else if (text.length() > 0 && text.length() < 8 && !hasShortValuableSignal && !leadSignals.leadCandidate()) {
             total += add(breakdown, "shortPenalty", -0.24);
         } else if (text.isBlank()) {
             total += add(breakdown, "emptyPenalty", -0.40);
         }
 
-        return new SignalScore(clamp01(total), breakdown);
+        return new SignalScore(
+            clamp01(total),
+            breakdown,
+            leadSignals.labels(),
+            leadSignals.matchedSignals(),
+            leadSignals.classificationReason()
+        );
     }
 
     private double scoreLength(int length) {

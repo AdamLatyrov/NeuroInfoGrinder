@@ -23,7 +23,6 @@ import {
 import { useGroupsQuery } from "@/shared/api/groupsApi";
 import { usePipelineEvents } from "@/shared/api/pipelineEvents";
 import { useTopicsQuery } from "@/shared/api/topicsApi";
-import { getTelegramSyncSeconds, onUiSettingsChange } from "@/shared/ui-settings";
 import type { Group, Message, Topic } from "@/shared/types";
 
 function formatChainTime(value: string): string {
@@ -68,7 +67,6 @@ export function GroupsChatView() {
   const [activeTopicId, setActiveTopicId] = useState<string | null>(null);
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
   const [chainSheetOpen, setChainSheetOpen] = useState(false);
-  const [telegramSyncMs, setTelegramSyncMs] = useState(() => getTelegramSyncSeconds() * 1000);
 
   const groupsQuery = useGroupsQuery({ size: 200 });
   const allGroups = groupsQuery.data?.content ?? [];
@@ -183,35 +181,6 @@ export function GroupsChatView() {
     setSelectedMessage(null);
   }, [activeTopicId]);
 
-  useEffect(() => {
-    return onUiSettingsChange(() => {
-      setTelegramSyncMs(getTelegramSyncSeconds() * 1000);
-    });
-  }, []);
-
-  const effectiveSyncMs =
-    connectionState === "connected" ? Math.max(telegramSyncMs, 30_000) : telegramSyncMs;
-
-  useEffect(() => {
-    if (!selectedGroup?.id || !selectedGroup.enabled) {
-      return;
-    }
-
-    syncMessagesMutation.mutate();
-    const intervalId = window.setInterval(() => {
-      if (document.visibilityState === "visible" && !syncMessagesMutation.isPending) {
-        syncMessagesMutation.mutate();
-      }
-    }, effectiveSyncMs);
-
-    return () => window.clearInterval(intervalId);
-  }, [
-    effectiveSyncMs,
-    selectedGroup?.enabled,
-    selectedGroup?.id,
-    syncMessagesMutation,
-    syncMessagesMutation.isPending,
-  ]);
 
   const selectedChain = messageChainQuery.data;
   const centerTitle = selectedGroup?.title ?? "Сообщения";

@@ -426,6 +426,14 @@ export function RulesPage() {
           },
         }}
       />
+      <Card>
+        <CardContent className="p-4 text-sm text-text-muted">
+          This page shows DB-managed rules and classifier config.
+          Built-in runtime context-aware signals run on the backend during pipeline execution.
+          See Pipeline Classified/Skipped for labels, reasoning, and context hash.
+        </CardContent>
+      </Card>
+
 
       <Tabs defaultValue="rules">
         <TabsList>

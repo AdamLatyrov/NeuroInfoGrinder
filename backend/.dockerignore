@@ -1,0 +1,6 @@
+target/
+logs/
+tdlib-data/
+native/
+.idea/
+.git/

@@ -91,16 +91,28 @@ public class PipelineController {
         );
 
         messages.forEach(message -> {
-            message.setProcessingStatus("UNPROCESSED");
-            message.setSignalScore(null);
-            message.setClassifierScore(null);
-            message.setClassifierReason(null);
-            message.setSignalBreakdown(null);
-            message.setRuleResultJson(null);
-            message.setGuideId(null);
+            resetForRequeue(message);
         });
         messageRepository.saveAll(messages);
         return new RequeueResponse(messages.size());
+    }
+
+    @PostMapping("/requeue/{messageId}")
+    @ResponseStatus(HttpStatus.OK)
+    public RequeueResponse requeueMessage(@PathVariable Long messageId) {
+        MessageEntity message = messageRepository.findById(messageId)
+            .orElseThrow(() -> new IllegalArgumentException("Message not found: " + messageId));
+
+        GroupEntity group = groupRepository.findById(message.getGroupId())
+            .orElseThrow(() -> new IllegalArgumentException("Group not found: " + message.getGroupId()));
+
+        if (!Boolean.TRUE.equals(group.getEnabled())) {
+            return new RequeueResponse(0);
+        }
+
+        resetForRequeue(message);
+        messageRepository.save(message);
+        return new RequeueResponse(1);
     }
 
     @PostMapping("/dev/smoke-guide")
@@ -275,6 +287,8 @@ public class PipelineController {
             message.setSignalScore(null);
             message.setClassifierScore(null);
             message.setClassifierReason(null);
+            message.setClassifierResultJson(null);
+            message.setClassificationContextHash(null);
             message.setSignalBreakdown(null);
             message.setRuleResultJson(null);
             message.setGuideId(null);
@@ -336,6 +350,8 @@ public class PipelineController {
             msg.getSignalScore(),
             msg.getClassifierScore(),
             msg.getClassifierReason(),
+            msg.getClassifierResultJson(),
+            msg.getClassificationContextHash(),
             msg.getGuideId(),
             msg.getMessageDate(),
             msg.getSignalBreakdown(),
@@ -364,6 +380,8 @@ public class PipelineController {
         Double signalScore,
         Double classifierScore,
         String classifierReason,
+        String classifierResultJson,
+        String classificationContextHash,
         Long guideId,
         java.time.Instant messageDate,
         String signalBreakdown,
@@ -388,6 +406,18 @@ public class PipelineController {
     public record RequeueResponse(int requeued) {}
 
     public record SmokeGuideResponse(Long messageId, String status, Long guideId, String guideTitle) {}
+
+    private void resetForRequeue(MessageEntity message) {
+        message.setProcessingStatus("UNPROCESSED");
+        message.setSignalScore(null);
+        message.setClassifierScore(null);
+        message.setClassifierReason(null);
+        message.setClassifierResultJson(null);
+        message.setClassificationContextHash(null);
+        message.setSignalBreakdown(null);
+        message.setRuleResultJson(null);
+        message.setGuideId(null);
+    }
 
     private List<Long> enabledGroupIds() {
         return groupRepository.findByEnabledTrue().stream()

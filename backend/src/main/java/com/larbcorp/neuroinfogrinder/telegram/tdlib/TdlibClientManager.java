@@ -41,6 +41,7 @@ public class TdlibClientManager {
 
     private static final long REQUEST_TIMEOUT_SECONDS = 30L;
     private static final long CHAT_HISTORY_TIMEOUT_SECONDS = 8L;
+    private static final long TDLIB_NATIVE_LOG_MAX_FILE_SIZE = 50L * 1024L * 1024L;
     private static final Logger log = LoggerFactory.getLogger(TdlibClientManager.class);
 
     private final TdlibProperties properties;
@@ -292,6 +293,7 @@ public class TdlibClientManager {
             try {
                 createDirectories();
                 TdlibNativeLoader.load(properties);
+                configureTdlibLogging();
                 Client.setLogMessageHandler(0, null);
                 client = Client.create(this::handleUpdate, null, throwable -> lastError.set(throwable.getMessage()));
                 send(new TdApi.GetAuthorizationState());
@@ -313,6 +315,18 @@ public class TdlibClientManager {
     private void createDirectories() throws IOException {
         Files.createDirectories(Path.of(properties.getDatabaseDirectory()).toAbsolutePath());
         Files.createDirectories(Path.of(properties.getFilesDirectory()).toAbsolutePath());
+    }
+
+    private void configureTdlibLogging() {
+        Path tdlibLogPath = Path.of("./logs/tdlib-native.log").toAbsolutePath().normalize();
+        try {
+            Files.createDirectories(tdlibLogPath.getParent());
+            Client.execute(new TdApi.SetLogStream(
+                    new TdApi.LogStreamFile(tdlibLogPath.toString(), TDLIB_NATIVE_LOG_MAX_FILE_SIZE, true)
+            ));
+        } catch (Exception exception) {
+            log.warn("Failed to redirect TDLib native log stream to {}", tdlibLogPath, exception);
+        }
     }
 
     private void handleUpdate(TdApi.Object object) {

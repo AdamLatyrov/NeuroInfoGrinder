@@ -56,6 +56,14 @@ public class MessageEntity extends BaseEntity {
     @Column(length = 1024)
     private String classifierReason;
 
+    /** Full classifier result JSON including labels/evidence/guide_candidate. */
+    @Column(columnDefinition = "TEXT")
+    private String classifierResultJson;
+
+    /** Hash of the classification context bundle used for deduplication. */
+    @Column(length = 128)
+    private String classificationContextHash;
+
     /** Signal scorer breakdown as JSON: {"length":0.15,"replies":0.0,...}. */
     @Column(columnDefinition = "TEXT")
     private String signalBreakdown;

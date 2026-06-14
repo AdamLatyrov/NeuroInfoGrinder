@@ -158,10 +158,16 @@ function GroupsTable({
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<(typeof FILTERS)[number]["key"]>("all");
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
+  const [backgroundSyncNotice, setBackgroundSyncNotice] = useState<string | null>(null);
 
   const groupsQuery = useGroupsQuery({ size: 200 });
   const updateGroupMutation = useUpdateGroupMutation();
   const bulkToggleMutation = useBulkToggleMutation();
+  const pendingGroupId = updateGroupMutation.isPending ? updateGroupMutation.variables?.id ?? null : null;
+  const mutationError =
+    (updateGroupMutation.error as Error | null)?.message ??
+    (bulkToggleMutation.error as Error | null)?.message ??
+    null;
 
   const groups = groupsQuery.data?.content ?? [];
 
@@ -248,6 +254,18 @@ function GroupsTable({
         <div className="flex items-center gap-2 text-sm text-text-muted">
           <SpinnerGap size={16} weight="regular" className="animate-spin text-text-muted" />
           Обновляю список групп...
+        </div>
+      )}
+
+      {mutationError && (
+        <div className="rounded-xl border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger">
+          ?? ??????? ???????? ???. ????????? ?? ??????? ?? ??????????: {mutationError}
+        </div>
+      )}
+
+      {backgroundSyncNotice && !mutationError && (
+        <div className="rounded-xl border border-brand-blue/20 bg-brand-blue-soft px-4 py-3 text-sm text-brand-blue">
+          {backgroundSyncNotice}
         </div>
       )}
 
@@ -381,8 +399,23 @@ function GroupsTable({
                           <TableCell>
                             <Switch
                               checked={group.enabled}
+                              disabled={pendingGroupId === group.id}
                               onCheckedChange={(enabled) =>
-                                updateGroupMutation.mutate({ id: group.id, enabled })
+                                updateGroupMutation.mutate(
+                                  { id: group.id, enabled },
+                                  {
+                                    onSuccess: () => {
+                                      setBackgroundSyncNotice(
+                                        enabled
+                                          ? "Группа включена. Фоновая синхронизация запланирована и идет отдельно от интерфейса."
+                                          : "Группа выключена."
+                                      );
+                                    },
+                                    onError: () => {
+                                      setBackgroundSyncNotice(null);
+                                    },
+                                  }
+                                )
                               }
                             />
                           </TableCell>

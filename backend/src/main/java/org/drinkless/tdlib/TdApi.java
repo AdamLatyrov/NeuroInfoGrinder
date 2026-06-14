@@ -1,11 +1,16 @@
 package org.drinkless.tdlib;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class TdApi {
+    private static final Logger log = LoggerFactory.getLogger(TdApi.class);
+
     static {
         try {
             System.loadLibrary("tdjni");
         } catch (UnsatisfiedLinkError e) {
-            e.printStackTrace();
+            log.warn("TDLib JNI library is not available on java.library.path; native loading will be retried by the application loader", e);
         }
     }
 

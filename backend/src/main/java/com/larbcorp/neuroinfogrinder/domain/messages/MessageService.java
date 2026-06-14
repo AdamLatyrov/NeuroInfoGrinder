@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicLong;
 
 @Service
 public class MessageService {
@@ -30,17 +31,21 @@ public class MessageService {
     private static final Logger log = LoggerFactory.getLogger(MessageService.class);
     private static final int INITIAL_SYNC_BATCH_SIZE = 20;
     private static final int INCREMENTAL_SYNC_BATCH_SIZE = 100;
+    private static final AtomicLong TDLIB_TIMEOUT_COUNT = new AtomicLong(0);
 
     private final MessageRepository messageRepository;
     private final GroupRepository groupRepository;
     private final TelegramTdlibService telegramTdlibService;
+    private final MessageSyncPersistenceService messageSyncPersistenceService;
 
     public MessageService(MessageRepository messageRepository,
                           GroupRepository groupRepository,
-                          TelegramTdlibService telegramTdlibService) {
+                          TelegramTdlibService telegramTdlibService,
+                          MessageSyncPersistenceService messageSyncPersistenceService) {
         this.messageRepository = messageRepository;
         this.groupRepository = groupRepository;
         this.telegramTdlibService = telegramTdlibService;
+        this.messageSyncPersistenceService = messageSyncPersistenceService;
     }
 
     @Transactional
@@ -124,11 +129,11 @@ public class MessageService {
         return toResponse(message);
     }
 
-    @Transactional
     public int syncMessagesFromTelegram(Long groupId) {
         GroupEntity group = groupRepository.findById(groupId)
                 .orElseThrow(() -> new IllegalArgumentException("Group not found: " + groupId));
 
+        long fetchStartedAt = System.currentTimeMillis();
         List<TelegramMessageDto> messages;
         try {
             if (group.getLastReadMessageId() == null || group.getLastReadMessageId() == 0L) {
@@ -137,73 +142,23 @@ public class MessageService {
                 messages = telegramTdlibService.getMessages(group.getTelegramChatId(), 0, INCREMENTAL_SYNC_BATCH_SIZE);
             }
         } catch (Exception e) {
+            if (isTdlibTimeout(e)) {
+                long timeoutCount = TDLIB_TIMEOUT_COUNT.incrementAndGet();
+                log.warn("TDLib timeout during sync for group {} (timeoutCount={}): {}", groupId, timeoutCount, e.getMessage());
+            }
             log.warn("Primary sync for group {} failed, falling back to latest message: {}", groupId, e.getMessage());
             messages = telegramTdlibService.getLatestMessage(group.getTelegramChatId())
                     .map(List::of)
                     .orElseGet(List::of);
         }
 
-        log.info("Sync for group {}: TDLib returned {} messages", groupId, messages.size());
-
-        Instant monthAgo = Instant.now().minusSeconds(30 * 24 * 3600);
-        Map<Long, MessageEntity> existingByTelegramMessageId = loadExistingMessages(groupId, messages);
-        List<MessageEntity> newEntities = new ArrayList<>();
-        List<MessageEntity> repairedEntities = new ArrayList<>();
-        int created = 0;
-        int skipped = 0;
-        int repaired = 0;
-        int tooOld = 0;
-
-        for (TelegramMessageDto msg : messages) {
-            Instant msgDate = Instant.ofEpochSecond(msg.date());
-            if (msgDate.isBefore(monthAgo)) {
-                tooOld++;
-                continue;
-            }
-            group.setLastReadMessageId(Math.max(group.getLastReadMessageId() == null ? 0L : group.getLastReadMessageId(), msg.id()));
-            if (group.getLastReadAt() == null || msgDate.isAfter(group.getLastReadAt())) {
-                group.setLastReadAt(msgDate);
-            }
-            MessageEntity existing = existingByTelegramMessageId.get(msg.id());
-            if (existing != null) {
-                if (repairMessageMetadata(existing, msg, msgDate)) {
-                    repairedEntities.add(existing);
-                    repaired++;
-                } else {
-                    skipped++;
-                }
-                continue;
-            }
-            MessageEntity entity = new MessageEntity();
-            entity.setTelegramMessageId(msg.id());
-            entity.setGroupId(groupId);
-            entity.setText(msg.text());
-            entity.setSenderName(msg.senderName());
-            entity.setSenderTelegramUserId(msg.senderTelegramUserId());
-            entity.setIsBot(msg.isBot());
-            entity.setReplyToMessageId(msg.replyToMessageId() > 0 ? msg.replyToMessageId() : null);
-            entity.setTopicName(msg.topicName());
-            entity.setTopicId(msg.messageThreadId() > 0 ? msg.messageThreadId() : null);
-            entity.setReplyCount(0);
-            entity.setProcessingStatus("UNPROCESSED");
-            entity.setMessageDate(msgDate);
-            newEntities.add(entity);
-            created++;
-        }
-
-        if (!repairedEntities.isEmpty()) {
-            messageRepository.saveAll(repairedEntities);
-        }
-        if (!newEntities.isEmpty()) {
-            messageRepository.saveAll(newEntities);
-        }
-        if (created > 0 || repaired > 0 || !messages.isEmpty()) {
-            groupRepository.save(group);
-        }
-
-        log.info("Message sync for group {}: {} new, {} repaired, {} skipped (existing), {} too old, from {} TDLib messages",
-                groupId, created, repaired, skipped, tooOld, messages.size());
-        return created + repaired;
+        log.info(
+                "Sync for group {}: TDLib returned {} messages in {} ms",
+                groupId,
+                messages.size(),
+                System.currentTimeMillis() - fetchStartedAt
+        );
+        return messageSyncPersistenceService.persistSyncedMessages(groupId, messages);
     }
 
     @Transactional
@@ -230,6 +185,7 @@ public class MessageService {
         if (senderName == null || senderName.isBlank()) {
             senderName = "Unknown";
         }
+        GroupEntity group = groupRepository.findById(message.getGroupId()).orElse(null);
         return new MessageResponse(
                 message.getId(),
                 message.getTelegramMessageId(),
@@ -244,52 +200,16 @@ public class MessageService {
                 message.getGuideId(),
                 message.getTopicName(),
                 message.getTopicId(),
+                TelegramMessageLinkBuilder.build(group, message),
                 message.getMessageDate(),
                 message.getSignalScore(),
                 message.getClassifierScore(),
                 message.getClassifierReason(),
+                message.getClassifierResultJson(),
+                message.getClassificationContextHash(),
                 message.getSignalBreakdown(),
                 message.getRuleResultJson()
         );
-    }
-
-    private boolean repairMessageMetadata(MessageEntity entity, TelegramMessageDto msg, Instant msgDate) {
-        boolean changed = false;
-
-        if (isPlaceholderSenderName(entity.getSenderName()) && !isPlaceholderSenderName(msg.senderName())) {
-            entity.setSenderName(msg.senderName());
-            changed = true;
-        }
-        if (entity.getSenderTelegramUserId() == null && msg.senderTelegramUserId() != null) {
-            entity.setSenderTelegramUserId(msg.senderTelegramUserId());
-            changed = true;
-        }
-        if ((entity.getTopicName() == null || entity.getTopicName().isBlank()) && msg.topicName() != null && !msg.topicName().isBlank()) {
-            entity.setTopicName(msg.topicName());
-            changed = true;
-        }
-        if (entity.getTopicId() == null && msg.messageThreadId() > 0) {
-            entity.setTopicId(msg.messageThreadId());
-            changed = true;
-        }
-        if (entity.getReplyToMessageId() == null && msg.replyToMessageId() > 0) {
-            entity.setReplyToMessageId(msg.replyToMessageId());
-            changed = true;
-        }
-        if (shouldRefreshText(entity.getText(), msg.text())) {
-            entity.setText(msg.text());
-            changed = true;
-        }
-        if (entity.getMessageDate() == null) {
-            entity.setMessageDate(msgDate);
-            changed = true;
-        }
-        if (!Boolean.TRUE.equals(entity.getIsBot()) && msg.isBot()) {
-            entity.setIsBot(true);
-            changed = true;
-        }
-
-        return changed;
     }
 
     private boolean isPlaceholderSenderName(String senderName) {
@@ -425,20 +345,8 @@ public class MessageService {
         }
     }
 
-    private Map<Long, MessageEntity> loadExistingMessages(Long groupId, List<TelegramMessageDto> messages) {
-        if (messages.isEmpty()) {
-            return Map.of();
-        }
-
-        List<Long> telegramMessageIds = messages.stream()
-                .map(TelegramMessageDto::id)
-                .distinct()
-                .toList();
-
-        Map<Long, MessageEntity> existingByTelegramMessageId = new HashMap<>();
-        for (MessageEntity entity : messageRepository.findByGroupIdAndTelegramMessageIdIn(groupId, telegramMessageIds)) {
-            existingByTelegramMessageId.put(entity.getTelegramMessageId(), entity);
-        }
-        return existingByTelegramMessageId;
+    private boolean isTdlibTimeout(Exception exception) {
+        String message = exception.getMessage();
+        return message != null && message.toLowerCase().contains("timed out");
     }
 }

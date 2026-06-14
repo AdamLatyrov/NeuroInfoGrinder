@@ -72,18 +72,65 @@ export function useGroupsQuery(filters?: GroupsFilters) {
         content: response.content.map(normalizeGroup),
       };
     },
-    refetchInterval: 10_000,
+    refetchInterval: 30_000,
     refetchIntervalInBackground: true,
     refetchOnMount: "always",
     refetchOnReconnect: true,
   });
 }
 
+function updateGroupsCache(
+  updater: (group: Group) => Group,
+  targetId?: string
+) {
+  const cacheEntries = queryClient.getQueriesData<PaginatedResponse<Group>>({
+    queryKey: ["groups"],
+  });
+
+  const previousEntries = cacheEntries.map(([queryKey, data]) => [queryKey, data] as const);
+
+  cacheEntries.forEach(([queryKey, data]) => {
+    if (!data) return;
+    queryClient.setQueryData<PaginatedResponse<Group>>(queryKey, {
+      ...data,
+      content: data.content.map((group) =>
+        !targetId || group.id === targetId ? updater(group) : group
+      ),
+    });
+  });
+
+  return previousEntries;
+}
+
 export function useUpdateGroupMutation() {
   return useMutation({
-    mutationFn: ({ id, ...body }: Partial<Group> & { id: string }) =>
-      patchJsonAuth<Group>(`/groups/${id}`, body),
-    onSuccess: () => {
+    mutationFn: async ({ id, ...body }: Partial<Group> & { id: string }) => {
+      const response = await patchJsonAuth<GroupDto>(`/groups/${id}`, body);
+      return normalizeGroup(response);
+    },
+    onMutate: async ({ id, ...body }) => {
+      await queryClient.cancelQueries({ queryKey: ["groups"] });
+      const previousEntries = updateGroupsCache(
+        (group) => ({
+          ...group,
+          ...body,
+        }),
+        id
+      );
+      return { previousEntries };
+    },
+    onError: (_error, _variables, context) => {
+      context?.previousEntries?.forEach(([queryKey, data]) => {
+        queryClient.setQueryData(queryKey, data);
+      });
+    },
+    onSuccess: (updatedGroup) => {
+      updateGroupsCache((group) => ({
+        ...group,
+        ...updatedGroup,
+      }), updatedGroup.id);
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["groups"] });
     },
   });

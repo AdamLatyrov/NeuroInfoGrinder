@@ -5,8 +5,10 @@ import com.larbcorp.neuroinfogrinder.infrastructure.persistence.repository.Group
 import com.larbcorp.neuroinfogrinder.infrastructure.persistence.repository.MessageRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.CannotCreateTransactionException;
 
 import java.util.List;
 
@@ -38,20 +40,32 @@ public class QueueProcessor {
             return;
         }
 
-        List<Long> enabledGroupIds = groupRepository.findByEnabledTrue().stream()
-            .map(group -> group.getId())
-            .toList();
+        List<Long> enabledGroupIds;
+        try {
+            enabledGroupIds = groupRepository.findByEnabledTrue().stream()
+                .map(group -> group.getId())
+                .toList();
+        } catch (CannotCreateTransactionException | DataAccessResourceFailureException exception) {
+            log.warn("QueueProcessor: DB pressure while loading enabled groups; deferring this cycle");
+            return;
+        }
 
         if (enabledGroupIds.isEmpty()) {
             return;
         }
 
-        List<MessageEntity> queued = messageRepository
-            .findByGroupIdInAndProcessingStatusInOrderByMessageDateAsc(
-                enabledGroupIds,
-                List.of("QUEUED", "UNPROCESSED"),
-                org.springframework.data.domain.Pageable.ofSize(20)
-            ).getContent();
+        List<MessageEntity> queued;
+        try {
+            queued = messageRepository
+                .findByGroupIdInAndProcessingStatusInOrderByMessageDateAsc(
+                    enabledGroupIds,
+                    List.of("QUEUED", "UNPROCESSED"),
+                    org.springframework.data.domain.Pageable.ofSize(20)
+                ).getContent();
+        } catch (CannotCreateTransactionException | DataAccessResourceFailureException exception) {
+            log.warn("QueueProcessor: DB pressure while loading queue; deferring this cycle");
+            return;
+        }
 
         if (queued.isEmpty()) {
             return;
@@ -62,6 +76,9 @@ public class QueueProcessor {
         for (MessageEntity msg : queued) {
             try {
                 pipelineService.processMessage(msg.getId());
+            } catch (CannotCreateTransactionException | DataAccessResourceFailureException exception) {
+                log.warn("QueueProcessor: DB pressure while processing queue; stopping current cycle");
+                return;
             } catch (Exception e) {
                 log.error("QueueProcessor: failed to process message {}: {}", msg.getId(), e.getMessage(), e);
                 messageRepository.findById(msg.getId()).ifPresent(message -> {

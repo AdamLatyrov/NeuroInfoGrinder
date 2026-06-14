@@ -2,17 +2,21 @@ package com.larbcorp.neuroinfogrinder.shared.exception;
 
 import com.larbcorp.neuroinfogrinder.shared.dto.ApiErrorResponse;
 import com.larbcorp.neuroinfogrinder.telegram.tdlib.TdlibException;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotWritableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
 
@@ -65,6 +69,42 @@ public class ApiExceptionHandler {
         );
     }
 
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ApiErrorResponse> handleMissingRequestParameter(MissingServletRequestParameterException exception) {
+        return ResponseEntity.badRequest().body(
+                new ApiErrorResponse("missing_parameter", exception.getMessage(), List.of(), Instant.now())
+        );
+    }
+
+    @ExceptionHandler(HttpMessageNotWritableException.class)
+    public ResponseEntity<?> handleHttpMessageNotWritable(HttpMessageNotWritableException exception, HttpServletRequest request) {
+        if (isSseRequest(request)) {
+            log.debug("SSE client disconnected while writing response: {}", exception.getMessage());
+            return ResponseEntity.noContent().build();
+        }
+        log.error("Failed to write HTTP response", exception);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
+                new ApiErrorResponse("internal_error", "Failed to write response", List.of(), Instant.now())
+        );
+    }
+
+    @ExceptionHandler(IOException.class)
+    public ResponseEntity<?> handleIoException(IOException exception, HttpServletRequest request) {
+        if (isSseRequest(request)) {
+            log.debug("SSE client disconnected: {}", exception.getMessage());
+            return ResponseEntity.noContent().build();
+        }
+        log.error("I/O exception", exception);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
+                new ApiErrorResponse(
+                        "internal_error",
+                        exception.getMessage() == null ? "Unexpected I/O error" : exception.getMessage(),
+                        List.of(),
+                        Instant.now()
+                )
+        );
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiErrorResponse> handleUnexpected(Exception exception) {
         log.error("Unhandled exception", exception);
@@ -100,5 +140,11 @@ public class ApiExceptionHandler {
 
     private String formatFieldError(FieldError error) {
         return error.getField() + ": " + error.getDefaultMessage();
+    }
+
+    private boolean isSseRequest(HttpServletRequest request) {
+        return request != null
+                && request.getRequestURI() != null
+                && request.getRequestURI().contains("/api/v1/pipeline/events/stream");
     }
 }

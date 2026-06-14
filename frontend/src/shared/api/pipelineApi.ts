@@ -83,6 +83,21 @@ export function useRequeuePipelineMutation() {
   });
 }
 
+export function useRequeueMessageMutation() {
+  return useMutation({
+    mutationFn: (messageId: number | string) =>
+      postJsonAuth<void>(`/pipeline/requeue/${messageId}`, {}),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["group-messages"] });
+      queryClient.invalidateQueries({ queryKey: ["pipeline-status"] });
+      queryClient.invalidateQueries({ queryKey: ["pipeline-queue"] });
+      queryClient.invalidateQueries({ queryKey: ["pipeline-results"] });
+      queryClient.invalidateQueries({ queryKey: ["traces"] });
+      queryClient.invalidateQueries({ queryKey: ["message-trace"] });
+    },
+  });
+}
+
 export function useSmokeGuideMutation() {
   return useMutation({
     mutationFn: () => postJsonAuth<void>("/pipeline/dev/smoke-guide", {}),
@@ -127,6 +142,8 @@ export interface PipelineResultItem {
   signalScore: number | null;
   classifierScore: number | null;
   classifierReason: string | null;
+  classifierResultJson: string | null;
+  classificationContextHash: string | null;
   guideId: number | null;
   messageDate: string;
   signalBreakdown: string | null;

@@ -27,6 +27,7 @@ public class AiClientService {
     private static final Pattern RELEASE_PATTERN = Pattern.compile("\\b(release|launched|launch|update|pricing|credits?|limits?|quota|access|api|endpoint|model|benchmark|tokens?|context|\\u0440\\u0435\\u043b\\u0438\\u0437|\\u043e\\u0431\\u043d\\u043e\\u0432\\u043b\\u0435\\u043d\\u0438\\u0435|\\u0446\\u0435\\u043d\\u0430|\\u043b\\u0438\\u043c\\u0438\\u0442|\\u0434\\u043e\\u0441\\u0442\\u0443\\u043f|\\u0442\\u043e\\u043a\\u0435\\u043d)\\b", Pattern.CASE_INSENSITIVE);
     private static final Pattern QUESTION_PATTERN = Pattern.compile("(\\?|\\bhow\\b|\\bwhere\\b|\\bwhy\\b|\\banyone\\b|\\bhelp\\b|\\b\\u043a\\u0430\\u043a\\b|\\b\\u0433\\u0434\\u0435\\b|\\b\\u043f\\u043e\\u0447\\u0435\\u043c\\u0443\\b|\\b\\u043a\\u0442\\u043e\\s+\\u043d\\u0438\\u0431\\u0443\\u0434\\u044c\\b)", Pattern.CASE_INSENSITIVE);
     private static final Pattern ACTION_PATTERN = Pattern.compile("\\b(do|use|setup|configure|connect|run|install|register|check|get|take|switch|compare|test|deploy|enable|\\u0441\\u0434\\u0435\\u043b\\u0430\\u0439|\\u043d\\u0443\\u0436\\u043d\\u043e|\\u043d\\u0430\\u0434\\u043e|\\u0437\\u0430\\u043f\\u0443\\u0441\\u0442\\u0438\\u0442\\u044c|\\u043d\\u0430\\u0441\\u0442\\u0440\\u043e\\u0438\\u0442\\u044c|\\u043f\\u043e\\u0434\\u043a\\u043b\\u044e\\u0447\\u0438\\u0442\\u044c|\\u0440\\u0435\\u0433\\u0438\\u0441\\u0442\\u0440\\u0438\\u0440\\u0443\\u0435\\u043c\\u0441\\u044f|\\u0437\\u0430\\u0445\\u043e\\u0434\\u0438\\u043c)\\b", Pattern.CASE_INSENSITIVE);
+    private static final Pattern ACCESS_DEMAND_PATTERN = Pattern.compile("\\b(where|buy|gift|gifts|account|accounts|provider|proxy|endpoint|plus|access|unlimited|quota|limit|fanpay|payment|card|sbp|\\u0433\\u0434\\u0435|\\u043a\\u0443\\u043f\\u0438\\u0442\\u044c|\\u043f\\u043e\\u043a\\u0443\\u043f\\u0430\\u0442\\u044c|\\u0433\\u0438\\u0444\\u0442|\\u0430\\u043a\\u043a|\\u0430\\u043a\\u043a\\u0430\\u0443\\u043d\\u0442|\\u0431\\u0435\\u0437\\u043b\\u0438\\u043c\\u0438\\u0442|\\u043b\\u0438\\u043c\\u0438\\u0442|\\u0434\\u043e\\u0440\\u043e\\u0433|\\u0444\\u0430\\u043d\\u043f\\u0435\\u0439|\\u043a\\u0430\\u0440\\u0442\\u0430|\\u0441\\u0431\\u043f|\\u043e\\u043f\\u043b\\u0430\\u0442|\\u043f\\u043e\\u043f\\u043e\\u043b\\u043d|\\u043a\\u0438\\u0442\\u0430\\u0439\\u0446\\u0435\\u0432)\\b", Pattern.CASE_INSENSITIVE);
     private static final Pattern CHATTER_PATTERN = Pattern.compile("\\b(lol|lmao|bro|dude|thanks|thank\\s+you|okay|ok|sure|got\\s+it|nice|cool|hype|trash|sucks|\\u043b\\u043e\\u043b|\\u0430\\u0445\\u0430\\u0445|\\u0430\\u0433\\u0430|\\u043f\\u043e\\u043d\\u044f\\u043b|\\u0441\\u043f\\u0430\\u0441\\u0438\\u0431\\u043e|\\u0436\\u0435\\u0441\\u0442\\u044c|\\u043a\\u0440\\u0438\\u043d\\u0436)\\b", Pattern.CASE_INSENSITIVE);
     private static final Pattern BENCHMARK_PATTERN = Pattern.compile("\\b(benchmark|latency|pricing|tokens?|context|window|sdk|endpoint|quota|credits?|rate\\s*limit|release\\s*notes?|\\u0431\\u0435\\u043d\\u0447|\\u0442\\u043e\\u043a\\u0435\\u043d|\\u043a\\u043e\\u043d\\u0442\\u0435\\u043a\\u0441\\u0442|\\u043f\\u0440\\u0430\\u0439\\u0441)\\b", Pattern.CASE_INSENSITIVE);
     private static final Pattern PROMO_PATTERN = Pattern.compile("\\b(ref|referral|affiliate|subscribe|bonus|promo|coupon|discount|\\u0440\\u0435\\u0444|\\u0431\\u043e\\u043d\\u0443\\u0441|\\u0431\\u0435\\u0441\\u043f\\u043b\\u0430\\u0442|\\u0441\\u043a\\u0438\\u0434\\u043a)\\b|t\\.me/|youtube\\.com|youtu\\.be", Pattern.CASE_INSENSITIVE);
@@ -138,6 +139,16 @@ public class AiClientService {
         boolean hasBenchmark = BENCHMARK_PATTERN.matcher(normalized).find();
         boolean looksPromotional = PROMO_PATTERN.matcher(normalized).find();
         boolean startsCasual = CASUAL_REPLY_PATTERN.matcher(normalized).find();
+        boolean hasAccessDemand = ACCESS_DEMAND_PATTERN.matcher(normalized).find();
+        boolean hasPaymentWorkaround = containsAny(normalized,
+            "fanpay", "\u0444\u0430\u043d\u043f\u0435", "\u043a\u0438\u0442\u0430\u0439", "\u044e\u0430\u043d",
+            "\u043e\u043f\u043b\u0430\u0442", "\u043f\u043e\u043f\u043e\u043b\u043d", "\u0441\u0431\u043f");
+        boolean hasLeadIntent = hasAccessDemand && (
+            hasAiTopic
+                || containsAny(normalized,
+                "\u0430\u043f\u0438", "claude", "chatgpt", "chat gpt", "gpt", "openrouter",
+                "\u0444\u0430\u043d\u043f\u0435", "fanpay", "\u043a\u0438\u0442\u0430\u0439", "\u0441\u0431\u043f")
+        );
         int questionMarks = countMatches(relevantText, '?');
 
         int strongSignalCount = 0;
@@ -157,6 +168,9 @@ public class AiClientService {
         if (hasList) score += 0.18;
         if (hasAction) score += 0.12;
         if (hasBenchmark) score += 0.10;
+        if (hasAccessDemand) score += 0.30;
+        if (hasPaymentWorkaround) score += 0.42;
+        if (hasLeadIntent) score += 0.52;
         if (textLength >= 420) score += 0.12;
         else if (textLength >= 240) score += 0.05;
         if (strongSignalCount >= 3) score += 0.12;
@@ -165,25 +179,50 @@ public class AiClientService {
         if (looksChatty && !hasUrl && !hasCode && !hasGuide) score -= 0.28;
         if (looksPromotional && !hasCode && !hasGuide && !hasList) score -= 0.28;
         if (startsCasual && !hasCode && !hasGuide && !hasList) score -= 0.12;
-        if (textLength < 160 && !hasCode && !hasList && !hasGuide && !hasUrl) score -= 0.30;
+        if (textLength < 160 && !hasCode && !hasList && !hasGuide && !hasUrl && !hasPaymentWorkaround) score -= 0.30;
 
         score = Math.max(0.0, Math.min(1.0, score));
-        boolean matched = score >= 0.80
-            && strongSignalCount >= 2
-            && (
-                hasGuide
-                    || hasCode
-                    || hasList
-                    || (hasUrl && (hasAction || hasRelease || hasBenchmark))
-                    || (hasRelease && hasBenchmark && textLength >= 420)
+        boolean matched = (
+            ((hasLeadIntent || hasAccessDemand || hasPaymentWorkaround) && score >= 0.30)
+                || (
+                    score >= 0.80
+                        && (
+                        hasGuide
+                            || hasCode
+                            || hasList
+                            || (hasUrl && (hasAction || hasRelease || hasBenchmark))
+                            || (hasRelease && hasBenchmark && textLength >= 420)
+                            || hasLeadIntent
+                    )
+                )
             )
             && !(looksChatty && !hasCode && !hasGuide && !hasList)
-            && !(looksPromotional && !hasCode && !hasGuide && !hasList);
+            && !(looksPromotional && !hasCode && !hasGuide && !hasList && !hasAccessDemand);
+        boolean guideCandidate = matched && score >= 0.75
+            && (hasGuide || hasCode || hasList || (hasUrl && hasAction) || (hasRelease && hasBenchmark));
+
+        List<String> labels = new java.util.ArrayList<>();
+        if (hasAccessDemand) labels.add("DEMAND_SIGNAL");
+        if (hasPaymentWorkaround) labels.add("PAYMENT_WORKAROUND");
+        if (hasAiTopic) labels.add("AI_TOOL_OR_PROVIDER");
+        if (hasUrl || hasAction) labels.add("SOLUTION_MENTION");
+        if (hasUrl || looksPromotional) labels.add("VENDOR_OR_SOURCE");
+        if (looksPromotional) labels.add("SPAM_OR_AD");
+        if (normalized.contains("лимит") || normalized.contains("quota") || normalized.contains("error")) {
+            labels.add("BUG_OR_LIMITATION");
+        }
+        if (guideCandidate) labels.add("PRACTICAL_GUIDE_CANDIDATE");
+        if ((hasAccessDemand || hasPaymentWorkaround) && !guideCandidate) labels.add("OPPORTUNITY");
+        if (!matched && labels.isEmpty()) labels.add("NOT_USEFUL");
+        labels = labels.stream().distinct().toList();
+        List<Long> evidenceMessageIds = extractInternalMessageIds(prompt);
 
         String reasoning = "mock heuristic | aiTopic=" + hasAiTopic
             + ", guide=" + hasGuide
             + ", release=" + hasRelease
             + ", action=" + hasAction
+            + ", accessDemand=" + hasAccessDemand
+            + ", paymentWorkaround=" + hasPaymentWorkaround
             + ", url=" + hasUrl
             + ", code=" + hasCode
             + ", list=" + hasList
@@ -196,12 +235,49 @@ public class AiClientService {
         return "{\n"
             + "  \"score\": " + formatDecimal(score) + ",\n"
             + "  \"matched\": " + matched + ",\n"
+            + "  \"labels\": " + toJsonArray(labels) + ",\n"
+            + "  \"guide_candidate\": " + guideCandidate + ",\n"
+            + "  \"evidence_message_ids\": " + toJsonNumberArray(evidenceMessageIds) + ",\n"
             + "  \"reasoning\": " + escapeJsonString(reasoning) + "\n"
             + "}";
     }
 
+    private List<Long> extractInternalMessageIds(String prompt) {
+        java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("internalMessageId:\\s*(\\d+)").matcher(prompt);
+        List<Long> ids = new java.util.ArrayList<>();
+        while (matcher.find()) {
+            ids.add(Long.parseLong(matcher.group(1)));
+        }
+        return ids.stream().limit(3).toList();
+    }
+
+    private String toJsonArray(List<String> values) {
+        StringBuilder json = new StringBuilder("[");
+        for (int i = 0; i < values.size(); i++) {
+            if (i > 0) {
+                json.append(',');
+            }
+            json.append(escapeJsonString(values.get(i)));
+        }
+        json.append(']');
+        return json.toString();
+    }
+
+    private String toJsonNumberArray(List<Long> values) {
+        StringBuilder json = new StringBuilder("[");
+        for (int i = 0; i < values.size(); i++) {
+            if (i > 0) {
+                json.append(',');
+            }
+            json.append(values.get(i));
+        }
+        json.append(']');
+        return json.toString();
+    }
+
     private String extractClassificationText(String prompt) {
         String[] markers = {
+            "Context bundle to classify:",
             "Message chain to classify:",
             "Source message chain:",
             "Messages to classify:"

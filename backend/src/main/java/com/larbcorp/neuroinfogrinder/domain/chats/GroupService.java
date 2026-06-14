@@ -13,6 +13,7 @@ import com.larbcorp.neuroinfogrinder.infrastructure.persistence.repository.Group
 import com.larbcorp.neuroinfogrinder.infrastructure.persistence.repository.MessageRepository;
 import com.larbcorp.neuroinfogrinder.infrastructure.persistence.repository.TelegramAccountRepository;
 import com.larbcorp.neuroinfogrinder.shared.dto.PageResponse;
+import com.larbcorp.neuroinfogrinder.domain.messages.TelegramSyncTaskExecutor;
 import com.larbcorp.neuroinfogrinder.telegram.TelegramTdlibService;
 import com.larbcorp.neuroinfogrinder.telegram.model.TelegramChatDto;
 import com.larbcorp.neuroinfogrinder.telegram.model.TelegramMessageDto;
@@ -24,12 +25,18 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -45,17 +52,21 @@ public class GroupService {
     private final TelegramTdlibService telegramTdlibService;
     private final MessageRepository messageRepository;
     private final GuideRepository guideRepository;
+    private final TelegramSyncTaskExecutor telegramSyncTaskExecutor;
+    private final Set<Long> duplicateWarningChatIds = ConcurrentHashMap.newKeySet();
 
     public GroupService(GroupRepository groupRepository,
                         TelegramAccountRepository accountRepository,
                         TelegramTdlibService telegramTdlibService,
                         MessageRepository messageRepository,
-                        GuideRepository guideRepository) {
+                        GuideRepository guideRepository,
+                        TelegramSyncTaskExecutor telegramSyncTaskExecutor) {
         this.groupRepository = groupRepository;
         this.accountRepository = accountRepository;
         this.telegramTdlibService = telegramTdlibService;
         this.messageRepository = messageRepository;
         this.guideRepository = guideRepository;
+        this.telegramSyncTaskExecutor = telegramSyncTaskExecutor;
     }
 
     @Transactional(readOnly = true)
@@ -82,12 +93,19 @@ public class GroupService {
         };
 
         Page<GroupEntity> page = groupRepository.findAll(spec, pageable);
-        return PageResponse.from(page.map(this::toResponse));
+        List<GroupEntity> dedupedGroups = deduplicateGroups(page.getContent());
+        return new PageResponse<>(
+                dedupedGroups.stream().map(this::toResponse).toList(),
+                page.getNumber(),
+                page.getSize(),
+                dedupedGroups.size(),
+                dedupedGroups.isEmpty() ? 0 : 1
+        );
     }
 
     @Transactional
     public void syncGroups() {
-        List<TelegramChatDto> telegramChats = telegramTdlibService.getChats(100);
+        List<TelegramChatDto> telegramChats = deduplicateTelegramChats(telegramTdlibService.getChats(100));
         if (telegramChats.isEmpty()) {
             log.warn("No Telegram chats returned from TDLib");
             return;
@@ -96,7 +114,12 @@ public class GroupService {
         Map<Long, GroupEntity> existingByChatId = groupRepository
                 .findByTelegramChatIdIn(telegramChats.stream().map(TelegramChatDto::id).toList())
                 .stream()
-                .collect(Collectors.toMap(GroupEntity::getTelegramChatId, Function.identity()));
+                .collect(Collectors.toMap(
+                        GroupEntity::getTelegramChatId,
+                        Function.identity(),
+                        this::preferCanonicalGroup,
+                        LinkedHashMap::new
+                ));
 
         int created = 0;
         int updated = 0;
@@ -142,6 +165,7 @@ public class GroupService {
 
     @Transactional
     public GroupResponse updateGroup(Long id, UpdateGroupRequest request) {
+        long startedAt = System.currentTimeMillis();
         GroupEntity group = groupRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Group not found: " + id));
         boolean wasEnabled = Boolean.TRUE.equals(group.getEnabled());
@@ -162,23 +186,43 @@ public class GroupService {
         }
 
         group = groupRepository.save(group);
+        boolean syncRequested = false;
         if (!wasEnabled && Boolean.TRUE.equals(group.getEnabled())) {
-            syncRecentMessages(group, group.getTelegramChatId());
+            schedulePostCommitWarmup(group.getId(), group.getTelegramChatId());
+            syncRequested = true;
         }
+        log.info(
+                "Group enable/update completed: groupId={} telegramChatId={} enabled={} syncRequested={} durationMs={}",
+                group.getId(),
+                group.getTelegramChatId(),
+                group.getEnabled(),
+                syncRequested,
+                System.currentTimeMillis() - startedAt
+        );
         return toResponse(group);
     }
 
     @Transactional
     public void bulkToggle(BulkToggleRequest request) {
+        long startedAt = System.currentTimeMillis();
         List<GroupEntity> groups = groupRepository.findAllById(request.groupIds());
+        List<GroupEntity> groupsToWarmUp = new ArrayList<>();
         for (GroupEntity group : groups) {
             boolean wasEnabled = Boolean.TRUE.equals(group.getEnabled());
             group.setEnabled(request.enabled());
             if (!wasEnabled && request.enabled()) {
-                syncRecentMessages(group, group.getTelegramChatId());
+                groupsToWarmUp.add(group);
             }
         }
         groupRepository.saveAll(groups);
+        groupsToWarmUp.forEach(group -> schedulePostCommitWarmup(group.getId(), group.getTelegramChatId()));
+        log.info(
+                "Bulk group toggle completed: groups={} enabled={} syncRequested={} durationMs={}",
+                groups.size(),
+                request.enabled(),
+                groupsToWarmUp.size(),
+                System.currentTimeMillis() - startedAt
+        );
     }
 
     private int syncRecentMessages(GroupEntity group, Long telegramChatId) {
@@ -408,5 +452,99 @@ public class GroupService {
             return "DIRECT_CHAT";
         }
         return "GROUP";
+    }
+
+    private List<TelegramChatDto> deduplicateTelegramChats(List<TelegramChatDto> telegramChats) {
+        LinkedHashMap<Long, TelegramChatDto> uniqueByChatId = new LinkedHashMap<>();
+        for (TelegramChatDto chat : telegramChats) {
+            uniqueByChatId.putIfAbsent(chat.id(), chat);
+        }
+        return new ArrayList<>(uniqueByChatId.values());
+    }
+
+    private List<GroupEntity> deduplicateGroups(List<GroupEntity> groups) {
+        LinkedHashMap<Long, GroupEntity> uniqueByChatId = new LinkedHashMap<>();
+        int duplicatesHidden = 0;
+        for (GroupEntity group : groups) {
+            GroupEntity existing = uniqueByChatId.get(group.getTelegramChatId());
+            if (existing == null) {
+                uniqueByChatId.put(group.getTelegramChatId(), group);
+                continue;
+            }
+            duplicatesHidden++;
+            GroupEntity canonical = preferCanonicalGroup(existing, group);
+            uniqueByChatId.put(group.getTelegramChatId(), canonical);
+            GroupEntity duplicate = canonical == existing ? group : existing;
+            if (duplicateWarningChatIds.add(group.getTelegramChatId())) {
+                log.warn(
+                        "Duplicate group rows detected for telegramChatId={}: keeping id={}, hiding id={}",
+                        group.getTelegramChatId(),
+                        canonical.getId(),
+                        duplicate.getId()
+                );
+            }
+        }
+        if (duplicatesHidden > 0) {
+            log.info("Group response deduplicated: hiddenDuplicates={} uniqueGroups={}", duplicatesHidden, uniqueByChatId.size());
+        }
+        return uniqueByChatId.values().stream()
+                .sorted(Comparator.comparing(GroupEntity::getId))
+                .toList();
+    }
+
+    private GroupEntity preferCanonicalGroup(GroupEntity left, GroupEntity right) {
+        return Comparator
+                .comparing((GroupEntity group) -> Boolean.TRUE.equals(group.getEnabled()))
+                .thenComparing(group -> group.getAccountId() != null)
+                .thenComparing(group -> group.getLastReadMessageId() != null ? group.getLastReadMessageId() : 0L)
+                .thenComparing(GroupEntity::getUpdatedAt)
+                .thenComparing(GroupEntity::getId)
+                .compare(left, right) >= 0 ? left : right;
+    }
+
+    private void schedulePostCommitWarmup(Long groupId, Long telegramChatId) {
+        Runnable task = () -> {
+            try {
+                int created = syncRecentMessagesAfterEnable(groupId, telegramChatId);
+                log.info("Post-enable message warmup completed for group {}: {} new messages", groupId, created);
+            } catch (RuntimeException exception) {
+                log.warn("Post-enable message warmup failed for group {}: {}", groupId, exception.getMessage());
+            }
+        };
+
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    boolean scheduled = telegramSyncTaskExecutor.execute("group-enable-sync:" + groupId, task);
+                    log.info(
+                            "Post-enable sync dispatch: groupId={} telegramChatId={} scheduled={} activeSyncs={} queuedTasks={}",
+                            groupId,
+                            telegramChatId,
+                            scheduled,
+                            telegramSyncTaskExecutor.getActiveCount(),
+                            telegramSyncTaskExecutor.getQueueSize()
+                    );
+                }
+            });
+        } else {
+            boolean scheduled = telegramSyncTaskExecutor.execute("group-enable-sync:" + groupId, task);
+            log.info(
+                    "Post-enable sync dispatch (no tx): groupId={} telegramChatId={} scheduled={} activeSyncs={} queuedTasks={}",
+                    groupId,
+                    telegramChatId,
+                    scheduled,
+                    telegramSyncTaskExecutor.getActiveCount(),
+                    telegramSyncTaskExecutor.getQueueSize()
+            );
+        }
+    }
+
+    private int syncRecentMessagesAfterEnable(Long groupId, Long telegramChatId) {
+        GroupEntity persistedGroup = groupRepository.findById(groupId).orElse(null);
+        if (persistedGroup == null || !Boolean.TRUE.equals(persistedGroup.getEnabled())) {
+            return 0;
+        }
+        return syncRecentMessages(persistedGroup, telegramChatId);
     }
 }
