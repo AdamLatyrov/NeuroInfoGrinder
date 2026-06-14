@@ -1,0 +1,80 @@
+spring:
+  application:
+    name: neuroinfogrinder-backend
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5433/neuroinfogrinder}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+    driver-class-name: ${DB_DRIVER:org.postgresql.Driver}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: true
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      repositories:
+        enabled: false
+
+server:
+  port: ${SERVER_PORT:8080}
+  servlet:
+    encoding:
+      charset: UTF-8
+      force: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      show-details: always
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+
+app:
+  api-version: v1
+  jwt:
+    secret: neuroinfogrinder-dev-secret-key-must-be-at-least-256-bits-long-for-hs256
+    expiration-ms: 86400000
+
+neuroinfogrinder:
+  pipeline:
+    signal-threshold: ${PIPELINE_SIGNAL_THRESHOLD:0.30}
+    local-guide-fallback: ${PIPELINE_LOCAL_GUIDE_FALLBACK:false}
+
+telegram:
+  tdlib:
+    enabled: ${TDLIB_ENABLED:true}
+    library-name: ${TDLIB_LIBRARY_NAME:tdjni}
+    library-path: ${TDLIB_LIBRARY_PATH:./native}
+    api-id: ${TDLIB_API_ID:38702302}
+    api-hash: ${TDLIB_API_HASH:008317b3378b61620a6faebb81129792}
+    database-directory: ${TDLIB_DATABASE_DIRECTORY:./tdlib-data/db}
+    files-directory: ${TDLIB_FILES_DIRECTORY:./tdlib-data/files}
+    database-encryption-key: ${TDLIB_DATABASE_ENCRYPTION_KEY:neuroinfogrinder}
+    use-test-dc: ${TDLIB_USE_TEST_DC:false}
+    use-file-database: ${TDLIB_USE_FILE_DATABASE:true}
+    use-chat-info-database: ${TDLIB_USE_CHAT_INFO_DATABASE:true}
+    use-message-database: ${TDLIB_USE_MESSAGE_DATABASE:true}
+    use-secret-chats: ${TDLIB_USE_SECRET_CHATS:false}
+    system-language-code: ${TDLIB_SYSTEM_LANGUAGE_CODE:ru}
+    device-model: ${TDLIB_DEVICE_MODEL:Windows Desktop}
+    system-version: ${TDLIB_SYSTEM_VERSION:Windows}
+    application-version: ${TDLIB_APPLICATION_VERSION:0.1.0}
+    chat-limit: ${TDLIB_CHAT_LIMIT:100}
+    topic-limit: ${TDLIB_TOPIC_LIMIT:100}

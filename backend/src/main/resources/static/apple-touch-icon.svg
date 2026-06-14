@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180">
+  <!-- Dark rounded tile (same style as Cerebrum apple-touch-icon) -->
+  <rect width="180" height="180" rx="40" fill="#0a0a0a"/>
+  <!-- "N" shape scaled up -->
+  <path d="M50 138V42" stroke="#fafafa" stroke-width="16" stroke-linecap="round" fill="none"/>
+  <path d="M50 42L130 138" stroke="#fafafa" stroke-width="16" stroke-linecap="round" fill="none"/>
+  <path d="M130 138V42" stroke="#a78bfa" stroke-width="16" stroke-linecap="round" fill="none"/>
+  <!-- Center data point -->
+  <circle cx="90" cy="90" r="11" fill="#a78bfa"/>
+</svg>

@@ -1,0 +1,221 @@
+{
+  "info": {
+    "_postman_id": "a9932441-455e-4b85-bd45-b94be9322f30",
+    "name": "NeuroInfoGrinder TDLib API",
+    "description": "Collection for local testing of the Java backend TDLib endpoints.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Get Auth State",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/telegram/auth/state",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "telegram", "auth", "state"]
+            },
+            "description": "Returns current TDLib authorization state."
+          },
+          "response": []
+        },
+        {
+          "name": "Submit Phone",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"value\": \"+79990000000\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/telegram/auth/phone",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "telegram", "auth", "phone"]
+            },
+            "description": "Sends phone number to TDLib and requests login code."
+          },
+          "response": []
+        },
+        {
+          "name": "Submit Code",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"value\": \"12345\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/telegram/auth/code",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "telegram", "auth", "code"]
+            },
+            "description": "Submits Telegram login code."
+          },
+          "response": []
+        },
+        {
+          "name": "Submit Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"value\": \"your_2fa_password\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/telegram/auth/password",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "telegram", "auth", "password"]
+            },
+            "description": "Submits Telegram 2FA password if required."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Chats",
+      "item": [
+        {
+          "name": "Get Chats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/telegram/chats?limit={{chatLimit}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "telegram", "chats"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "{{chatLimit}}"
+                }
+              ]
+            },
+            "description": "Returns main chat list with chat titles."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Chat Topics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/telegram/chats/{{chatId}}/topics?limit={{topicLimit}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "telegram", "chats", "{{chatId}}", "topics"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "{{topicLimit}}"
+                }
+              ]
+            },
+            "description": "Returns topic list for forum-enabled chats."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Messages",
+      "item": [
+        {
+          "name": "Get Chat Messages",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/telegram/chats/{{chatId}}/messages?fromMessageId={{fromMessageId}}&limit={{messageLimit}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "telegram", "chats", "{{chatId}}", "messages"],
+              "query": [
+                {
+                  "key": "fromMessageId",
+                  "value": "{{fromMessageId}}"
+                },
+                {
+                  "key": "limit",
+                  "value": "{{messageLimit}}"
+                }
+              ]
+            },
+            "description": "Returns messages from a specific chat. Use fromMessageId=0 for latest messages."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Messages Batch",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"chatIds\": [\n    {{chatId}}\n  ],\n  \"limitPerChat\": {{messageLimit}}\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/telegram/messages/batch",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "telegram", "messages", "batch"]
+            },
+            "description": "Returns messages grouped by chat for several chat IDs."
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "chatId",
+      "value": "0"
+    },
+    {
+      "key": "chatLimit",
+      "value": "50"
+    },
+    {
+      "key": "topicLimit",
+      "value": "100"
+    },
+    {
+      "key": "messageLimit",
+      "value": "50"
+    },
+    {
+      "key": "fromMessageId",
+      "value": "0"
+    }
+  ]
+}

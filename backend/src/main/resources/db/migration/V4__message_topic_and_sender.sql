@@ -1,0 +1,2 @@
+ALTER TABLE messages ADD COLUMN topic_name VARCHAR(256);
+ALTER TABLE messages ADD COLUMN topic_id BIGINT;
