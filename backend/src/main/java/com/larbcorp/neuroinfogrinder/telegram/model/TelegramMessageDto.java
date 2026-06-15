@@ -8,8 +8,10 @@ public record TelegramMessageDto(
         String contentType,
         String text,
         String senderName,
+        String senderUsername,
         Long senderTelegramUserId,
         boolean isBot,
+        String textEntitiesJson,
         long replyToMessageId,
         long date
 ) {

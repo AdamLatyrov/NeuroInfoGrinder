@@ -9,24 +9,44 @@ public final class TelegramMessageLinkBuilder {
     }
 
     public static String build(GroupEntity group, MessageEntity message) {
+        return buildLink(group, message).url();
+    }
+
+    public static TelegramMessageLink buildLink(GroupEntity group, MessageEntity message) {
         if (group == null || message == null || message.getTelegramMessageId() == null) {
-            return null;
+            return new TelegramMessageLink(null, false, "Ссылка недоступна: отсутствует группа или message metadata");
         }
 
         if (group.getUsername() != null && !group.getUsername().isBlank()) {
-            return "https://t.me/" + group.getUsername().trim() + "/" + message.getTelegramMessageId();
+            return new TelegramMessageLink(
+                "https://t.me/" + group.getUsername().trim() + "/" + message.getTelegramMessageId(),
+                true,
+                null
+            );
         }
 
         String rawChatId = String.valueOf(group.getTelegramChatId());
         if (!rawChatId.startsWith("-100")) {
-            return null;
+            return new TelegramMessageLink(
+                null,
+                false,
+                "Ссылка недоступна: нет public username или недостаточно Telegram metadata"
+            );
         }
 
         String normalizedChatId = rawChatId.substring(4);
         if (normalizedChatId.isBlank()) {
-            return null;
+            return new TelegramMessageLink(
+                null,
+                false,
+                "Ссылка недоступна: не удалось вычислить internal chat id"
+            );
         }
 
-        return "https://t.me/c/" + normalizedChatId + "/" + message.getTelegramMessageId();
+        return new TelegramMessageLink(
+            "https://t.me/c/" + normalizedChatId + "/" + message.getTelegramMessageId(),
+            true,
+            null
+        );
     }
 }

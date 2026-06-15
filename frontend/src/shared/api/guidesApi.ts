@@ -38,15 +38,33 @@ interface GuideSummaryDto {
 }
 
 interface SourceMessageDto {
+  groupId: number | null;
+  telegramChatId: number | null;
   messageId: number;
   telegramMessageId: number | null;
-  senderName: string | null;
+  senderDisplayName: string | null;
+  senderUsername: string | null;
+  senderTelegramUserId: number | null;
+  senderNameSource: string | null;
   text: string | null;
+  textEntities:
+    | {
+        type: string | null;
+        offset: number | null;
+        length: number | null;
+        url: string | null;
+        text: string | null;
+      }[]
+    | null;
   usedInPrompt: boolean;
   relation: string | null;
   replyToTelegramMessageId: number | null;
   topicId: number | null;
   topicName: string | null;
+  internalMessageUrl: string | null;
+  telegramMessageUrl: string | null;
+  telegramLinkAvailable: boolean;
+  telegramLinkReason: string | null;
 }
 
 interface GuideLlmRequestDto {
@@ -63,6 +81,8 @@ interface GuideLlmRequestDto {
 interface GuideDetailDto extends GuideSummaryDto {
   content: string | null;
   contentMarkdown: string | null;
+  rawResponse: string | null;
+  regeneratedFromGuideId: number | null;
   sourceMessages: SourceMessageDto[] | null;
   llmRequest: GuideLlmRequestDto | null;
   relatedGuideIds: number[] | null;
@@ -72,16 +92,27 @@ interface GuideDetailDto extends GuideSummaryDto {
 function normalizeSourceMessage(dto: SourceMessageDto): SourceMessage {
   return {
     messageId: String(dto.messageId),
+    groupId: dto.groupId != null ? String(dto.groupId) : null,
+    telegramChatId: dto.telegramChatId != null ? String(dto.telegramChatId) : null,
     telegramMessageId:
       dto.telegramMessageId != null ? String(dto.telegramMessageId) : null,
-    senderName: dto.senderName,
+    senderDisplayName: dto.senderDisplayName,
+    senderUsername: dto.senderUsername,
+    senderTelegramUserId:
+      dto.senderTelegramUserId != null ? String(dto.senderTelegramUserId) : null,
+    senderNameSource: dto.senderNameSource,
     text: dto.text,
+    textEntities: Array.isArray(dto.textEntities) ? dto.textEntities : [],
     usedInPrompt: dto.usedInPrompt,
     relation: dto.relation,
     replyToTelegramMessageId:
       dto.replyToTelegramMessageId != null ? String(dto.replyToTelegramMessageId) : null,
     topicId: dto.topicId != null ? String(dto.topicId) : null,
     topicName: dto.topicName,
+    internalMessageUrl: dto.internalMessageUrl,
+    telegramMessageUrl: dto.telegramMessageUrl,
+    telegramLinkAvailable: dto.telegramLinkAvailable,
+    telegramLinkReason: dto.telegramLinkReason,
   };
 }
 
@@ -109,6 +140,9 @@ function normalizeGuide(dto: GuideSummaryDto | GuideDetailDto): Guide {
     rootMessageId: dto.rootMessageId != null ? String(dto.rootMessageId) : null,
     content: detail.content ?? null,
     contentMarkdown: detail.contentMarkdown ?? null,
+    rawResponse: detail.rawResponse ?? null,
+    regeneratedFromGuideId:
+      detail.regeneratedFromGuideId != null ? String(detail.regeneratedFromGuideId) : null,
     confidence: dto.confidence ?? 0,
     status: dto.status as Guide["status"],
     providerId: dto.providerId != null ? String(dto.providerId) : null,
@@ -187,6 +221,21 @@ export function useUpdateGuideStatusMutation() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["guides"] });
       queryClient.invalidateQueries({ queryKey: ["guides", variables.id] });
+    },
+  });
+}
+
+export function useRegenerateGuideMutation() {
+  return useMutation({
+    mutationFn: async (id: string) => {
+      return postJsonAuth<{ oldGuideId: number; newGuideId: number; status: string }>(
+        `/guides/${id}/regenerate`,
+        {}
+      );
+    },
+    onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: ["guides"] });
+      queryClient.invalidateQueries({ queryKey: ["guides", id] });
     },
   });
 }

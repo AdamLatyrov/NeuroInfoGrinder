@@ -112,14 +112,30 @@ export type GuideStatus =
 
 export interface SourceMessage {
   messageId: string;
+  groupId: string | null;
+  telegramChatId: string | null;
   telegramMessageId: string | null;
-  senderName: string | null;
+  senderDisplayName: string | null;
+  senderUsername: string | null;
+  senderTelegramUserId: string | null;
+  senderNameSource: string | null;
   text: string | null;
+  textEntities: {
+    type: string | null;
+    offset: number | null;
+    length: number | null;
+    url: string | null;
+    text: string | null;
+  }[];
   usedInPrompt: boolean;
   relation: string | null;
   replyToTelegramMessageId: string | null;
   topicId: string | null;
   topicName: string | null;
+  internalMessageUrl: string | null;
+  telegramMessageUrl: string | null;
+  telegramLinkAvailable: boolean;
+  telegramLinkReason: string | null;
 }
 
 export interface GuideLlmRequest {
@@ -141,6 +157,8 @@ export interface Guide {
   rootMessageId: string | null;
   content: string | null;
   contentMarkdown: string | null;
+  rawResponse: string | null;
+  regeneratedFromGuideId: string | null;
   confidence: number;
   status: GuideStatus;
   providerId: string | null;

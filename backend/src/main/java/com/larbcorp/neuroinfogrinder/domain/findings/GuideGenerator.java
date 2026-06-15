@@ -70,7 +70,8 @@ public class GuideGenerator {
                 "## Ошибка генерации\n\n" + error,
                 0.0,
                 extractFallbackTags(userPrompt),
-                error
+                error,
+                response.content()
             );
         }
 
@@ -101,12 +102,13 @@ public class GuideGenerator {
             - Пиши title, content, contentMarkdown и tags только на русском языке.
             - Явно называй продукт, приложение, игру, сервис или платформу, если это можно уверенно понять из контекста.
             - Если продукт неочевиден, не выдумывай его, а компенсируй это точными тегами по теме.
-            - Сохраняй исходные ссылки, команды, версии, цены и дедлайны без искажений.
+            - Сохраняй исходные ссылки, встроенные гиперссылки, команды, версии, цены и дедлайны без искажений.
             - Сообщения с метками ROOT, PARENT_REPLY, DIRECT_REPLY и THREAD_REPLY считай основным контекстом.
             - Сообщения с метками SAME_TOPIC_NEARBY, SAME_AUTHOR_NEARBY и TIMELINE_NEARBY используй только если они реально уточняют основную мысль.
             - Если соседние сообщения выглядят шумом, игнорируй их.
             - Если это how-to, оформи как пошаговую инструкцию.
             - Если это полезный фидбек по продукту, сгруппируй его по темам и явно выдели проблемы и предложения.
+            - Для workaround, reseller, VPN, gray-market или payment bypass сценариев добавляй короткую заметку о рисках.
             - Верни от 3 до 6 коротких тегов. Среди них должен быть хотя бы один тег про предмет обсуждения и, если возможно, один тег с названием продукта или платформы.
             - Если полезного гайда из контекста не получается, поставь confidence ниже 0.5.
             """;
@@ -122,10 +124,11 @@ public class GuideGenerator {
             Mandatory output rules:
             - Return title, content, contentMarkdown, and tags only in Russian.
             - Mention the product, application, game, or service explicitly if the context makes it identifiable.
-            - Preserve original URLs exactly. Do not drop hidden or inline links.
+            - Preserve original URLs and embedded hyperlinks exactly. Do not drop hidden or inline links.
             - Treat ROOT, PARENT_REPLY, DIRECT_REPLY, and THREAD_REPLY as the primary context.
             - Use SAME_TOPIC_NEARBY, SAME_AUTHOR_NEARBY, and TIMELINE_NEARBY only as optional supporting context.
             - Ignore nearby messages if they look off-topic.
+            - If the source includes workaround, reseller, VPN, or regional-payment steps, add a short risk note.
             - Return 3 to 6 concise tags.
             """;
     }
@@ -156,6 +159,7 @@ public class GuideGenerator {
             sb.append("- topicId: ").append(root.getTopicId()).append("\n");
             sb.append("- topicName: ").append(root.getTopicName()).append("\n");
             sb.append("- senderName: ").append(root.getSenderName()).append("\n");
+            sb.append("- senderUsername: ").append(root.getSenderUsername()).append("\n");
             sb.append("- replyToTelegramMessageId: ").append(root.getReplyToMessageId()).append("\n\n");
         }
 
@@ -165,6 +169,7 @@ public class GuideGenerator {
             String botTag = Boolean.TRUE.equals(msg.getIsBot()) ? " [BOT]" : "";
             sb.append("- relation: ").append(resolveRelationLabel(root, msg)).append("\n");
             sb.append("  sender: ").append(sender).append(botTag).append("\n");
+            sb.append("  senderUsername: ").append(msg.getSenderUsername()).append("\n");
             sb.append("  telegramMessageId: ").append(msg.getTelegramMessageId()).append("\n");
             sb.append("  replyToTelegramMessageId: ").append(msg.getReplyToMessageId()).append("\n");
             sb.append("  topicId: ").append(msg.getTopicId()).append("\n");
@@ -206,31 +211,27 @@ public class GuideGenerator {
             String json = extractJson(content);
             JsonNode node = objectMapper.readTree(json);
 
-            String title = node.path("title").asText("Untitled Guide");
             String guideContent = node.path("content").asText("");
             String contentMarkdown = node.path("contentMarkdown").asText("");
             double confidence = node.path("confidence").asDouble(0.5);
             List<String> tags = normalizeTags(parseTags(node), fallbackSource);
+            String title = sanitizeGuideTitle(node.path("title").asText(null), guideContent, contentMarkdown);
 
             if ((contentMarkdown == null || contentMarkdown.isBlank()) && guideContent != null) {
                 contentMarkdown = guideContent;
             }
 
-            return new GuideContent(title, guideContent, contentMarkdown, confidence, tags, null);
+            return new GuideContent(title, guideContent, contentMarkdown, confidence, tags, null, content);
         } catch (Exception e) {
-            log.warn("Failed to parse guide response as JSON, using raw content: {}", e.getMessage());
-
-            String rawContent = content != null ? content : "";
-            String title = extractTitle(rawContent);
-            double confidence = 0.5;
-
+            log.warn("Failed to parse guide response as JSON: {}", e.getMessage());
             return new GuideContent(
-                title,
-                rawContent,
-                rawContent,
-                confidence,
-                extractFallbackTags(fallbackSource + "\n" + rawContent),
-                null
+                "Untitled Guide",
+                null,
+                null,
+                0.0,
+                extractFallbackTags(fallbackSource),
+                "Failed to parse model response as guide JSON: " + e.getMessage(),
+                content
             );
         }
     }
@@ -252,6 +253,9 @@ public class GuideGenerator {
     }
 
     private String extractJson(String content) {
+        if (content == null || content.isBlank()) {
+            return "{}";
+        }
         if (content.contains("```json")) {
             int start = content.indexOf("```json") + 7;
             int end = content.indexOf("```", start);
@@ -277,6 +281,9 @@ public class GuideGenerator {
     }
 
     private String extractTitle(String content) {
+        if (content == null || content.isBlank()) {
+            return "Untitled Guide";
+        }
         for (String line : content.split("\n")) {
             String trimmed = line.trim();
             if (trimmed.startsWith("# ")) {
@@ -290,6 +297,32 @@ public class GuideGenerator {
             }
         }
         return "Untitled Guide";
+    }
+
+    private String sanitizeGuideTitle(String rawTitle, String guideContent, String contentMarkdown) {
+        String title = rawTitle != null ? rawTitle.trim() : "";
+        if (!title.isBlank() && !looksLikeJson(title)) {
+            return title.length() > 160 ? title.substring(0, 160).trim() : title;
+        }
+
+        String fallback = extractTitle(
+            contentMarkdown != null && !contentMarkdown.isBlank()
+                ? contentMarkdown
+                : guideContent
+        );
+        if (fallback == null || fallback.isBlank() || looksLikeJson(fallback)) {
+            return "Untitled Guide";
+        }
+        return fallback.length() > 160 ? fallback.substring(0, 160).trim() : fallback;
+    }
+
+    private boolean looksLikeJson(String value) {
+        if (value == null) {
+            return false;
+        }
+        String trimmed = value.trim();
+        return (trimmed.startsWith("{") && trimmed.endsWith("}"))
+            || (trimmed.startsWith("[") && trimmed.endsWith("]"));
     }
 
     private List<String> normalizeTags(List<String> candidateTags, String fallbackSource) {

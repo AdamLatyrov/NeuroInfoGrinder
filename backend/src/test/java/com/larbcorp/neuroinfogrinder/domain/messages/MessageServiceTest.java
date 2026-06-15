@@ -36,7 +36,9 @@ class MessageServiceTest {
         group.setTelegramChatId(99L);
         group.setLastReadMessageId(0L);
 
-        TelegramMessageDto dto = new TelegramMessageDto(1L, 99L, 0L, "topic", "text", "payload", "sender", 123L, false, 0L, 1L);
+        TelegramMessageDto dto = new TelegramMessageDto(
+            1L, 99L, 0L, "topic", "text", "payload", "sender", null, 123L, false, null, 0L, 1L
+        );
 
         when(groupRepository.findById(7L)).thenReturn(Optional.of(group));
         when(telegramTdlibService.getMessages(99L, 0, 20)).thenReturn(List.of(dto));

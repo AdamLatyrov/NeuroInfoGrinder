@@ -67,5 +67,10 @@ public class GuideEntity extends BaseEntity {
     @Column(columnDefinition = "TEXT")
     private String generationError;
 
+    @Column(columnDefinition = "TEXT")
+    private String rawResponse;
+
+    private Long regeneratedFromGuideId;
+
     private Instant publishedAt;
 }

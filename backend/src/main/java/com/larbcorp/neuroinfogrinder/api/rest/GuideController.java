@@ -3,6 +3,7 @@ package com.larbcorp.neuroinfogrinder.api.rest;
 import com.larbcorp.neuroinfogrinder.domain.findings.GuideService;
 import com.larbcorp.neuroinfogrinder.domain.findings.dto.BulkDeleteGuidesRequest;
 import com.larbcorp.neuroinfogrinder.domain.findings.dto.GuideDetailResponse;
+import com.larbcorp.neuroinfogrinder.domain.findings.dto.GuideRegenerateResponse;
 import com.larbcorp.neuroinfogrinder.domain.findings.dto.GuideSummaryResponse;
 import com.larbcorp.neuroinfogrinder.domain.findings.dto.UpdateGuideContentRequest;
 import com.larbcorp.neuroinfogrinder.domain.findings.dto.UpdateGuideStatusRequest;
@@ -54,6 +55,11 @@ public class GuideController {
     @GetMapping("/{id}")
     public GuideDetailResponse getGuideDetail(@PathVariable Long id) {
         return guideService.getGuideDetail(id);
+    }
+
+    @PostMapping("/{id}/regenerate")
+    public GuideRegenerateResponse regenerate(@PathVariable Long id) {
+        return guideService.regenerate(id);
     }
 
     @PatchMapping("/{id}/status")

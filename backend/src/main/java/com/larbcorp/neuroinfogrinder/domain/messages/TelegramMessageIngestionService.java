@@ -38,8 +38,10 @@ public class TelegramMessageIngestionService implements TelegramUpdateListener {
         entity.setGroupId(group.getId());
         entity.setText(message.text());
         entity.setSenderName(message.senderName());
+        entity.setSenderUsername(message.senderUsername());
         entity.setSenderTelegramUserId(message.senderTelegramUserId());
         entity.setIsBot(message.isBot());
+        entity.setTextEntitiesJson(message.textEntitiesJson());
         entity.setReplyToMessageId(message.replyToMessageId() > 0 ? message.replyToMessageId() : null);
         entity.setTopicName(message.topicName());
         entity.setTopicId(message.messageThreadId() > 0 ? message.messageThreadId() : null);

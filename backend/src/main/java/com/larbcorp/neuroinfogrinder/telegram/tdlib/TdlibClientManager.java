@@ -1,5 +1,6 @@
 package com.larbcorp.neuroinfogrinder.telegram.tdlib;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.larbcorp.neuroinfogrinder.config.TdlibProperties;
 import com.larbcorp.neuroinfogrinder.telegram.TelegramUpdateListener;
 import com.larbcorp.neuroinfogrinder.telegram.model.TelegramAuthStateResponse;
@@ -38,6 +39,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 @Component
 public class TdlibClientManager {
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private static final long REQUEST_TIMEOUT_SECONDS = 30L;
     private static final long CHAT_HISTORY_TIMEOUT_SECONDS = 8L;
@@ -567,6 +569,7 @@ public class TdlibClientManager {
         long topicKey = extractTopicKey(message.topicId);
         String topicName = resolveTopicName(chatId, message.topicId);
         String senderName = extractSenderName(message);
+        String senderUsername = extractSenderUsername(message);
         Long senderTelegramUserId = extractSenderUserId(message);
         boolean isBot = message.senderId instanceof TdApi.MessageSenderUser senderUser
                 && getUser(senderUser.userId).type instanceof TdApi.UserTypeBot;
@@ -578,8 +581,10 @@ public class TdlibClientManager {
                 message.content == null ? "Unknown" : message.content.getClass().getSimpleName(),
                 extractMessageText(message.content),
                 senderName,
+                senderUsername,
                 senderTelegramUserId,
                 isBot,
+                extractTextEntitiesJson(message.content),
                 extractReplyToMessageId(message),
                 message.date > 0 ? message.date : Instant.now().getEpochSecond()
         );
@@ -589,6 +594,7 @@ public class TdlibClientManager {
         long topicKey = extractTopicKey(message.topicId);
         String topicName = resolveTopicName(chatId, message.topicId);
         String senderName = extractSenderName(message);
+        String senderUsername = extractSenderUsername(message);
         Long senderTelegramUserId = extractSenderUserId(message);
         boolean isBot = message.senderId instanceof TdApi.MessageSenderUser senderUser
                 && getUser(senderUser.userId).type instanceof TdApi.UserTypeBot;
@@ -601,8 +607,10 @@ public class TdlibClientManager {
                 message.content == null ? "Unknown" : message.content.getClass().getSimpleName(),
                 extractMessageText(message.content),
                 senderName,
+                senderUsername,
                 senderTelegramUserId,
                 isBot,
+                extractTextEntitiesJson(message.content),
                 extractReplyToMessageId(message),
                 message.date > 0 ? message.date : Instant.now().getEpochSecond()
         );
@@ -638,6 +646,13 @@ public class TdlibClientManager {
     private Long extractSenderUserId(TdApi.Message message) {
         if (message.senderId instanceof TdApi.MessageSenderUser senderUser) {
             return senderUser.userId;
+        }
+        return null;
+    }
+
+    private String extractSenderUsername(TdApi.Message message) {
+        if (message.senderId instanceof TdApi.MessageSenderUser senderUser) {
+            return resolveUserUsername(senderUser.userId);
         }
         return null;
     }
@@ -805,6 +820,97 @@ public class TdlibClientManager {
             return messageSticker.sticker == null ? "[sticker]" : messageSticker.sticker.emoji;
         }
         return content.toString();
+    }
+
+    private String extractTextEntitiesJson(TdApi.MessageContent content) {
+        TdApi.FormattedText formattedText = extractFormattedText(content);
+        if (formattedText == null || formattedText.entities == null || formattedText.entities.length == 0) {
+            return null;
+        }
+
+        List<Map<String, Object>> entities = new ArrayList<>();
+        for (TdApi.TextEntity entity : formattedText.entities) {
+            if (entity == null || entity.type == null) {
+                continue;
+            }
+
+            int start = Math.max(0, Math.min(entity.offset, formattedText.text.length()));
+            int end = Math.max(start, Math.min(entity.offset + entity.length, formattedText.text.length()));
+            String entityText = start < end ? formattedText.text.substring(start, end) : "";
+
+            Map<String, Object> item = new ConcurrentHashMap<>();
+            item.put("type", describeEntityType(entity.type));
+            item.put("offset", entity.offset);
+            item.put("length", entity.length);
+            item.put("text", entityText);
+            if (entity.type instanceof TdApi.TextEntityTypeTextUrl textUrl) {
+                item.put("url", textUrl.url);
+            } else if (entity.type instanceof TdApi.TextEntityTypeUrl) {
+                item.put("url", entityText);
+            }
+            entities.add(item);
+        }
+
+        if (entities.isEmpty()) {
+            return null;
+        }
+
+        try {
+            return OBJECT_MAPPER.writeValueAsString(entities);
+        } catch (Exception exception) {
+            log.warn("Failed to serialize Telegram text entities: {}", exception.getMessage());
+            return null;
+        }
+    }
+
+    private TdApi.FormattedText extractFormattedText(TdApi.MessageContent content) {
+        if (content instanceof TdApi.MessageText messageText) {
+            return messageText.text;
+        }
+        if (content instanceof TdApi.MessagePhoto messagePhoto) {
+            return messagePhoto.caption;
+        }
+        if (content instanceof TdApi.MessageVideo messageVideo) {
+            return messageVideo.caption;
+        }
+        if (content instanceof TdApi.MessageDocument messageDocument) {
+            return messageDocument.caption;
+        }
+        if (content instanceof TdApi.MessageAnimation messageAnimation) {
+            return messageAnimation.caption;
+        }
+        if (content instanceof TdApi.MessageAudio messageAudio) {
+            return messageAudio.caption;
+        }
+        if (content instanceof TdApi.MessageVoiceNote messageVoiceNote) {
+            return messageVoiceNote.caption;
+        }
+        return null;
+    }
+
+    private String describeEntityType(TdApi.TextEntityType entityType) {
+        if (entityType instanceof TdApi.TextEntityTypeTextUrl) {
+            return "textUrl";
+        }
+        if (entityType instanceof TdApi.TextEntityTypeUrl) {
+            return "url";
+        }
+        if (entityType instanceof TdApi.TextEntityTypeMention) {
+            return "mention";
+        }
+        if (entityType instanceof TdApi.TextEntityTypeCode) {
+            return "code";
+        }
+        if (entityType instanceof TdApi.TextEntityTypePre || entityType instanceof TdApi.TextEntityTypePreCode) {
+            return "pre";
+        }
+        if (entityType instanceof TdApi.TextEntityTypeBold) {
+            return "bold";
+        }
+        if (entityType instanceof TdApi.TextEntityTypeItalic) {
+            return "italic";
+        }
+        return entityType.getClass().getSimpleName();
     }
 
     private String formatFormattedText(TdApi.FormattedText formattedText) {

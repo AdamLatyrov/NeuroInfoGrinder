@@ -22,6 +22,8 @@ public record GuideDetailResponse(
     Double estimatedCostUsd,
     List<String> tags,
     String generationError,
+    String rawResponse,
+    Long regeneratedFromGuideId,
     Instant publishedAt,
     Instant createdAt,
     String content,

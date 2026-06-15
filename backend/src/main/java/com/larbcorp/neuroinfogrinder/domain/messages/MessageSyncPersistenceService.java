@@ -64,8 +64,10 @@ public class MessageSyncPersistenceService {
             entity.setGroupId(groupId);
             entity.setText(msg.text());
             entity.setSenderName(msg.senderName());
+            entity.setSenderUsername(msg.senderUsername());
             entity.setSenderTelegramUserId(msg.senderTelegramUserId());
             entity.setIsBot(msg.isBot());
+            entity.setTextEntitiesJson(msg.textEntitiesJson());
             entity.setReplyToMessageId(msg.replyToMessageId() > 0 ? msg.replyToMessageId() : null);
             entity.setTopicName(msg.topicName());
             entity.setTopicId(msg.messageThreadId() > 0 ? msg.messageThreadId() : null);
@@ -110,6 +112,11 @@ public class MessageSyncPersistenceService {
             entity.setSenderTelegramUserId(msg.senderTelegramUserId());
             changed = true;
         }
+        if ((entity.getSenderUsername() == null || entity.getSenderUsername().isBlank())
+            && msg.senderUsername() != null && !msg.senderUsername().isBlank()) {
+            entity.setSenderUsername(msg.senderUsername());
+            changed = true;
+        }
         if ((entity.getTopicName() == null || entity.getTopicName().isBlank()) && msg.topicName() != null && !msg.topicName().isBlank()) {
             entity.setTopicName(msg.topicName());
             changed = true;
@@ -124,6 +131,11 @@ public class MessageSyncPersistenceService {
         }
         if (shouldRefreshText(entity.getText(), msg.text())) {
             entity.setText(msg.text());
+            changed = true;
+        }
+        if ((entity.getTextEntitiesJson() == null || entity.getTextEntitiesJson().isBlank())
+            && msg.textEntitiesJson() != null && !msg.textEntitiesJson().isBlank()) {
+            entity.setTextEntitiesJson(msg.textEntitiesJson());
             changed = true;
         }
         if (entity.getMessageDate() == null) {

@@ -1,9 +1,10 @@
 import { useMemo } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import {
   ArrowsClockwise,
   CheckCircle,
   FileDashed,
+  Link as LinkIcon,
   PaperPlaneTilt,
   SpinnerGap,
   WarningCircle,
@@ -23,6 +24,7 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   useGuideDetailQuery,
+  useRegenerateGuideMutation,
   useUpdateGuideStatusMutation,
 } from "@/shared/api/guidesApi";
 import { useMessageTraceQuery } from "@/shared/api/tracesApi";
@@ -72,6 +74,16 @@ function relationLabel(relation: string | null): string {
   }
 }
 
+function displayGuideTitle(title: string | null | undefined, id: string): string {
+  if (!title) return `Guide #${id}`;
+  const trimmed = title.trim();
+  if (!trimmed) return `Guide #${id}`;
+  if ((trimmed.startsWith("{") && trimmed.endsWith("}")) || (trimmed.startsWith("[") && trimmed.endsWith("]"))) {
+    return `Guide #${id}`;
+  }
+  return trimmed;
+}
+
 function TraceTimeline({ steps }: { steps: PipelineTrace[] }) {
   return (
     <div className="flex flex-col gap-3">
@@ -106,10 +118,11 @@ function TraceTimeline({ steps }: { steps: PipelineTrace[] }) {
 
 export function GuideDetailPage() {
   const { guideId } = useParams<{ guideId: string }>();
+  const navigate = useNavigate();
   const guideQuery = useGuideDetailQuery(guideId);
   const updateGuideStatusMutation = useUpdateGuideStatusMutation();
+  const regenerateGuideMutation = useRegenerateGuideMutation();
   const guide = guideQuery.data;
-
   const traceQuery = useMessageTraceQuery(guide?.rootMessageId ?? undefined);
 
   const sourceSummary = useMemo(() => {
@@ -119,6 +132,10 @@ export function GuideDetailPage() {
       usedInPrompt: guide.sourceMessages.filter((message) => message.usedInPrompt).length,
     };
   }, [guide]);
+
+  const renderedTitle = guide ? displayGuideTitle(guide.title, guide.id) : "";
+  const displayMarkdown = guide?.contentMarkdown || guide?.content || "";
+  const showContentParseError = !displayMarkdown && (!!guide?.rawResponse || !!guide?.generationError);
 
   if (guideQuery.isLoading) {
     return (
@@ -147,10 +164,17 @@ export function GuideDetailPage() {
   const updateStatus = (status: string) =>
     updateGuideStatusMutation.mutate({ id: guide.id, status });
 
+  const regenerateGuide = () =>
+    regenerateGuideMutation.mutate(guide.id, {
+      onSuccess: (result) => {
+        navigate(`/guides/${result.newGuideId}`);
+      },
+    });
+
   return (
     <div className="flex flex-col gap-5">
       <PageHeaderCard
-        title={guide.title}
+        title={renderedTitle}
         description={`Гайд #${guide.id} · ${
           guide.sourceGroupTitle
             ? `${guide.sourceGroupTitle}${guide.sourceGroupId ? ` (#${guide.sourceGroupId})` : ""}`
@@ -173,6 +197,9 @@ export function GuideDetailPage() {
           <Badge variant="outline">{sourceSummary.total} source messages</Badge>
           <Badge variant="outline">{sourceSummary.usedInPrompt} used in prompt</Badge>
           {guide.rootMessageId && <Badge variant="outline">root msg #{guide.rootMessageId}</Badge>}
+          {guide.regeneratedFromGuideId && (
+            <Badge variant="outline">regenerated from #{guide.regeneratedFromGuideId}</Badge>
+          )}
         </div>
         {guide.tags.length > 0 && (
           <div className="mt-3 flex flex-wrap gap-2">
@@ -188,7 +215,7 @@ export function GuideDetailPage() {
       {guide.generationError && (
         <Alert variant="danger">
           <WarningCircle size={18} weight="fill" />
-          <AlertTitle>Гайд не собрался из-за ошибки API</AlertTitle>
+          <AlertTitle>Гайд не собрался автоматически</AlertTitle>
           <AlertDescription>
             <div className="whitespace-pre-wrap break-words">{guide.generationError}</div>
           </AlertDescription>
@@ -227,6 +254,16 @@ export function GuideDetailPage() {
           Опубликовать
         </Button>
         <Button
+          variant="secondary"
+          size="sm"
+          className="gap-1.5"
+          onClick={regenerateGuide}
+          disabled={regenerateGuideMutation.isPending}
+        >
+          <ArrowsClockwise size={14} />
+          Сгенерировать заново
+        </Button>
+        <Button
           variant="outline"
           size="sm"
           className="gap-1.5 text-danger hover:text-danger"
@@ -246,7 +283,18 @@ export function GuideDetailPage() {
             </div>
             <ScrollArea className="h-[460px]">
               <div className="p-4">
-                <MarkdownArticle markdown={guide.contentMarkdown || guide.content || ""} />
+                {showContentParseError ? (
+                  <Alert>
+                    <WarningCircle size={18} weight="fill" />
+                    <AlertTitle>Контент не распарсился как гайд</AlertTitle>
+                    <AlertDescription>
+                      Сырая модельная выдача сохранена во вкладке Raw. Основной контент не показывается, чтобы не
+                      путать JSON с готовым гайдом.
+                    </AlertDescription>
+                  </Alert>
+                ) : (
+                  <MarkdownArticle markdown={displayMarkdown} />
+                )}
               </div>
             </ScrollArea>
           </CardContent>
@@ -318,8 +366,11 @@ export function GuideDetailPage() {
                     >
                       <div className="flex flex-wrap items-center gap-2">
                         <div className="font-medium text-text-strong">
-                          {message.senderName ?? "Unknown"}
+                          {message.senderDisplayName ?? "Unknown"}
                         </div>
+                        {message.senderUsername && (
+                          <Badge variant="outline">@{message.senderUsername}</Badge>
+                        )}
                         <Badge variant={message.usedInPrompt ? "success" : "outline"}>
                           {message.usedInPrompt ? "used in prompt" : "stored only"}
                         </Badge>
@@ -331,12 +382,43 @@ export function GuideDetailPage() {
                         {message.replyToTelegramMessageId && (
                           <Badge variant="outline">reply to #{message.replyToTelegramMessageId}</Badge>
                         )}
-                        {message.topicName && (
-                          <Badge variant="outline">{message.topicName}</Badge>
+                        {message.topicName && <Badge variant="outline">{message.topicName}</Badge>}
+                        {message.senderNameSource && (
+                          <Badge variant="outline">name: {message.senderNameSource}</Badge>
                         )}
                       </div>
                       <div className="mt-2 whitespace-pre-wrap text-sm text-text-default">
                         <RichMessageText text={message.text ?? ""} />
+                      </div>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {message.internalMessageUrl && (
+                          <a
+                            href={message.internalMessageUrl}
+                            className="inline-flex items-center gap-1 rounded-md border border-border-subtle px-2 py-1 text-xs text-text-default hover:bg-bg-card"
+                          >
+                            <LinkIcon size={12} />
+                            Открыть в приложении
+                          </a>
+                        )}
+                        {message.telegramLinkAvailable && message.telegramMessageUrl ? (
+                          <a
+                            href={message.telegramMessageUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-1 rounded-md border border-border-subtle px-2 py-1 text-xs text-text-default hover:bg-bg-card"
+                          >
+                            <LinkIcon size={12} />
+                            Открыть в Telegram
+                          </a>
+                        ) : (
+                          <span
+                            className="inline-flex items-center gap-1 rounded-md border border-border-subtle px-2 py-1 text-xs text-text-muted"
+                            title={message.telegramLinkReason ?? "Ссылка недоступна"}
+                          >
+                            <LinkIcon size={12} />
+                            Telegram link unavailable
+                          </span>
+                        )}
                       </div>
                     </div>
                   ))
@@ -350,7 +432,7 @@ export function GuideDetailPage() {
           <Card>
             <CardContent className="p-4">
               <pre className="whitespace-pre-wrap font-mono-value text-xs leading-relaxed text-text-default">
-                {guide.content || "—"}
+                {guide.rawResponse || guide.content || "—"}
               </pre>
             </CardContent>
           </Card>

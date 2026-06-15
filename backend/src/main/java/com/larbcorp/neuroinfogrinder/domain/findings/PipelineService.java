@@ -393,7 +393,8 @@ public class PipelineService {
                 "## Гайд не создан\n\nПричина: недоступен AI-провайдер.",
                 0.0,
                 List.of("AI", "ошибка", "провайдер"),
-                "No active AI provider found"
+                "No active AI provider found",
+                null
             );
 
             pipelineTraceService.createTrace(
@@ -579,6 +580,7 @@ public class PipelineService {
         guide.setTitle(guideContent.title());
         guide.setContent(guideContent.content());
         guide.setContentMarkdown(guideContent.contentMarkdown());
+        guide.setRawResponse(guideContent.rawResponse());
         guide.setGroupId(message.getGroupId());
         guide.setRootMessageId(message.getId());
         guide.setProviderId(provider != null ? provider.getId() : null);
@@ -645,7 +647,8 @@ public class PipelineService {
             content,
             0.55,
             List.of("локальный fallback", "AI", "черновик"),
-            null
+            null,
+            content
         );
     }
 

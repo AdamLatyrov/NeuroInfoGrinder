@@ -3,15 +3,22 @@ package com.larbcorp.neuroinfogrinder.domain.findings;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.larbcorp.neuroinfogrinder.domain.findings.dto.GuideDetailResponse;
+import com.larbcorp.neuroinfogrinder.domain.findings.dto.GuideRegenerateResponse;
 import com.larbcorp.neuroinfogrinder.domain.findings.dto.GuideSummaryResponse;
 import com.larbcorp.neuroinfogrinder.domain.findings.dto.LlmRequestDto;
 import com.larbcorp.neuroinfogrinder.domain.findings.dto.SourceMessageDto;
+import com.larbcorp.neuroinfogrinder.domain.findings.dto.SourceMessageTextEntityDto;
 import com.larbcorp.neuroinfogrinder.domain.findings.dto.UpdateGuideContentRequest;
 import com.larbcorp.neuroinfogrinder.domain.findings.dto.UpdateGuideStatusRequest;
+import com.larbcorp.neuroinfogrinder.domain.messages.TelegramMessageLink;
+import com.larbcorp.neuroinfogrinder.domain.messages.TelegramMessageLinkBuilder;
+import com.larbcorp.neuroinfogrinder.domain.messages.dto.MessageTextEntityDto;
+import com.larbcorp.neuroinfogrinder.infrastructure.persistence.entity.AiProviderEntity;
 import com.larbcorp.neuroinfogrinder.infrastructure.persistence.entity.GuideEntity;
 import com.larbcorp.neuroinfogrinder.infrastructure.persistence.entity.GuideSourceMessageEntity;
 import com.larbcorp.neuroinfogrinder.infrastructure.persistence.entity.GroupEntity;
 import com.larbcorp.neuroinfogrinder.infrastructure.persistence.entity.MessageEntity;
+import com.larbcorp.neuroinfogrinder.infrastructure.persistence.repository.AiProviderRepository;
 import com.larbcorp.neuroinfogrinder.infrastructure.persistence.repository.GuideRepository;
 import com.larbcorp.neuroinfogrinder.infrastructure.persistence.repository.GuideSourceMessageRepository;
 import com.larbcorp.neuroinfogrinder.infrastructure.persistence.repository.GroupRepository;
@@ -23,10 +30,11 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Comparator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.LinkedHashSet;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -38,6 +46,8 @@ public class GuideService {
     private final GuideSourceMessageRepository guideSourceMessageRepository;
     private final MessageRepository messageRepository;
     private final GroupRepository groupRepository;
+    private final AiProviderRepository aiProviderRepository;
+    private final GuideGenerator guideGenerator;
     private final ObjectMapper objectMapper;
 
     @Transactional(readOnly = true)
@@ -68,31 +78,12 @@ public class GuideService {
         GroupEntity group = groupRepository.findById(guide.getGroupId()).orElse(null);
 
         List<GuideSourceMessageEntity> sourceMsgs = guideSourceMessageRepository.findByGuideId(id);
-
-        Map<Long, MessageEntity> messageMap = sourceMsgs.isEmpty()
-            ? Map.of()
-            : messageRepository.findAllById(
-                sourceMsgs.stream().map(GuideSourceMessageEntity::getMessageId).toList()
-            ).stream().collect(Collectors.toMap(MessageEntity::getId, Function.identity()));
-
+        Map<Long, MessageEntity> messageMap = loadMessageMap(sourceMsgs);
         MessageEntity rootMessage = resolveRootMessage(guide, sourceMsgs, messageMap);
 
         List<SourceMessageDto> sourceMessageDtos = sourceMsgs.stream()
             .sorted((left, right) -> compareSourceMessages(left, right, messageMap))
-            .map(sm -> {
-                MessageEntity msg = messageMap.get(sm.getMessageId());
-                return new SourceMessageDto(
-                    sm.getMessageId(),
-                    msg != null ? msg.getTelegramMessageId() : null,
-                    msg != null ? msg.getSenderName() : null,
-                    msg != null ? msg.getText() : null,
-                    sm.getUsedInPrompt(),
-                    resolveRelation(rootMessage, msg),
-                    msg != null ? msg.getReplyToMessageId() : null,
-                    msg != null ? msg.getTopicId() : null,
-                    msg != null ? msg.getTopicName() : null
-                );
-            })
+            .map(source -> toSourceMessageDto(source, messageMap.get(source.getMessageId()), group, rootMessage))
             .toList();
 
         LlmRequestDto llmRequest = new LlmRequestDto(
@@ -118,7 +109,7 @@ public class GuideService {
 
         return new GuideDetailResponse(
             guide.getId(),
-            guide.getTitle(),
+            displayGuideTitle(guide),
             guide.getGroupId(),
             group != null ? group.getTitle() : null,
             guide.getRootMessageId(),
@@ -135,6 +126,8 @@ public class GuideService {
             guide.getEstimatedCostUsd(),
             parseTags(guide.getTagsJson()),
             guide.getGenerationError(),
+            guide.getRawResponse(),
+            guide.getRegeneratedFromGuideId(),
             guide.getPublishedAt(),
             guide.getCreatedAt(),
             guide.getContent(),
@@ -144,6 +137,68 @@ public class GuideService {
             relatedGuideIds,
             possibleDuplicateIds
         );
+    }
+
+    @Transactional
+    public GuideRegenerateResponse regenerate(Long id) {
+        GuideEntity sourceGuide = getById(id);
+        List<GuideSourceMessageEntity> sourceLinks = guideSourceMessageRepository.findByGuideId(id);
+        Map<Long, MessageEntity> messageMap = loadMessageMap(sourceLinks);
+        List<MessageEntity> chain = sourceLinks.stream()
+            .map(GuideSourceMessageEntity::getMessageId)
+            .map(messageMap::get)
+            .filter(Objects::nonNull)
+            .sorted(this::compareMessages)
+            .toList();
+
+        if (chain.isEmpty()) {
+            throw new IllegalArgumentException("Guide has no source messages: " + id);
+        }
+
+        MessageEntity rootMessage = resolveRootMessage(sourceGuide, sourceLinks, messageMap);
+        ClassifierResult classifierResult = parseClassifierResult(rootMessage);
+        Long providerId = resolveProviderId(sourceGuide);
+
+        GuideContent regenerated = guideGenerator.generate(
+            chain,
+            classifierResult,
+            providerId,
+            sourceGuide.getPromptId(),
+            rootMessage != null ? rootMessage.getId() : chain.get(0).getId()
+        );
+
+        GuideEntity newGuide = new GuideEntity();
+        newGuide.setTitle(displayGuideTitle(regenerated.title()));
+        newGuide.setContent(regenerated.content());
+        newGuide.setContentMarkdown(regenerated.contentMarkdown());
+        newGuide.setRawResponse(regenerated.rawResponse());
+        newGuide.setGroupId(sourceGuide.getGroupId());
+        newGuide.setRootMessageId(rootMessage != null ? rootMessage.getId() : sourceGuide.getRootMessageId());
+        newGuide.setProviderId(providerId);
+        newGuide.setModel(resolveProviderModel(providerId, sourceGuide.getModel()));
+        newGuide.setClassifierId(sourceGuide.getClassifierId());
+        newGuide.setPromptId(sourceGuide.getPromptId());
+        newGuide.setPromptVersion(sourceGuide.getPromptVersion());
+        newGuide.setStatus(regenerated.generationError() != null ? "FAILED" : "DRAFT");
+        newGuide.setDuplicateOfId(sourceGuide.getDuplicateOfId());
+        newGuide.setDuplicateScore(sourceGuide.getDuplicateScore());
+        newGuide.setConfidence(regenerated.confidence());
+        newGuide.setTotalTokens(sourceGuide.getTotalTokens());
+        newGuide.setEstimatedCostUsd(sourceGuide.getEstimatedCostUsd());
+        newGuide.setTagsJson(writeJson(regenerated.tags()));
+        newGuide.setGenerationError(regenerated.generationError());
+        newGuide.setRegeneratedFromGuideId(sourceGuide.getId());
+        newGuide = guideRepository.save(newGuide);
+
+        for (GuideSourceMessageEntity sourceLink : sourceLinks) {
+            GuideSourceMessageEntity copy = new GuideSourceMessageEntity();
+            copy.setGuideId(newGuide.getId());
+            copy.setMessageId(sourceLink.getMessageId());
+            copy.setUsedInPrompt(sourceLink.getUsedInPrompt());
+            guideSourceMessageRepository.save(copy);
+        }
+
+        return new GuideRegenerateResponse(sourceGuide.getId(), newGuide.getId(), newGuide.getStatus());
     }
 
     @Transactional
@@ -193,6 +248,174 @@ public class GuideService {
         return guides.size();
     }
 
+    public GuideSummaryResponse toSummaryResponse(GuideEntity guide) {
+        GroupEntity group = groupRepository.findById(guide.getGroupId()).orElse(null);
+        return new GuideSummaryResponse(
+            guide.getId(),
+            displayGuideTitle(guide),
+            guide.getGroupId(),
+            group != null ? group.getTitle() : null,
+            guide.getRootMessageId(),
+            guide.getProviderId(),
+            guide.getModel(),
+            guide.getClassifierId(),
+            guide.getPromptId(),
+            guide.getPromptVersion(),
+            guide.getStatus(),
+            guide.getDuplicateOfId(),
+            guide.getDuplicateScore(),
+            guide.getConfidence(),
+            guide.getTotalTokens(),
+            guide.getEstimatedCostUsd(),
+            parseTags(guide.getTagsJson()),
+            guide.getGenerationError(),
+            guide.getPublishedAt(),
+            guide.getCreatedAt()
+        );
+    }
+
+    private Map<Long, MessageEntity> loadMessageMap(List<GuideSourceMessageEntity> sourceMsgs) {
+        return sourceMsgs.isEmpty()
+            ? Map.of()
+            : messageRepository.findAllById(sourceMsgs.stream().map(GuideSourceMessageEntity::getMessageId).toList())
+                .stream()
+                .collect(Collectors.toMap(MessageEntity::getId, Function.identity()));
+    }
+
+    private SourceMessageDto toSourceMessageDto(
+        GuideSourceMessageEntity source,
+        MessageEntity message,
+        GroupEntity group,
+        MessageEntity rootMessage
+    ) {
+        TelegramMessageLink telegramLink = TelegramMessageLinkBuilder.buildLink(group, message);
+        return new SourceMessageDto(
+            source.getMessageId(),
+            message != null ? message.getGroupId() : null,
+            group != null ? group.getTelegramChatId() : null,
+            message != null ? message.getTelegramMessageId() : null,
+            resolveSenderDisplayName(message),
+            message != null ? message.getSenderUsername() : null,
+            message != null ? message.getSenderTelegramUserId() : null,
+            resolveSenderNameSource(message),
+            message != null ? message.getText() : null,
+            parseTextEntities(message != null ? message.getTextEntitiesJson() : null),
+            source.getUsedInPrompt(),
+            resolveRelation(rootMessage, message),
+            message != null ? message.getReplyToMessageId() : null,
+            message != null ? message.getTopicId() : null,
+            message != null ? message.getTopicName() : null,
+            message != null && message.getGroupId() != null ? "/groups?group=" + message.getGroupId() + "&message=" + message.getId() : null,
+            telegramLink.url(),
+            telegramLink.available(),
+            telegramLink.reason()
+        );
+    }
+
+    private String resolveSenderDisplayName(MessageEntity message) {
+        if (message == null) {
+            return null;
+        }
+        if (message.getSenderName() != null && !message.getSenderName().isBlank()) {
+            return message.getSenderName();
+        }
+        if (message.getSenderUsername() != null && !message.getSenderUsername().isBlank()) {
+            return "@" + message.getSenderUsername();
+        }
+        if (message.getSenderTelegramUserId() != null) {
+            return "User " + message.getSenderTelegramUserId();
+        }
+        return "Unknown";
+    }
+
+    private String resolveSenderNameSource(MessageEntity message) {
+        if (message == null) {
+            return null;
+        }
+        if (message.getSenderName() != null && !message.getSenderName().isBlank()) {
+            return "display_name";
+        }
+        if (message.getSenderUsername() != null && !message.getSenderUsername().isBlank()) {
+            return "username";
+        }
+        if (message.getSenderTelegramUserId() != null) {
+            return "telegram_user_id";
+        }
+        return "unknown";
+    }
+
+    private List<SourceMessageTextEntityDto> parseTextEntities(String textEntitiesJson) {
+        if (textEntitiesJson == null || textEntitiesJson.isBlank()) {
+            return List.of();
+        }
+        try {
+            List<MessageTextEntityDto> entities = objectMapper.readValue(
+                textEntitiesJson,
+                new TypeReference<List<MessageTextEntityDto>>() {}
+            );
+            return entities.stream()
+                .map(entity -> new SourceMessageTextEntityDto(
+                    entity.type(),
+                    entity.offset(),
+                    entity.length(),
+                    entity.url(),
+                    entity.text()
+                ))
+                .toList();
+        } catch (Exception ignored) {
+            return List.of();
+        }
+    }
+
+    private Long resolveProviderId(GuideEntity sourceGuide) {
+        if (sourceGuide.getProviderId() != null && aiProviderRepository.findById(sourceGuide.getProviderId()).isPresent()) {
+            return sourceGuide.getProviderId();
+        }
+        return aiProviderRepository.findAll().stream()
+            .filter(provider -> {
+                String status = provider.getStatus();
+                return "ACTIVE".equalsIgnoreCase(status)
+                    || "HEALTHY".equalsIgnoreCase(status)
+                    || "WARNING".equalsIgnoreCase(status);
+            })
+            .sorted(Comparator.comparing(AiProviderEntity::getId))
+            .map(AiProviderEntity::getId)
+            .findFirst()
+            .orElseThrow(() -> new IllegalArgumentException("No active AI provider found for guide regeneration"));
+    }
+
+    private String resolveProviderModel(Long providerId, String fallbackModel) {
+        if (providerId == null) {
+            return fallbackModel;
+        }
+        return aiProviderRepository.findById(providerId)
+            .map(AiProviderEntity::getModel)
+            .filter(model -> model != null && !model.isBlank())
+            .orElse(fallbackModel);
+    }
+
+    private ClassifierResult parseClassifierResult(MessageEntity rootMessage) {
+        if (rootMessage != null
+            && rootMessage.getClassifierResultJson() != null
+            && !rootMessage.getClassifierResultJson().isBlank()) {
+            try {
+                return objectMapper.readValue(rootMessage.getClassifierResultJson(), ClassifierResult.class);
+            } catch (Exception ignored) {
+                // fall through
+            }
+        }
+        return new ClassifierResult(
+            rootMessage != null && rootMessage.getClassifierScore() != null ? rootMessage.getClassifierScore() : 0.0,
+            true,
+            List.of(),
+            false,
+            rootMessage != null ? List.of(rootMessage.getId()) : List.of(),
+            rootMessage != null && rootMessage.getClassifierReason() != null
+                ? rootMessage.getClassifierReason()
+                : "Guide regenerated from stored source messages"
+        );
+    }
+
     private void deleteGuideAndDetachMessages(GuideEntity guide) {
         guideSourceMessageRepository.findByGuideId(guide.getId())
             .forEach(sm -> guideSourceMessageRepository.deleteById(sm.getId()));
@@ -216,32 +439,6 @@ public class GuideService {
             .orElseThrow(() -> new IllegalArgumentException("Guide not found: " + id));
     }
 
-    public GuideSummaryResponse toSummaryResponse(GuideEntity guide) {
-        GroupEntity group = groupRepository.findById(guide.getGroupId()).orElse(null);
-        return new GuideSummaryResponse(
-            guide.getId(),
-            guide.getTitle(),
-            guide.getGroupId(),
-            group != null ? group.getTitle() : null,
-            guide.getRootMessageId(),
-            guide.getProviderId(),
-            guide.getModel(),
-            guide.getClassifierId(),
-            guide.getPromptId(),
-            guide.getPromptVersion(),
-            guide.getStatus(),
-            guide.getDuplicateOfId(),
-            guide.getDuplicateScore(),
-            guide.getConfidence(),
-            guide.getTotalTokens(),
-            guide.getEstimatedCostUsd(),
-            parseTags(guide.getTagsJson()),
-            guide.getGenerationError(),
-            guide.getPublishedAt(),
-            guide.getCreatedAt()
-        );
-    }
-
     private MessageEntity resolveRootMessage(
         GuideEntity guide,
         List<GuideSourceMessageEntity> sourceMsgs,
@@ -254,7 +451,7 @@ public class GuideService {
             .map(GuideSourceMessageEntity::getMessageId)
             .map(messageMap::get)
             .filter(Objects::nonNull)
-            .min((left, right) -> compareMessages(left, right))
+            .min(this::compareMessages)
             .orElse(null);
     }
 
@@ -263,9 +460,7 @@ public class GuideService {
         GuideSourceMessageEntity right,
         Map<Long, MessageEntity> messageMap
     ) {
-        MessageEntity leftMessage = messageMap.get(left.getMessageId());
-        MessageEntity rightMessage = messageMap.get(right.getMessageId());
-        return compareMessages(leftMessage, rightMessage);
+        return compareMessages(messageMap.get(left.getMessageId()), messageMap.get(right.getMessageId()));
     }
 
     private int compareMessages(MessageEntity left, MessageEntity right) {
@@ -322,5 +517,29 @@ public class GuideService {
         } catch (Exception ignored) {
             return List.of();
         }
+    }
+
+    private String writeJson(Object value) {
+        try {
+            return objectMapper.writeValueAsString(value);
+        } catch (Exception exception) {
+            throw new IllegalStateException("Failed to serialize guide metadata", exception);
+        }
+    }
+
+    private String displayGuideTitle(GuideEntity guide) {
+        return displayGuideTitle(guide != null ? guide.getTitle() : null);
+    }
+
+    private String displayGuideTitle(String title) {
+        if (title == null || title.isBlank()) {
+            return "Untitled Guide";
+        }
+        String trimmed = title.trim();
+        if ((trimmed.startsWith("{") && trimmed.endsWith("}"))
+            || (trimmed.startsWith("[") && trimmed.endsWith("]"))) {
+            return "Untitled Guide";
+        }
+        return trimmed;
     }
 }

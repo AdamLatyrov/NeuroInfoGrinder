@@ -23,6 +23,9 @@ public class MessageEntity extends BaseEntity {
     @Column(length = 128)
     private String senderName;
 
+    @Column(length = 128)
+    private String senderUsername;
+
     private Long senderTelegramUserId;
 
     @Column(nullable = false)
@@ -30,6 +33,9 @@ public class MessageEntity extends BaseEntity {
 
     @Column(columnDefinition = "TEXT")
     private String text;
+
+    @Column(columnDefinition = "TEXT")
+    private String textEntitiesJson;
 
     private Long replyToMessageId;
 

@@ -8,5 +8,6 @@ public record GuideContent(
     String contentMarkdown,
     double confidence,
     List<String> tags,
-    String generationError
+    String generationError,
+    String rawResponse
 ) {}

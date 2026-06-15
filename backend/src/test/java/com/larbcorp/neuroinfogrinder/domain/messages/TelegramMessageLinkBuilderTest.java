@@ -42,5 +42,8 @@ class TelegramMessageLinkBuilderTest {
         message.setTelegramMessageId(789L);
 
         assertThat(TelegramMessageLinkBuilder.build(group, message)).isNull();
+        TelegramMessageLink link = TelegramMessageLinkBuilder.buildLink(group, message);
+        assertThat(link.available()).isFalse();
+        assertThat(link.reason()).isNotBlank();
     }
 }
