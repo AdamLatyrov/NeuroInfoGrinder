@@ -1,4 +1,4 @@
-FROM maven:3.9.11-eclipse-temurin-17 AS build
+FROM maven:3.9.11-eclipse-temurin-17-noble AS build
 WORKDIR /workspace
 
 COPY pom.xml .
@@ -7,7 +7,7 @@ RUN mvn -q -DskipTests dependency:go-offline
 COPY src ./src
 RUN mvn -q -DskipTests package
 
-FROM eclipse-temurin:17-jre-jammy
+FROM eclipse-temurin:17-jre-noble
 ARG TDLIB_RELEASE_URL=https://github.com/all4fun/build-tdlib/releases/download/v1.2.1/tdlib-v1.2.1-linux-amd64.tar.gz
 
 RUN apt-get update \
