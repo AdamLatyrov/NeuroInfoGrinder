@@ -7,34 +7,8 @@ RUN mvn -q -DskipTests dependency:go-offline
 COPY src ./src
 RUN mvn -q -DskipTests package
 
-FROM ubuntu:24.04 AS tdlib-build
-ARG TDLIB_GIT_REPOSITORY=https://github.com/tdlib/td.git
-ARG TDLIB_GIT_COMMIT=e0943d068ce90b5010f1aea946e6901e25b43bf6
-
-RUN apt-get update \
-    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-        ca-certificates \
-        cmake \
-        g++ \
-        git \
-        gperf \
-        make \
-        openjdk-17-jdk-headless \
-        php-cli \
-        zlib1g-dev \
-        libssl-dev \
-    && rm -rf /var/lib/apt/lists/*
-
-WORKDIR /tmp/tdlib-src
-
-RUN git init \
-    && git remote add origin "${TDLIB_GIT_REPOSITORY}" \
-    && git fetch --depth 1 origin "${TDLIB_GIT_COMMIT}" \
-    && git checkout --detach FETCH_HEAD \
-    && cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DTD_ENABLE_JNI=ON -DCMAKE_INSTALL_PREFIX=/opt/tdlib-install \
-    && cmake --build build --target install -j2
-
 FROM eclipse-temurin:17-jre-noble
+ARG TDLIB_RELEASE_URL=https://github.com/all4fun/build-tdlib/releases/download/v1.2.1/tdlib-v1.2.1-linux-amd64.tar.gz
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends ca-certificates curl libssl3 zlib1g libstdc++6 \
@@ -42,8 +16,11 @@ RUN apt-get update \
 
 WORKDIR /app
 
-RUN mkdir -p /opt/tdlib
-COPY --from=tdlib-build /opt/tdlib-install/bin/libtdjni.so /opt/tdlib/libtdjni.so
+RUN mkdir -p /opt/tdlib /tmp/tdlib-download \
+    && curl -fsSL "${TDLIB_RELEASE_URL}" -o /tmp/tdlib-download/tdlib.tar.gz \
+    && tar -xzf /tmp/tdlib-download/tdlib.tar.gz -C /tmp/tdlib-download \
+    && cp /tmp/tdlib-download/tdlib/bin/libtdjni.so /opt/tdlib/libtdjni.so \
+    && rm -rf /tmp/tdlib-download
 
 COPY --from=build /workspace/target/*.jar /app/app.jar
 
