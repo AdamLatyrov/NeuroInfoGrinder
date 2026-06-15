@@ -19,6 +19,7 @@ RUN apt-get update \
         git \
         gperf \
         make \
+        openjdk-17-jdk-headless \
         php-cli \
         zlib1g-dev \
         libssl-dev \
