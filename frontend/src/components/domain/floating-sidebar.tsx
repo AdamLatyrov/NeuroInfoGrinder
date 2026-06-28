@@ -1,15 +1,15 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import {
   IconBook2,
-  IconChartHistogram,
+  IconBraces,
   IconDeviceMobileFilled,
-  IconFileText,
+  IconHeartbeat,
   IconMenu2,
-  IconScaleFilled,
+  IconMoonFilled,
+  IconRoute,
   IconSettingsFilled,
   IconSparklesFilled,
   IconSunFilled,
-  IconMoonFilled,
   IconUsersGroup,
 } from "@tabler/icons-react";
 import { useTheme } from "@/app/theme";
@@ -17,19 +17,8 @@ import { clearToken, useCurrentUser } from "@/shared/api/authApi";
 import { useProvidersQuery } from "@/shared/api/providersApi";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface NavItem {
   to: string;
@@ -41,6 +30,7 @@ export const navGroups: { label: string; items: NavItem[] }[] = [
   {
     label: "Telegram",
     items: [
+      { to: "/operator", icon: IconHeartbeat, label: "Оператор" },
       { to: "/accounts", icon: IconDeviceMobileFilled, label: "Аккаунты" },
       { to: "/groups", icon: IconUsersGroup, label: "Группы" },
     ],
@@ -48,31 +38,54 @@ export const navGroups: { label: string; items: NavItem[] }[] = [
   {
     label: "Обработка",
     items: [
-      { to: "/pipeline", icon: IconChartHistogram, label: "Конвейер" },
-      { to: "/guides", icon: IconBook2, label: "Гайды" },
-      { to: "/classifiers", icon: IconScaleFilled, label: "Классификаторы" },
+      { to: "/pipeline", icon: IconRoute, label: "Конвейер сообщений" },
+      { to: "/materials", icon: IconBook2, label: "Материалы" },
     ],
   },
   {
     label: "AI",
     items: [
-      { to: "/ai", icon: IconSparklesFilled, label: "AI провайдеры" },
-      { to: "/prompts", icon: IconFileText, label: "Промпты" },
+      { to: "/ai", icon: IconSparklesFilled, label: "AI-провайдеры" },
+      { to: "/prompts", icon: IconBraces, label: "Промпты" },
     ],
   },
   {
     label: "Система",
-    items: [
-      { to: "/settings", icon: IconSettingsFilled, label: "Настройки" },
-    ],
+    items: [{ to: "/settings", icon: IconSettingsFilled, label: "Настройки" }],
   },
 ];
 
-function navClassName({ isActive }: { isActive: boolean }) {
+export function isNavItemActive(pathname: string, to: string) {
+  if (to === "/dashboard") {
+    return pathname === "/" || pathname === "/dashboard";
+  }
+
+  if (to === "/pipeline") {
+    return pathname === "/pipeline"
+      || pathname.startsWith("/pipeline/stages/")
+      || pathname.startsWith("/pipeline/messages/")
+      || pathname.startsWith("/pipeline/clusters/");
+  }
+
+  if (to === "/materials") {
+    return pathname === "/materials"
+      || pathname.startsWith("/materials/")
+      || pathname === "/guides"
+      || pathname.startsWith("/guides/");
+  }
+
+  if (to === "/ai") {
+    return pathname === "/ai" || pathname.startsWith("/ai/") || pathname.startsWith("/ai-providers");
+  }
+
+  return pathname === to || pathname.startsWith(`${to}/`);
+}
+
+function navClassName(isActive: boolean) {
   return cn(
-    "grid h-12 w-12 place-items-center rounded-[18px] transition-all duration-150",
+    "sidebar-nav-link grid h-12 w-12 place-items-center rounded-[18px] transition-all duration-150",
     isActive
-      ? "bg-sidebar-active-bg text-brand-blue shadow-[inset_0_0_0_1px_rgba(106,166,255,0.22),0_10px_24px_rgba(41,95,190,0.16)]"
+      ? "bg-brand-yellow text-[var(--color-button-primary-text)] shadow-[inset_0_0_0_1px_rgba(139,99,12,0.16),0_10px_24px_rgba(185,133,23,0.22)]"
       : "bg-bg-elevated text-text-muted hover:bg-brand-blue-soft hover:text-text-strong"
   );
 }
@@ -85,16 +98,9 @@ export function ThemeToggleButton({ className }: { className?: string }) {
       type="button"
       variant="outline"
       size="icon"
-      className={cn(
-        "rounded-2xl border-sidebar-border bg-bg-card text-text-strong",
-        className
-      )}
+      className={cn("rounded-2xl border-sidebar-border bg-bg-card text-text-strong", className)}
       onClick={toggleTheme}
-      title={
-        theme === "dark"
-          ? "Переключить на светлую тему"
-          : "Переключить на тёмную тему"
-      }
+      title={theme === "dark" ? "Переключить на светлую тему" : "Переключить на тёмную тему"}
     >
       {theme === "dark" ? <IconSunFilled size={16} /> : <IconMoonFilled size={16} />}
     </Button>
@@ -102,6 +108,7 @@ export function ThemeToggleButton({ className }: { className?: string }) {
 }
 
 function SidebarNavContent({ onNavigate }: { onNavigate?: () => void }) {
+  const location = useLocation();
   const currentUserQuery = useCurrentUser();
   const providersQuery = useProvidersQuery();
   const username = currentUserQuery.data?.username ?? "Admin";
@@ -117,16 +124,17 @@ function SidebarNavContent({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <TooltipProvider delayDuration={200}>
       <div className="flex h-full w-full flex-col items-center">
-        <nav className="flex flex-1 flex-col items-center gap-3 overflow-y-auto pt-1">
+        <nav className="flex flex-1 flex-col items-center gap-4 overflow-y-auto pt-1">
           {navGroups.map((group) => (
-            <div key={group.label} className="flex flex-col items-center gap-2">
+            <div key={group.label} className="flex flex-col items-center gap-4">
               {group.items.map((item) => (
                 <Tooltip key={item.to}>
                   <TooltipTrigger asChild>
                     <NavLink
                       to={item.to}
                       end={item.to === "/dashboard"}
-                      className={navClassName}
+                      className={({ isActive }) => navClassName(isActive || isNavItemActive(location.pathname, item.to))}
+                      data-active={isNavItemActive(location.pathname, item.to) ? "true" : "false"}
                       onClick={onNavigate}
                     >
                       <span className="relative grid h-full w-full place-items-center">
@@ -196,10 +204,7 @@ export function MobileSidebar() {
           <IconMenu2 size={18} stroke={2} />
         </Button>
       </SheetTrigger>
-      <SheetContent
-        side="left"
-        className="w-[292px] border-sidebar-border bg-sidebar-bg p-4"
-      >
+      <SheetContent side="left" className="w-[292px] border-sidebar-border bg-sidebar-bg p-4">
         <SheetHeader className="sr-only">
           <SheetTitle>Навигация</SheetTitle>
         </SheetHeader>

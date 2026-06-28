@@ -1,16 +1,18 @@
 import { Outlet, useLocation } from "react-router-dom";
 import { CommandPalette } from "@/components/domain/command-palette";
-import { FloatingSidebar, MobileSidebar, ThemeToggleButton, navGroups } from "@/components/domain/floating-sidebar";
+import {
+  FloatingSidebar,
+  isNavItemActive,
+  MobileSidebar,
+  ThemeToggleButton,
+  navGroups,
+} from "@/components/domain/floating-sidebar";
 
 export function AppShell() {
   const location = useLocation();
   const currentItem = navGroups
     .flatMap((group) => group.items)
-    .find((item) =>
-      item.to === "/dashboard"
-        ? location.pathname === "/" || location.pathname === "/dashboard"
-        : location.pathname.startsWith(item.to)
-    );
+    .find((item) => isNavItemActive(location.pathname, item.to));
 
   return (
     <div className="min-h-screen bg-bg-app">
@@ -23,7 +25,7 @@ export function AppShell() {
             <MobileSidebar />
             <div className="min-w-0">
               <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-text-weak">Neuro InfoGrinder</div>
-              <div className="truncate text-sm font-semibold text-text-strong">{currentItem?.label ?? "Workspace"}</div>
+              <div className="truncate text-sm font-semibold text-text-strong">{currentItem?.label ?? "Рабочая область"}</div>
             </div>
           </div>
           <ThemeToggleButton className="shrink-0" />
