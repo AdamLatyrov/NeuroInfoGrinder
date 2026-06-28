@@ -20,72 +20,58 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
-interface NavItem {
+export interface NavItem {
   to: string;
   icon: React.ElementType;
   label: string;
+  activePaths: string[];
 }
 
 export const navGroups: { label: string; items: NavItem[] }[] = [
   {
     label: "Telegram",
     items: [
-      { to: "/operator", icon: IconHeartbeat, label: "Оператор" },
-      { to: "/accounts", icon: IconDeviceMobileFilled, label: "Аккаунты" },
-      { to: "/groups", icon: IconUsersGroup, label: "Группы" },
+      { to: "/operator", icon: IconHeartbeat, label: "Оператор", activePaths: ["/", "/dashboard", "/operator"] },
+      { to: "/accounts", icon: IconDeviceMobileFilled, label: "Аккаунты", activePaths: ["/accounts"] },
+      { to: "/groups", icon: IconUsersGroup, label: "Группы", activePaths: ["/groups", "/messages", "/chat-viewer"] },
     ],
   },
   {
     label: "Обработка",
     items: [
-      { to: "/pipeline", icon: IconRoute, label: "Конвейер сообщений" },
-      { to: "/materials", icon: IconBook2, label: "Материалы" },
+      { to: "/pipeline", icon: IconRoute, label: "Конвейер сообщений", activePaths: ["/pipeline"] },
+      { to: "/materials", icon: IconBook2, label: "Материалы", activePaths: ["/materials", "/guides"] },
     ],
   },
   {
     label: "AI",
     items: [
-      { to: "/ai", icon: IconSparklesFilled, label: "AI-провайдеры" },
-      { to: "/prompts", icon: IconBraces, label: "Промпты" },
+      { to: "/ai", icon: IconSparklesFilled, label: "AI-провайдеры", activePaths: ["/ai", "/providers", "/ai-providers", "/fronts"] },
+      { to: "/prompts", icon: IconBraces, label: "Промпты", activePaths: ["/prompts"] },
     ],
   },
   {
     label: "Система",
-    items: [{ to: "/settings", icon: IconSettingsFilled, label: "Настройки" }],
+    items: [{ to: "/settings", icon: IconSettingsFilled, label: "Настройки", activePaths: ["/settings"] }],
   },
 ];
 
-export function isNavItemActive(pathname: string, to: string) {
-  if (to === "/dashboard") {
-    return pathname === "/" || pathname === "/dashboard";
-  }
+export function getActiveNavItem(pathname: string) {
+  return navGroups
+    .flatMap((group) => group.items)
+    .find((item) => item.activePaths.some((path) => matchesNavPath(pathname, path)));
+}
 
-  if (to === "/pipeline") {
-    return pathname === "/pipeline"
-      || pathname.startsWith("/pipeline/stages/")
-      || pathname.startsWith("/pipeline/messages/")
-      || pathname.startsWith("/pipeline/clusters/");
-  }
-
-  if (to === "/materials") {
-    return pathname === "/materials"
-      || pathname.startsWith("/materials/")
-      || pathname === "/guides"
-      || pathname.startsWith("/guides/");
-  }
-
-  if (to === "/ai") {
-    return pathname === "/ai" || pathname.startsWith("/ai/") || pathname.startsWith("/ai-providers");
-  }
-
-  return pathname === to || pathname.startsWith(`${to}/`);
+function matchesNavPath(pathname: string, activePath: string) {
+  if (activePath === "/") return pathname === "/";
+  return pathname === activePath || pathname.startsWith(`${activePath}/`);
 }
 
 function navClassName(isActive: boolean) {
   return cn(
     "sidebar-nav-link grid h-12 w-12 place-items-center rounded-[18px] transition-all duration-150",
     isActive
-      ? "bg-brand-yellow text-[var(--color-button-primary-text)] shadow-[inset_0_0_0_1px_rgba(139,99,12,0.16),0_10px_24px_rgba(185,133,23,0.22)]"
+      ? "bg-[#f1c75b] text-[#1f2430] shadow-[inset_0_0_0_1px_rgba(139,99,12,0.20),0_10px_24px_rgba(185,133,23,0.28)]"
       : "bg-bg-elevated text-text-muted hover:bg-brand-blue-soft hover:text-text-strong"
   );
 }
@@ -111,6 +97,7 @@ function SidebarNavContent({ onNavigate }: { onNavigate?: () => void }) {
   const location = useLocation();
   const currentUserQuery = useCurrentUser();
   const providersQuery = useProvidersQuery();
+  const activeItem = getActiveNavItem(location.pathname);
   const username = currentUserQuery.data?.username ?? "Admin";
   const hasProviderError = (providersQuery.data ?? []).some(
     (provider) => provider.status === "ERROR" || !!provider.lastError
@@ -127,14 +114,16 @@ function SidebarNavContent({ onNavigate }: { onNavigate?: () => void }) {
         <nav className="flex flex-1 flex-col items-center gap-4 overflow-y-auto pt-1">
           {navGroups.map((group) => (
             <div key={group.label} className="flex flex-col items-center gap-4">
-              {group.items.map((item) => (
-                <Tooltip key={item.to}>
+              {group.items.map((item) => {
+                const isActive = activeItem?.to === item.to;
+
+                return <Tooltip key={item.to}>
                   <TooltipTrigger asChild>
                     <NavLink
                       to={item.to}
-                      end={item.to === "/dashboard"}
-                      className={({ isActive }) => navClassName(isActive || isNavItemActive(location.pathname, item.to))}
-                      data-active={isNavItemActive(location.pathname, item.to) ? "true" : "false"}
+                      className={navClassName(isActive)}
+                      data-active={isActive ? "true" : "false"}
+                      aria-current={isActive ? "page" : undefined}
                       onClick={onNavigate}
                     >
                       <span className="relative grid h-full w-full place-items-center">
@@ -152,8 +141,8 @@ function SidebarNavContent({ onNavigate }: { onNavigate?: () => void }) {
                   <TooltipContent side="right" sideOffset={10}>
                     {item.label}
                   </TooltipContent>
-                </Tooltip>
-              ))}
+                </Tooltip>;
+              })}
             </div>
           ))}
         </nav>

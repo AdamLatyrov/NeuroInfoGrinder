@@ -2,17 +2,14 @@ import { Outlet, useLocation } from "react-router-dom";
 import { CommandPalette } from "@/components/domain/command-palette";
 import {
   FloatingSidebar,
-  isNavItemActive,
+  getActiveNavItem,
   MobileSidebar,
   ThemeToggleButton,
-  navGroups,
 } from "@/components/domain/floating-sidebar";
 
 export function AppShell() {
   const location = useLocation();
-  const currentItem = navGroups
-    .flatMap((group) => group.items)
-    .find((item) => isNavItemActive(location.pathname, item.to));
+  const currentItem = getActiveNavItem(location.pathname);
 
   return (
     <div className="min-h-screen bg-bg-app">
