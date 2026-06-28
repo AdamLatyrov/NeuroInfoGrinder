@@ -1,843 +1,767 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  ArrowSquareOut,
-  ArrowsClockwise,
-  BookOpen,
+  ArrowClockwise,
+  ArrowRight,
   CaretDown,
-  CaretUp,
-  CheckCircle,
-  Clock,
-  Pause,
-  Play,
-  SpinnerGap,
+  ChartLineUp,
+  FolderOpen,
+  FunnelSimple,
+  Info,
+  TelegramLogo,
   WarningCircle,
-  XCircle,
 } from "@phosphor-icons/react";
-import { PageHeaderCard } from "@/components/domain/page-header-card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import {
   type PipelineResultItem,
-  usePausePipelineMutation,
-  useRequeueMessageMutation,
+  type PipelineStageSummary,
+  usePipelineLiveStagesQuery,
+  usePipelineLiveSummaryQuery,
   usePipelineResultsQuery,
-  usePipelineStatusQuery,
-  useResumePipelineMutation,
 } from "@/shared/api/pipelineApi";
-import { usePipelineEvents } from "@/shared/api/pipelineEvents";
-import { useMessageTraceQuery } from "@/shared/api/tracesApi";
-import { tryParseJson, type PipelineTrace } from "@/shared/types";
+import { queryClient } from "@/shared/api/queryClient";
 
-const STAGE_LABELS: Record<string, string> = {
-  TELEGRAM_READ: "Чтение Telegram",
-  RULES: "Правила",
-  SIGNAL_SCORING: "Оценка полезности",
-  CHAIN_BUILDING: "Сбор контекста",
-  CLASSIFICATION: "Классификация",
-  CLASSIFIER: "Классификатор",
-  LLM_CLASSIFIER: "LLM-классификатор",
-  GUIDE_GENERATION: "Создание гайда",
-  MODERATION: "Модерация",
-};
+type Tone = "blue" | "cyan" | "green" | "yellow" | "orange" | "purple" | "teal" | "red" | "gray";
+type StatTone = "passed" | "accepted" | "rejected" | "pending" | "failed" | "skipped" | "candidate";
 
-const STATUS_LABELS: Record<string, string> = {
-  UNPROCESSED: "Ожидает",
-  QUEUED: "В очереди",
-  PROCESSING: "Обрабатывается",
-  CLASSIFIED: "Классифицировано",
-  SKIPPED: "Отсеяно",
-  GUIDE_FOUND: "С гайдом",
-  PASSED: "Пройдено",
-  COMPLETED: "Завершено",
-  SUCCESS: "Успешно",
-  REJECTED: "Отклонено",
-  FAILED: "Ошибка",
-};
-
-const KEY_LABELS: Record<string, string> = {
-  score: "Оценка",
-  matched: "Совпадение",
-  reasoning: "Обоснование",
-  reason: "Причина",
-  totalScore: "Итоговая оценка",
-  threshold: "Порог",
-  length: "Длина",
-  replies: "Ответы",
-  aiKeywords: "AI-ключи",
-  guideKeywords: "Guide-ключи",
-  title: "Заголовок",
-  confidence: "Уверенность",
-  classifierType: "Тип классификатора",
-  classifierName: "Классификатор",
-  chainSize: "Размер цепочки",
-  providerId: "Провайдер",
-  model: "Модель",
-  checks: "Проверки",
-  passes: "Прошло",
-  ruleName: "Правило",
-  actionType: "Действие",
-  detail: "Деталь",
-  status: "Статус",
-};
-
-type PipelineView = "ALL" | "GUIDE_FOUND" | "CLASSIFIED" | "SKIPPED";
-type TimePreset = "all" | "live" | "5m" | "15m" | "1h" | "custom";
-
-function toDateTimeLocal(date: Date | null) {
-  if (!date) return "";
-  const offsetMs = date.getTimezoneOffset() * 60_000;
-  return new Date(date.getTime() - offsetMs).toISOString().slice(0, 16);
+interface StageStat {
+  label: string;
+  value: number;
+  tone: StatTone;
 }
 
-function presetDate(preset: TimePreset) {
-  const now = new Date();
-  if (preset === "all") return null;
-  if (preset === "5m") return new Date(now.getTime() - 5 * 60_000);
-  if (preset === "15m") return new Date(now.getTime() - 15 * 60_000);
-  if (preset === "1h") return new Date(now.getTime() - 60 * 60_000);
-  return now;
+interface ConveyorStage {
+  id: string;
+  n: number;
+  title: string;
+  input: number;
+  value: number;
+  pct: number;
+  tone: Tone;
+  selected: boolean;
+  stats: StageStat[];
 }
 
-function localToIso(value: string) {
-  return value ? new Date(value).toISOString() : undefined;
+interface TableRow {
+  rawId: number;
+  chat: string;
+  preview: string;
+  accepted: boolean;
+  reason: string;
+  score: number | null;
+  materialId: number | null;
 }
 
-function formatDate(value?: string | null) {
-  return value ? new Date(value).toLocaleString("ru-RU") : "—";
-}
-
-function formatDuration(value: number | null) {
-  if (value == null) return "—";
-  return value < 1000 ? `${value} мс` : `${(value / 1000).toFixed(1)} с`;
-}
-
-function formatNumber(value: number | null | undefined, fractionDigits = 3) {
-  if (value == null) return "—";
-  return Number.isInteger(value) ? String(value) : value.toFixed(fractionDigits);
-}
-
-function statusVariant(status: string): "success" | "danger" | "warning" | "outline" {
-  if (["GUIDE_FOUND", "CLASSIFIED", "PASSED", "COMPLETED", "SUCCESS"].includes(status)) return "success";
-  if (["SKIPPED", "REJECTED", "FAILED"].includes(status)) return "danger";
-  if (["UNPROCESSED", "QUEUED", "PROCESSING"].includes(status)) return "warning";
-  return "outline";
-}
-
-function keyLabel(key: string) {
-  return KEY_LABELS[key] ?? key;
-}
-
-function humanValue(value: unknown): string {
-  if (value == null) return "—";
-  if (typeof value === "boolean") return value ? "да" : "нет";
-  if (typeof value === "number") return Number.isInteger(value) ? String(value) : value.toFixed(3);
-  if (typeof value === "string") return value;
-  return JSON.stringify(value, null, 2);
-}
-
-function parsePipeData(value: string) {
-  return Object.fromEntries(
-    value
-      .split("|")
-      .map((part) => part.trim())
-      .filter(Boolean)
-      .map((part) => {
-        const index = part.indexOf("=");
-        if (index < 0) return [part, true];
-        return [part.slice(0, index).trim(), part.slice(index + 1).trim()];
-      }),
-  );
-}
-
-function normalizeData(value: string | null) {
-  if (!value) return null;
-  return tryParseJson<unknown>(value) ?? parsePipeData(value);
-}
-
-function classifierSummary(value: string | null) {
-  const parsed = tryParseJson<{
-    score?: number;
-    labels?: string[];
-    guideCandidate?: boolean;
-    guide_candidate?: boolean;
-    evidenceMessageIds?: number[];
-    evidence_message_ids?: number[];
-    reasoning?: string;
-  }>(value);
-  if (!parsed) return null;
-  return {
-    score: parsed.score ?? null,
-    labels: parsed.labels ?? [],
-    guideCandidate: parsed.guideCandidate ?? parsed.guide_candidate ?? false,
-    evidenceMessageIds: parsed.evidenceMessageIds ?? parsed.evidence_message_ids ?? [],
-    reasoning: parsed.reasoning ?? "",
-  };
-}
-
-function classifierMessages(
-  message: PipelineResultItem,
-  classifierInfo: ReturnType<typeof classifierSummary>,
-) {
-  if (!classifierInfo) return [];
-
-  const labels = new Set(classifierInfo.labels);
-  const hints: string[] = [];
-
-  if (message.status === "CLASSIFIED" && classifierInfo.guideCandidate === false) {
-    hints.push(
-      "Это полезный сигнал, но не гайд: не хватает ответа, инструкции, ссылки, цены, способа или подтверждения.",
-    );
-  }
-
-  if (message.status === "CLASSIFIED" && classifierInfo.guideCandidate && !message.guideId) {
-    hints.push("Кандидат в гайд.");
-  }
-
-  if (labels.has("DEMAND_SIGNAL") && !labels.has("SOLUTION_MENTION")) {
-    hints.push("Есть спрос/вопрос, но нет решения.");
-  }
-
-  if (labels.has("SPAM_OR_AD")) {
-    hints.push("Оффер/реклама: сохранено как источник, не как гайд.");
-  }
-
-  return hints;
-}
-
-
-type TraceRun = {
-  traceId: string;
-  traces: PipelineTrace[];
-  startedAt: string | null;
-};
-
-function groupTraceRuns(traces: PipelineTrace[]): TraceRun[] {
-  const grouped = new Map<string, PipelineTrace[]>();
-  traces.forEach((trace) => {
-    const key = trace.traceId || trace.id;
-    const bucket = grouped.get(key) ?? [];
-    bucket.push(trace);
-    grouped.set(key, bucket);
-  });
-
-  return Array.from(grouped.entries())
-    .map(([traceId, items]) => ({
-      traceId,
-      traces: items,
-      startedAt: items[0]?.startedAt ?? null,
-    }))
-    .sort((left, right) => new Date(left.startedAt ?? 0).getTime() - new Date(right.startedAt ?? 0).getTime());
-}
-
-function statusCallout(message: PipelineResultItem, classifierInfo: ReturnType<typeof classifierSummary>) {
-  if (message.status === "CLASSIFIED") {
-    if (classifierInfo?.guideCandidate && !message.guideId) {
-      return "Кандидат в гайд";
-    }
-    return "Полезный сигнал";
-  }
-  if (message.status === "GUIDE_FOUND") {
-    return "Гайд";
-  }
-  if (message.status === "SKIPPED") {
-    return "Отсеяно";
-  }
-  return STATUS_LABELS[message.status] ?? message.status;
-}
-
-function DataValue({ value }: { value: unknown }) {
-  if (value == null) {
-    return <div className="text-sm text-text-muted">—</div>;
-  }
-
-  if (Array.isArray(value)) {
-    if (value.length === 0) {
-      return <div className="text-sm text-text-muted">Пусто</div>;
-    }
-
-    const objectArray = value.every((item) => item && typeof item === "object" && !Array.isArray(item));
-    if (objectArray) {
-      return (
-        <div className="grid gap-2">
-          {value.map((item, index) => (
-            <div key={index} className="rounded-lg border border-border-subtle bg-bg-card px-3 py-3">
-              <div className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-text-weak">
-                Запись {index + 1}
-              </div>
-              <div className="grid gap-2 sm:grid-cols-2">
-                {Object.entries(item as Record<string, unknown>).map(([itemKey, itemValue]) => (
-                  <div key={itemKey} className="rounded-md bg-bg-app px-3 py-2">
-                    <div className="text-[11px] text-text-weak">{keyLabel(itemKey)}</div>
-                    <div className="mt-1 whitespace-pre-wrap break-words text-xs font-medium text-text-strong">
-                      {humanValue(itemValue)}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      );
-    }
-
-    return (
-      <div className="flex flex-wrap gap-2">
-        {value.map((item, index) => (
-          <div key={index} className="rounded-full bg-bg-card px-3 py-1 text-xs font-medium text-text-strong">
-            {humanValue(item)}
-          </div>
-        ))}
-      </div>
-    );
-  }
-
-  if (typeof value === "object") {
-    const entries = Object.entries(value as Record<string, unknown>);
-    return (
-      <div className="grid gap-2 sm:grid-cols-2">
-        {entries.map(([entryKey, entryValue]) => (
-          <div key={entryKey} className="rounded-lg bg-bg-card px-3 py-3">
-            <div className="text-[11px] text-text-weak">{keyLabel(entryKey)}</div>
-            {typeof entryValue === "object" && entryValue !== null ? (
-              <div className="mt-2">
-                <DataValue value={entryValue} />
-              </div>
-            ) : (
-              <div className="mt-1 whitespace-pre-wrap break-words text-xs font-medium text-text-strong">
-                {humanValue(entryValue)}
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-    );
-  }
-
-  return <pre className="whitespace-pre-wrap break-words font-sans text-sm text-text-strong">{humanValue(value)}</pre>;
-}
-
-function TraceDataCard({ title, data }: { title: string; data: string | null }) {
-  if (!data) return null;
-
-  return (
-    <div className="rounded-2xl border border-border-subtle bg-bg-card p-4">
-      <div className="mb-3 text-xs font-semibold uppercase tracking-wide text-text-weak">{title}</div>
-      <DataValue value={normalizeData(data) ?? data} />
-    </div>
-  );
-}
-
-function TraceSummary({ trace }: { trace: PipelineTrace }) {
-  const summaryItems = [
-    trace.score != null ? { label: "Оценка", value: formatNumber(trace.score) } : null,
-    trace.confidence != null ? { label: "Уверенность", value: formatNumber(trace.confidence) } : null,
-    trace.providerId ? { label: "Провайдер", value: trace.providerId } : null,
-    trace.model ? { label: "Модель", value: trace.model } : null,
-    trace.inputTokens ? { label: "Input tokens", value: String(trace.inputTokens) } : null,
-    trace.outputTokens ? { label: "Output tokens", value: String(trace.outputTokens) } : null,
-    trace.costUsd ? { label: "Стоимость", value: `$${trace.costUsd.toFixed(4)}` } : null,
-  ].filter(Boolean) as Array<{ label: string; value: string }>;
-
-  if (summaryItems.length === 0) {
-    return null;
-  }
-
-  return (
-    <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-      {summaryItems.map((item) => (
-        <div key={item.label} className="rounded-lg bg-bg-card px-3 py-2">
-          <div className="text-[11px] text-text-weak">{item.label}</div>
-          <div className="mt-1 text-sm font-medium text-text-strong">{item.value}</div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function TraceStep({ trace, index, total }: { trace: PipelineTrace; index: number; total: number }) {
-  const [showData, setShowData] = useState(index === total - 1);
-  const success = ["PASSED", "COMPLETED", "SUCCESS"].includes(trace.status);
-  const hasDetails = Boolean(trace.inputData || trace.outputData);
-  const Icon = success ? CheckCircle : trace.status === "PENDING" ? WarningCircle : XCircle;
-
-  return (
-    <div className="relative grid grid-cols-[28px_minmax(0,1fr)] gap-3 pb-5 last:pb-0">
-      <div className="relative flex justify-center">
-        {index < total - 1 && <div className="absolute bottom-[-20px] top-6 w-px bg-border-subtle" />}
-        <Icon
-          size={20}
-          weight="fill"
-          className={cn("relative z-10 bg-bg-card", {
-            "text-success": success,
-            "text-warning": trace.status === "PENDING",
-            "text-danger": !success && trace.status !== "PENDING",
-          })}
-        />
-      </div>
-
-      <div className="min-w-0 rounded-2xl border border-border-subtle bg-bg-app p-4">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-sm font-semibold text-text-strong">{STAGE_LABELS[trace.stage] ?? trace.stage}</span>
-          <Badge variant={statusVariant(trace.status)}>{STATUS_LABELS[trace.status] ?? trace.status}</Badge>
-          <span className="text-xs text-text-muted">{formatDuration(trace.durationMs)}</span>
-          {trace.startedAt && <span className="text-xs text-text-muted">{formatDate(trace.startedAt)}</span>}
-        </div>
-
-        <p
-          className={cn("mt-3 whitespace-pre-wrap break-words text-sm", {
-            "text-text-muted": success,
-            "text-warning": trace.status === "PENDING",
-            "font-medium text-danger": !success && trace.status !== "PENDING",
-          })}
-        >
-          {trace.errorMessage || trace.reason || "Этап завершен без пояснения."}
-        </p>
-
-        <div className="mt-3">
-          <TraceSummary trace={trace} />
-        </div>
-
-        {hasDetails && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="mt-3 h-7 px-0 text-xs"
-            onClick={() => setShowData((value) => !value)}
-          >
-            {showData ? <CaretUp size={14} /> : <CaretDown size={14} />}
-            {showData ? "Скрыть детали" : "Показать детали"}
-          </Button>
-        )}
-
-        {showData && (
-          <div className="mt-4 grid gap-3">
-            <TraceDataCard title="Что проверяли" data={trace.inputData} />
-            <TraceDataCard title="Что получилось" data={trace.outputData} />
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function ResultRow({
-  message,
-  expanded,
-  onToggle,
-}: {
-  message: PipelineResultItem;
-  expanded: boolean;
-  onToggle: () => void;
-}) {
-  const navigate = useNavigate();
-  const requeueMessage = useRequeueMessageMutation();
-  const [showHistory, setShowHistory] = useState(false);
-  const traceQuery = useMessageTraceQuery(expanded ? String(message.id) : undefined);
-  const traces = traceQuery.data ?? [];
-  const traceRuns = groupTraceRuns(traces);
-  const latestRun = traceRuns[traceRuns.length - 1] ?? null;
-  const classifierInfo = classifierSummary(message.classifierResultJson);
-  const callout = statusCallout(message, classifierInfo);
-  const hints = classifierMessages(message, classifierInfo);
-  const displayScore = classifierInfo?.score ?? message.classifierScore ?? message.signalScore;
-
-  return (
-    <div className="border-b border-border-subtle last:border-0">
-      <div className="flex items-start gap-3 px-4 py-4">
-        <button type="button" className="min-w-0 flex-1 text-left" onClick={onToggle}>
-          <div className="flex items-start gap-2">
-            <span className="line-clamp-2 flex-1 text-sm font-medium text-text-strong">
-              {message.text || "Сообщение без текста"}
-            </span>
-            <Badge variant={statusVariant(message.status)}>{STATUS_LABELS[message.status] ?? message.status}</Badge>
-            {callout !== (STATUS_LABELS[message.status] ?? message.status) && <Badge variant="outline">{callout}</Badge>}
-          </div>
-          <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-text-muted">
-            <span>{message.author || "Автор неизвестен"}</span>
-            <span>{formatDate(message.messageDate)}</span>
-            {message.signalScore != null && <span>Полезность {message.signalScore.toFixed(2)}</span>}
-            {message.classifierScore != null && <span>Классификация {message.classifierScore.toFixed(2)}</span>}
-            {displayScore != null && <span>Score {formatNumber(displayScore, 2)}</span>}
-          </div>
-          {message.classifierReason && (
-            <p className="mt-2 line-clamp-2 whitespace-pre-wrap break-words text-xs text-text-weak">
-              {message.classifierReason}
-            </p>
-          )}
-          {classifierInfo && (
-            <div className="mt-2 flex flex-wrap gap-2 text-[11px] text-text-weak">
-              {classifierInfo.labels.length > 0 && <span>Labels: {classifierInfo.labels.join(", ")}</span>}
-              <span>guideCandidate: {classifierInfo.guideCandidate ? "true" : "false"}</span>
-              {classifierInfo.evidenceMessageIds.length > 0 && (
-                <span>Evidence: {classifierInfo.evidenceMessageIds.join(", ")}</span>
-              )}
-            </div>
-          )}
-          {hints.length > 0 && (
-            <div className="mt-3 flex flex-col gap-2">
-              {hints.map((hint) => (
-                <div key={hint} className="rounded-lg border border-border-subtle bg-bg-app px-3 py-2 text-xs text-text-muted">
-                  {hint}
-                </div>
-              ))}
-            </div>
-          )}
-        </button>
-
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8 shrink-0"
-          title="Открыть исходное сообщение"
-          onClick={() => navigate(`/groups?group=${message.groupId}&message=${message.id}`)}
-        >
-          <ArrowSquareOut size={17} />
-        </Button>
-        {message.status === "CLASSIFIED" && (
-          <Button
-            variant="outline"
-            size="sm"
-            className="shrink-0"
-            disabled={requeueMessage.isPending}
-            onClick={(event) => {
-              event.stopPropagation();
-              requeueMessage.mutate(message.id);
-            }}
-          >
-            {requeueMessage.isPending ? "Отправляю..." : "На перепроверку"}
-          </Button>
-        )}
-        <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={onToggle}>
-          {expanded ? <CaretUp size={17} /> : <CaretDown size={17} />}
-        </Button>
-      </div>
-
-      {expanded && (
-        <div className="border-t border-border-subtle bg-bg-card px-4 py-4">
-          {classifierInfo && (
-            <div className="mb-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-              <div className="rounded-lg bg-bg-app px-3 py-3">
-                <div className="text-[11px] text-text-weak">Статус</div>
-                <div className="mt-1 text-xs font-medium text-text-strong">{callout}</div>
-              </div>
-              <div className="rounded-lg bg-bg-app px-3 py-3">
-                <div className="text-[11px] text-text-weak">Score</div>
-                <div className="mt-1 text-xs font-medium text-text-strong">
-                  {displayScore != null ? formatNumber(displayScore, 2) : "—"}
-                </div>
-              </div>
-              <div className="rounded-lg bg-bg-app px-3 py-3">
-                <div className="text-[11px] text-text-weak">Labels</div>
-                <div className="mt-1 text-xs font-medium text-text-strong">
-                  {classifierInfo.labels.length > 0 ? classifierInfo.labels.join(", ") : "—"}
-                </div>
-              </div>
-              <div className="rounded-lg bg-bg-app px-3 py-3">
-                <div className="text-[11px] text-text-weak">Guide candidate</div>
-                <div className="mt-1 text-xs font-medium text-text-strong">
-                  {classifierInfo.guideCandidate ? "true" : "false"}
-                </div>
-              </div>
-              <div className="rounded-lg bg-bg-app px-3 py-3">
-                <div className="text-[11px] text-text-weak">Evidence IDs</div>
-                <div className="mt-1 text-xs font-medium text-text-strong">
-                  {classifierInfo.evidenceMessageIds.length > 0 ? classifierInfo.evidenceMessageIds.join(", ") : "—"}
-                </div>
-              </div>
-              <div className="rounded-lg bg-bg-app px-3 py-3">
-                <div className="text-[11px] text-text-weak">Context hash</div>
-                <div className="mt-1 break-all text-xs font-medium text-text-strong">
-                  {message.classificationContextHash || "—"}
-                </div>
-              </div>
-              {classifierInfo.reasoning && (
-                <div className="rounded-lg bg-bg-app px-3 py-3 sm:col-span-2 xl:col-span-4">
-                  <div className="text-[11px] text-text-weak">Reasoning</div>
-                  <div className="mt-1 whitespace-pre-wrap break-words text-xs font-medium text-text-strong">
-                    {classifierInfo.reasoning}
-                  </div>
-                </div>
-              )}
-              {hints.length > 0 && (
-                <div className="rounded-lg bg-bg-app px-3 py-3 sm:col-span-2 xl:col-span-4">
-                  <div className="text-[11px] text-text-weak">Пояснение</div>
-                  <div className="mt-2 flex flex-col gap-2">
-                    {hints.map((hint) => (
-                      <div key={hint} className="text-xs font-medium text-text-strong">
-                        {hint}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-            <h4 className="text-sm font-semibold text-text-strong">Путь сообщения</h4>
-            <Badge variant="outline">{traces.length} этапов</Badge>
-          </div>
-
-          {traceQuery.isLoading ? (
-            <div className="flex items-center gap-2 py-4 text-sm text-text-muted">
-              <SpinnerGap size={18} className="animate-spin" />
-              Загружаю этапы...
-            </div>
-          ) : traces.length === 0 ? (
-            <p className="py-4 text-sm text-text-muted">Для этого сообщения этапы пока не записаны.</p>
-          ) : (
-            <div className="grid gap-4">
-              {traces.map((trace, index) => (
-                <TraceStep key={trace.id} trace={trace} index={index} total={traces.length} />
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
+const FILTERS = [
+  ["Период", "Сегодня 00:00 - сейчас"],
+  ["Чат", "Все чаты"],
+  ["Этап", "Все этапы"],
+  ["Статус", "Все статусы"],
+  ["Причина отклонения", "Все причины"],
+  ["Провайдер / Модель", "Все провайдеры"],
+] as const;
 
 export function PipelinePage() {
-  const [view, setView] = useState<PipelineView>("ALL");
-  const [expandedMessageId, setExpandedMessageId] = useState<number | null>(null);
-  const [timePreset, setTimePreset] = useState<TimePreset>("all");
-  const [fromLocal, setFromLocal] = useState(() => toDateTimeLocal(presetDate("15m")));
-  const connectionState = usePipelineEvents();
   const navigate = useNavigate();
+  const [selectedStageId, setSelectedStageId] = useState("raw_messages");
+  const summaryQuery = usePipelineLiveSummaryQuery();
+  const stagesQuery = usePipelineLiveStagesQuery();
+  const todayFrom = useMemo(() => startOfTodayIso(), []);
+  const resultsQuery = usePipelineResultsQuery(undefined, 0, 200, todayFrom, true);
 
-  const fromIso = useMemo(() => (timePreset === "all" ? undefined : localToIso(fromLocal)), [fromLocal, timePreset]);
-  const toIso = useMemo(() => (timePreset === "all" ? undefined : new Date().toISOString()), [timePreset]);
+  const conveyorStages = useMemo(
+    () => buildConveyorStages(stagesQuery.data ?? [], summaryQuery.data, selectedStageId),
+    [selectedStageId, stagesQuery.data, summaryQuery.data],
+  );
+  const selectedStage = conveyorStages.find((stage) => stage.id === selectedStageId) ?? conveyorStages[0] ?? null;
+  const tableRows = useMemo(
+    () => buildTableRows(resultsQuery.data?.content ?? [], selectedStageId),
+    [resultsQuery.data?.content, selectedStageId],
+  );
+  const reasonCounts = useMemo(() => topReasons(tableRows), [tableRows]);
+  const summaryCards = useMemo(() => buildSummaryCards(summaryQuery.data), [summaryQuery.data]);
+  const losses = useMemo(() => buildLosses(conveyorStages), [conveyorStages]);
 
-  const pipelineStatusQuery = usePipelineStatusQuery(fromIso, toIso);
-  const pausePipeline = usePausePipelineMutation();
-  const resumePipeline = useResumePipelineMutation();
+  const refresh = () => {
+    queryClient.invalidateQueries({ queryKey: ["pipeline-live-summary"] });
+    queryClient.invalidateQueries({ queryKey: ["pipeline-live-stages"] });
+    queryClient.invalidateQueries({ queryKey: ["pipeline-results"] });
+  };
 
-  const allResultsQuery = usePipelineResultsQuery(undefined, 0, 100, fromIso, view === "ALL");
-  const classifiedQuery = usePipelineResultsQuery("CLASSIFIED", 0, 100, fromIso, view === "CLASSIFIED");
-  const skippedQuery = usePipelineResultsQuery("SKIPPED", 0, 100, fromIso, view === "SKIPPED");
-  const guideQuery = usePipelineResultsQuery("GUIDE_FOUND", 0, 100, fromIso, view === "GUIDE_FOUND");
-
-  const allItems =
-    allResultsQuery.data?.content.filter((message) =>
-      ["CLASSIFIED", "GUIDE_FOUND", "SKIPPED"].includes(message.status),
-    ) ?? [];
-  const classifiedItems = classifiedQuery.data?.content ?? [];
-  const skippedItems = skippedQuery.data?.content ?? [];
-  const guideItems = guideQuery.data?.content ?? [];
-  const pipelineStatus = pipelineStatusQuery.data;
-
-  const currentLoading =
-    view === "ALL"
-      ? allResultsQuery.isLoading
-      : view === "CLASSIFIED"
-        ? classifiedQuery.isLoading
-        : view === "SKIPPED"
-          ? skippedQuery.isLoading
-          : guideQuery.isLoading;
-
-  const currentListLength =
-    view === "ALL"
-      ? allItems.length
-      : view === "CLASSIFIED"
-        ? classifiedItems.length
-        : view === "SKIPPED"
-          ? skippedItems.length
-          : guideItems.length;
-
-  const applyPreset = (preset: TimePreset) => {
-    setTimePreset(preset);
-    if (preset !== "custom" && preset !== "all") {
-      const date = presetDate(preset);
-      if (date) {
-        setFromLocal(toDateTimeLocal(date));
-      }
-    }
+  const openStageDetail = (stageId: string) => {
+    navigate(stageHref(stageId));
   };
 
   return (
-    <div className="flex flex-col gap-5">
-      <PageHeaderCard
-        title="Конвейер"
-        description="Здесь видно, что сейчас в очереди, что было отсеяно и какие сообщения дошли до гайда. Очередь можно останавливать и запускать прямо отсюда."
-      >
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-border-subtle pt-4">
-          <div className="flex items-center gap-2 text-sm text-text-muted">
-            <span
-              className={cn("h-2.5 w-2.5 rounded-full", {
-                "bg-success": connectionState === "connected",
-                "bg-warning": connectionState === "connecting",
-                "bg-danger": connectionState === "disconnected",
-              })}
-            />
-            {connectionState === "connected"
-              ? "События Telegram и конвейера приходят в реальном времени"
-              : connectionState === "connecting"
-                ? "Подключаю realtime..."
-                : "Realtime отключен, данные обновляются резервно"}
-          </div>
+    <div className="relative overflow-hidden rounded-[30px] border border-border-subtle/90 bg-[linear-gradient(180deg,#fffefb_0%,#fffaf2_100%)] p-5 shadow-[0_20px_60px_rgba(69,55,29,0.10)] lg:p-7">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_12%_0%,rgba(255,255,255,0.92),transparent_25%),radial-gradient(circle_at_55%_4%,rgba(240,222,181,0.18),transparent_26%),radial-gradient(circle_at_88%_0%,rgba(255,255,255,0.86),transparent_18%),radial-gradient(circle_at_50%_100%,rgba(243,231,205,0.18),transparent_40%)]" />
 
-          <div className="flex flex-wrap items-center gap-2">
+      <div className="relative">
+        <header className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h1 className="text-[30px] font-extrabold tracking-[-0.04em] text-text-strong lg:text-[34px]">
+              Конвейер сообщений
+            </h1>
+            <p className="mt-1.5 text-[15px] leading-6 text-text-muted">
+              Визуальная воронка прохождения сообщений по этапам
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
             <Button
-              variant="outline"
-              size="sm"
-              className="gap-1.5"
-              onClick={() => pausePipeline.mutate()}
-              disabled={!pipelineStatus?.processorEnabled || pausePipeline.isPending}
+              variant="primary"
+              className="h-10 gap-2 rounded-2xl px-4 shadow-[0_14px_30px_rgba(223,180,69,0.28)]"
+              onClick={refresh}
             >
-              <Pause size={15} />
-              Стоп очереди
+              <ArrowClockwise size={18} weight="bold" />
+              Обновить
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-1.5"
-              onClick={() => resumePipeline.mutate()}
-              disabled={pipelineStatus?.processorEnabled || resumePipeline.isPending}
-            >
-              <Play size={15} />
-              Запустить очередь
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => navigate("/guides")}>
-              <BookOpen size={16} />
-              Смотреть гайды
+            <Button variant="outline" size="icon" className="h-10 w-10 rounded-2xl" aria-label="Обновить" onClick={refresh}>
+              <ArrowClockwise size={17} />
             </Button>
           </div>
-        </div>
-      </PageHeaderCard>
+        </header>
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-        <div className="rounded-xl border border-border-subtle bg-bg-card px-4 py-3">
-          <div className="text-xs text-text-muted">Очередь</div>
-          <div className="mt-1 font-mono-value text-2xl font-semibold text-warning">{pipelineStatus?.queued ?? 0}</div>
+        <section className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-6" aria-label="Фильтры конвейера">
+          {FILTERS.map(([label, value]) => (
+            <FilterCard key={label} label={label} value={value} />
+          ))}
+        </section>
+
+        <section className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4" aria-label="Сводные метрики">
+          {summaryCards.map((item) => (
+            <SummaryCard key={item.label} {...item} />
+          ))}
+        </section>
+
+        <section className="mt-4 rounded-[28px] border border-border-subtle/90 bg-[linear-gradient(180deg,rgba(255,253,248,0.98),rgba(255,249,240,0.98))] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.75),0_14px_40px_rgba(76,55,24,0.06)] lg:p-5">
+          <div className="mb-4 flex items-center gap-2 text-[15px] font-semibold text-text-muted">
+            <Info size={16} className="text-text-weak" />
+            Нажмите на строку, чтобы выбрать этап. Стрелка справа откроет подробности.
+          </div>
+          <FunnelDiagram
+            stages={conveyorStages}
+            losses={losses}
+            onSelect={setSelectedStageId}
+            onOpen={openStageDetail}
+          />
+        </section>
+
+        <StageMessagesTable
+          stage={selectedStage}
+          rows={tableRows}
+          reasonCounts={reasonCounts}
+          loading={resultsQuery.isLoading}
+          error={resultsQuery.isError}
+        />
+      </div>
+    </div>
+  );
+}
+
+function FilterCard({ label, value }: { label: string; value: string }) {
+  return (
+    <button
+      type="button"
+      className="group flex h-[60px] min-w-0 items-center justify-between gap-3 rounded-[18px] border border-border-subtle bg-white/95 px-4 text-left shadow-[0_8px_20px_rgba(61,45,24,0.04)] transition hover:border-brand-blue/25 hover:bg-[#fffcf6]"
+    >
+      <div className="min-w-0">
+        <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-text-weak">{label}</div>
+        <div className="mt-1 truncate text-[15px] font-semibold text-text-strong">{value}</div>
+      </div>
+      <span className="shrink-0 text-text-muted transition group-hover:text-brand-blue">
+        <CaretDown size={16} />
+      </span>
+    </button>
+  );
+}
+
+function SummaryCard({ label, value, icon: Icon, tone }: ReturnType<typeof buildSummaryCards>[number]) {
+  return (
+    <article className="rounded-[20px] border border-border-subtle bg-white/95 px-4 py-3.5 shadow-[0_12px_28px_rgba(61,45,24,0.055)]">
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <p className="truncate text-[14px] font-medium text-text-muted">{label}</p>
+          <p className="mt-1 font-mono-value text-[23px] font-extrabold tracking-[-0.03em] text-text-strong">{value}</p>
         </div>
-        <div className="rounded-xl border border-border-subtle bg-bg-card px-4 py-3">
-          <div className="text-xs text-text-muted">В обработке</div>
-          <div className="mt-1 font-mono-value text-2xl font-semibold text-warning">
-            {pipelineStatus?.processing ?? 0}
+        <span className={cn("grid size-12 shrink-0 place-items-center rounded-2xl", iconTone(tone))}>
+          <Icon size={24} weight="duotone" />
+        </span>
+      </div>
+    </article>
+  );
+}
+
+function FunnelDiagram({
+  stages,
+  losses,
+  onSelect,
+  onOpen,
+}: {
+  stages: ConveyorStage[];
+  losses: Array<number | null>;
+  onSelect: (stageId: string) => void;
+  onOpen: (stageId: string) => void;
+}) {
+  const maxValue = Math.max(...stages.map((stage) => stage.value), 1);
+
+  return (
+    <div className="overflow-hidden rounded-[22px] border border-border-subtle/80 bg-white/80 shadow-[0_16px_40px_rgba(74,55,25,0.06)]">
+      <div className="hidden grid-cols-[minmax(210px,1.1fr)_minmax(260px,2.2fr)_120px_110px_145px_24px] items-center gap-4 border-b border-border-subtle bg-[#f7f0e4] px-5 py-3 text-[10px] font-bold uppercase tracking-[0.14em] text-text-weak lg:grid">
+        <span>Этап</span>
+        <span>Доля от общего потока</span>
+        <span className="text-right">Прошло</span>
+        <span className="text-right">Конверсия</span>
+        <span className="text-right">Потеря дальше</span>
+        <span />
+      </div>
+
+      <div className="divide-y divide-border-subtle/75">
+        {stages.map((stage, index) => {
+          const globalPercent = (stage.value / maxValue) * 100;
+          const loss = losses[index] ?? null;
+
+          return (
+            <div
+              key={stage.id}
+              className={cn(
+                "group grid w-full grid-cols-1 gap-2 px-4 py-3 transition duration-200 hover:bg-[#fff9ed] lg:grid-cols-[minmax(210px,1.1fr)_minmax(260px,2.2fr)_120px_110px_145px_44px] lg:items-stretch lg:gap-4 lg:px-5",
+                stage.selected && "bg-warning-soft/65 shadow-[inset_4px_0_0_var(--ui-brand-yellow)]",
+              )}
+            >
+              <button
+                type="button"
+                onClick={() => onSelect(stage.id)}
+                aria-pressed={stage.selected}
+                className="grid min-w-0 grid-cols-1 gap-3 rounded-xl text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-yellow lg:col-span-5 lg:grid-cols-subgrid lg:items-center lg:gap-4"
+              >
+              <div className="flex min-w-0 items-center gap-3 lg:col-start-1">
+                <span className={cn("grid size-9 shrink-0 place-items-center rounded-[13px] text-xs font-extrabold", iconTone(stage.tone))}>
+                  {stage.n}
+                </span>
+                <div className="min-w-0">
+                  <h3 className="truncate text-sm font-extrabold text-text-strong">{stage.title}</h3>
+                  <p className="mt-1 text-[11px] text-text-muted">Вход: {formatCompactNumber(stage.input)}</p>
+                </div>
+              </div>
+
+              <div className="min-w-0 lg:col-start-2">
+                <div className="h-3 overflow-hidden rounded-full bg-[#ede7dc] shadow-[inset_0_1px_2px_rgba(75,56,29,0.10)]">
+                  <div
+                    className={cn("h-full rounded-full transition-[width] duration-500", flowBarTone(stage.tone))}
+                    style={{ width: `${Math.max(globalPercent, stage.value > 0 ? 1.5 : 0)}%` }}
+                  />
+                </div>
+                <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
+                  {stage.stats.slice(0, 3).map((stat) => (
+                    <span key={`${stage.id}-${stat.label}`} className="inline-flex items-center gap-1.5 text-[11px] text-text-muted">
+                      <span className={cn("size-1.5 rounded-[2px]", statDotTone(stat.tone))} />
+                      {stat.label} <strong className="font-semibold text-text-default">{formatCompactNumber(stat.value)}</strong>
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex items-baseline justify-between lg:col-start-3 lg:block lg:text-right">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.1em] text-text-weak lg:hidden">Прошло</span>
+                <span className="font-mono-value text-xl font-extrabold text-text-strong">{formatCompactNumber(stage.value)}</span>
+              </div>
+              <div className="flex items-center justify-between lg:col-start-4 lg:justify-end">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.1em] text-text-weak lg:hidden">Конверсия</span>
+                <span className="rounded-lg bg-success-soft px-2.5 py-1 text-xs font-bold text-success">{formatPercent(stage.pct)}</span>
+              </div>
+              <div className="flex items-center justify-between lg:col-start-5 lg:justify-end">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.1em] text-text-weak lg:hidden">Потеря дальше</span>
+                {loss != null ? (
+                  <span className="rounded-lg bg-danger-soft px-2.5 py-1 text-xs font-bold text-danger">-{formatCompactNumber(loss)}</span>
+                ) : (
+                  <span className="text-xs font-semibold text-text-weak">—</span>
+                )}
+              </div>
+              </button>
+              <button
+                type="button"
+                onClick={() => onOpen(stage.id)}
+                aria-label={`Открыть подробности этапа ${stage.title}`}
+                title="Открыть подробности"
+                className="flex h-10 items-center justify-center gap-2 self-center rounded-xl border border-border-subtle bg-white/70 px-3 text-xs font-semibold text-text-muted transition hover:border-brand-yellow hover:text-warning focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-yellow lg:col-start-6 lg:w-10 lg:px-0"
+              >
+                <span className="lg:hidden">Подробнее</span>
+                <ArrowRight size={18} className="transition-transform group-hover:translate-x-0.5" />
+              </button>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function StageMessagesTable({
+  stage,
+  rows,
+  reasonCounts,
+  loading,
+  error,
+}: {
+  stage: ConveyorStage | null;
+  rows: TableRow[];
+  reasonCounts: Array<[string, number]>;
+  loading: boolean;
+  error: boolean;
+}) {
+  const acceptedCount = rows.filter((row) => row.accepted).length;
+  const rejectedCount = rows.length - acceptedCount;
+  const conversion = stage?.input ? (acceptedCount / stage.input) * 100 : 0;
+
+  return (
+    <section className="mt-4 rounded-[28px] border border-border-subtle bg-white/94 p-4 shadow-[0_14px_36px_rgba(61,45,24,0.075)] lg:p-5">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h2 className="text-[18px] font-extrabold tracking-[-0.03em] text-text-strong">
+            Сообщения этапа: {stage?.title ?? "—"}
+          </h2>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <InfoChip label="Вход" value={formatCompactNumber(stage?.input ?? 0)} />
+            <InfoChip label="Accepted" value={formatCompactNumber(acceptedCount)} tone="green" />
+            <InfoChip label="Rejected" value={formatCompactNumber(rejectedCount)} tone="red" />
+            <InfoChip label="Конверсия" value={formatPercent(conversion)} tone="blue" />
           </div>
         </div>
-        <div className="rounded-xl border border-border-subtle bg-bg-card px-4 py-3">
-          <div className="text-xs text-text-muted">Классифицировано {timePreset === "all" ? "за все время" : "в окне"}</div>
-          <div className="mt-1 font-mono-value text-2xl font-semibold text-success">
-            {pipelineStatus?.classified ?? classifiedQuery.data?.totalElements ?? 0}
-          </div>
-        </div>
-        <div className="rounded-xl border border-border-subtle bg-bg-card px-4 py-3">
-          <div className="text-xs text-text-muted">Отсеяно {timePreset === "all" ? "за все время" : "в окне"}</div>
-          <div className="mt-1 font-mono-value text-2xl font-semibold text-danger">
-            {pipelineStatus?.skipped ?? skippedQuery.data?.totalElements ?? 0}
-          </div>
-        </div>
-        <div className="rounded-xl border border-border-subtle bg-bg-card px-4 py-3">
-          <div className="text-xs text-text-muted">С гайдом {timePreset === "all" ? "за все время" : "в окне"}</div>
-          <div className="mt-1 font-mono-value text-2xl font-semibold text-success">
-            {pipelineStatus?.guideFound ?? guideQuery.data?.totalElements ?? 0}
-          </div>
+
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-text-weak">
+            Топ причин отклонений:
+          </span>
+          {reasonCounts.length ? (
+            reasonCounts.map(([reason]) => <ReasonChip key={reason}>{reason}</ReasonChip>)
+          ) : (
+            <ReasonChip>Нет явных причин</ReasonChip>
+          )}
+          <Button variant="outline" size="sm" className="h-10 rounded-2xl px-4">
+            Открыть в таблице
+          </Button>
         </div>
       </div>
 
-      <Card>
-        <CardContent className="p-0">
-          <div className="flex flex-wrap items-center gap-2 border-b border-border-subtle px-4 py-4">
-            {[
-              { value: "ALL", label: "Все" },
-              { value: "GUIDE_FOUND", label: "Гайды" },
-              { value: "CLASSIFIED", label: "Классифицировано" },
-              { value: "SKIPPED", label: "Отсеяно" },
-            ].map((item) => (
-              <Button
-                key={item.value}
-                variant={view === item.value ? "secondary" : "ghost"}
-                size="sm"
-                onClick={() => setView(item.value as PipelineView)}
-              >
-                {item.label}
-              </Button>
-            ))}
-
-            <div className="ml-auto flex flex-wrap items-center gap-2">
-              <Clock size={15} className="text-text-muted" />
-              {[
-                { value: "all", label: "За все время" },
-                { value: "live", label: "Сейчас" },
-                { value: "5m", label: "5 мин" },
-                { value: "15m", label: "15 мин" },
-                { value: "1h", label: "1 час" },
-              ].map((item) => (
-                <Button
-                  key={item.value}
-                  variant={timePreset === item.value ? "secondary" : "ghost"}
-                  size="sm"
-                  onClick={() => applyPreset(item.value as TimePreset)}
+      {loading ? (
+        <div className="mt-4 rounded-[18px] border border-border-subtle bg-[#fffcf7] p-4 text-sm text-text-muted">
+          Загружаю реальные сообщения pipeline...
+        </div>
+      ) : error ? (
+        <div className="mt-4 rounded-[18px] border border-border-subtle bg-[#fffcf7] p-4 text-sm text-text-muted">
+          Не удалось подгрузить таблицу сообщений для выбранного этапа. Верхняя воронка при этом продолжает показывать доступные live-данные.
+        </div>
+      ) : (
+        <div className="mt-4 overflow-hidden rounded-[18px] border border-border-subtle bg-white">
+          <table className="w-full table-fixed text-left text-sm">
+            <thead className="bg-[#f7f0e3] text-[11px] uppercase tracking-[0.12em] text-text-weak">
+              <tr>
+                {["raw_id", "чат", "preview", "status", "reason", "score", "material"].map((header) => (
+                  <th key={header} className="px-4 py-3 font-bold">
+                    {header}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.slice(0, 10).map((row) => (
+                <tr
+                  key={row.rawId}
+                  className="border-t border-border-subtle bg-white transition hover:bg-[#f9f5ee]"
                 >
-                  {item.label}
-                </Button>
+                  <td className="px-4 py-3 font-mono-value font-bold text-text-strong">{row.rawId}</td>
+                  <td className="px-4 py-3">
+                    <span className="inline-flex items-center gap-2 font-semibold text-text-strong">
+                      <span className="grid size-5 place-items-center rounded-full bg-brand-blue text-white">
+                        <TelegramLogo size={11} weight="fill" />
+                      </span>
+                      {row.chat}
+                    </span>
+                  </td>
+                  <td className="truncate px-4 py-3 text-text-muted">{row.preview}</td>
+                  <td className="px-4 py-3">
+                    <StatusBadge accepted={row.accepted} />
+                  </td>
+                  <td className="px-4 py-3">
+                    {row.reason === "—" ? <span className="text-text-weak">—</span> : <ReasonChip>{row.reason}</ReasonChip>}
+                  </td>
+                  <td className="px-4 py-3 font-mono-value font-bold text-text-strong">
+                    {row.score == null ? "—" : row.score.toFixed(2)}
+                  </td>
+                  <td className="truncate px-4 py-3">
+                    {row.materialId ? (
+                      <a className="font-semibold text-brand-blue hover:text-brand-blue-hover" href={`/materials/${row.materialId}`}>
+                        MAT-{row.materialId}
+                      </a>
+                    ) : (
+                      <span className="text-text-weak">—</span>
+                    )}
+                  </td>
+                </tr>
               ))}
-              <Input
-                type="datetime-local"
-                value={fromLocal}
-                onChange={(event) => {
-                  setTimePreset("custom");
-                  setFromLocal(event.target.value);
-                }}
-                className="h-9 w-[220px]"
-                title="Показать сообщения начиная с выбранной даты и времени"
-                disabled={timePreset === "all"}
-              />
-            </div>
-          </div>
+              {!rows.length ? (
+                <tr>
+                  <td colSpan={7} className="px-4 py-8 text-center text-sm text-text-muted">
+                    Для выбранного этапа пока нет сообщений в сегодняшнем окне.
+                  </td>
+                </tr>
+              ) : null}
+            </tbody>
+          </table>
+        </div>
+      )}
 
-          {currentLoading ? (
-            <div className="flex items-center justify-center gap-2 py-12 text-sm text-text-muted">
-              <SpinnerGap size={20} className="animate-spin" />
-              Загружаю сообщения...
-            </div>
-          ) : currentListLength === 0 ? (
-            <div className="py-12 text-center text-sm text-text-muted">Для текущего режима пока ничего нет.</div>
-          ) : view === "ALL" ? (
-            allItems.map((message) => (
-              <ResultRow
-                key={message.id}
-                message={message}
-                expanded={expandedMessageId === message.id}
-                onToggle={() => setExpandedMessageId((current) => (current === message.id ? null : message.id))}
-              />
-            ))
-          ) : view === "CLASSIFIED" ? (
-            classifiedItems.map((message) => (
-              <ResultRow
-                key={message.id}
-                message={message}
-                expanded={expandedMessageId === message.id}
-                onToggle={() => setExpandedMessageId((current) => (current === message.id ? null : message.id))}
-              />
-            ))
-          ) : view === "SKIPPED" ? (
-            skippedItems.map((message) => (
-              <ResultRow
-                key={message.id}
-                message={message}
-                expanded={expandedMessageId === message.id}
-                onToggle={() => setExpandedMessageId((current) => (current === message.id ? null : message.id))}
-              />
-            ))
-          ) : (
-            guideItems.map((message) => (
-              <ResultRow
-                key={message.id}
-                message={message}
-                expanded={expandedMessageId === message.id}
-                onToggle={() => setExpandedMessageId((current) => (current === message.id ? null : message.id))}
-              />
-            ))
-          )}
-        </CardContent>
-      </Card>
-    </div>
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-sm text-text-muted">
+        <span>
+          Показано 1-{Math.min(rows.length, 10)} из {rows.length} сообщений
+        </span>
+        <div className="flex items-center gap-2">
+          <Page active>1</Page>
+          <Page>2</Page>
+          <Page>3</Page>
+          <span className="px-1">...</span>
+          <Page>10</Page>
+          <span className="ml-2 rounded-xl border border-border-subtle bg-[#fffcf7] px-3 py-2 text-sm">
+            Строк на странице: <strong className="text-text-strong">10</strong>
+          </span>
+        </div>
+      </div>
+    </section>
   );
+}
+
+function InfoChip({ label, value, tone = "gray" }: { label: string; value: string; tone?: "gray" | "green" | "red" | "blue" }) {
+  return (
+    <span
+      className={cn(
+        "rounded-full border px-3 py-1.5 text-[12px] font-bold",
+        tone === "green"
+          ? "border-success/20 bg-success-soft text-success"
+          : tone === "red"
+            ? "border-danger/20 bg-danger-soft text-danger"
+            : tone === "blue"
+              ? "border-brand-blue/20 bg-brand-blue-soft text-brand-blue"
+              : "border-border-subtle bg-[#f8f4eb] text-text-muted",
+      )}
+    >
+      {label}: <strong>{value}</strong>
+    </span>
+  );
+}
+
+function ReasonChip({ children }: { children: string }) {
+  return (
+    <span className="rounded-full border border-danger/20 bg-danger-soft px-3 py-1 text-[11px] font-bold text-danger">
+      {children}
+    </span>
+  );
+}
+
+function StatusBadge({ accepted }: { accepted: boolean }) {
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-2 rounded-full px-3 py-1 text-[12px] font-bold",
+        accepted ? "bg-success-soft text-success" : "bg-danger-soft text-danger",
+      )}
+    >
+      <span className={cn("size-1.5 rounded-full", accepted ? "bg-success" : "bg-danger")} />
+      {accepted ? "accepted" : "rejected"}
+    </span>
+  );
+}
+
+function Page({ children, active }: { children: string; active?: boolean }) {
+  return (
+    <button
+      type="button"
+      className={cn(
+        "grid size-9 place-items-center rounded-xl border text-sm font-bold",
+        active
+          ? "border-brand-blue bg-brand-blue-soft text-brand-blue"
+          : "border-border-subtle bg-[#fffcf7] text-text-muted hover:text-text-strong",
+      )}
+    >
+      {children}
+    </button>
+  );
+}
+
+function buildSummaryCards(summary?: ReturnType<typeof usePipelineLiveSummaryQuery>["data"]) {
+  const totalMessages = summary?.rawMessages ?? 0;
+  const materials = summary?.generatedMaterials ?? 0;
+  const rejected = (summary?.skipped ?? 0) + (summary?.failed ?? 0);
+  const conversion = totalMessages > 0 ? (materials / totalMessages) * 100 : 0;
+
+  return [
+    { label: "Всего сообщений", value: formatCompactNumber(totalMessages), icon: TelegramLogo, tone: "blue" as const },
+    { label: "До материалов", value: formatCompactNumber(materials), icon: FolderOpen, tone: "green" as const },
+    { label: "Conversion", value: formatPercent(conversion), icon: ChartLineUp, tone: "purple" as const },
+    { label: "Rejected", value: formatCompactNumber(rejected), icon: WarningCircle, tone: "red" as const },
+  ];
+}
+
+function buildConveyorStages(
+  stages: PipelineStageSummary[],
+  summary: ReturnType<typeof usePipelineLiveSummaryQuery>["data"] | undefined,
+  selectedStageId: string,
+): ConveyorStage[] {
+  const find = (ids: string[], ordinal?: number) =>
+    stages.find((stage) => ids.includes(stage.id)) ?? stages.find((stage) => stage.ordinal === ordinal);
+
+  const mapped: Array<{
+    id: string;
+    n: number;
+    title: string;
+    tone: Tone;
+    source?: PipelineStageSummary;
+    fallback?: { input: number; value: number; stats: StageStat[] };
+  }> = [
+    {
+      id: "raw_messages",
+      n: 1,
+      title: "Raw messages",
+      tone: "blue",
+      fallback: {
+        input: summary?.rawMessages ?? 0,
+        value: summary?.rawMessages ?? 0,
+        stats: [{ label: "Passed", value: summary?.rawMessages ?? 0, tone: "passed" }],
+      },
+    },
+    { id: "intake", n: 2, title: "Intake", tone: "cyan", source: find(["telegram_ingest", "db_cache", "normalization"], 1) },
+    { id: "queue", n: 3, title: "Queue", tone: "green", source: find(["cleanup", "dedupe", "rule_signals"], 6) },
+    { id: "run", n: 4, title: "Run", tone: "yellow", source: find(["bootstrap_classification"], 7) },
+    { id: "embeddings", n: 5, title: "Embeddings / BGE-M3", tone: "orange", source: find(["embeddings"], 8) },
+    { id: "single_message_detection", n: 6, title: "Single-message", tone: "orange", source: find(["single_message_detection"], 10) },
+    { id: "clustering", n: 7, title: "Clustering", tone: "purple", source: find(["clustering"], 9) },
+    { id: "llm_judge", n: 8, title: "LLM Judge", tone: "blue", source: find(["llm_judge"], 11) },
+    { id: "material_generation", n: 9, title: "Material generation", tone: "teal", source: find(["material_generation"], 12) },
+    { id: "materials_publish", n: 10, title: "Material created", tone: "green", source: find(["materials_publish"], 13) },
+  ];
+
+  return mapped.map((item) => {
+    if (item.fallback) {
+      return {
+        id: item.id,
+        n: item.n,
+        title: item.title,
+        input: item.fallback.input,
+        value: item.fallback.value,
+        pct: item.fallback.input > 0 ? (item.fallback.value / item.fallback.input) * 100 : 0,
+        tone: item.tone,
+        selected: item.id === selectedStageId,
+        stats: item.fallback.stats,
+      };
+    }
+
+    const stage = item.source;
+    const input = stage ? stage.active + stage.processed + stage.failed + stage.skipped + stage.waiting : 0;
+    const value = stage?.processed ?? 0;
+    return {
+      id: item.id,
+      n: item.n,
+      title: item.title,
+      input,
+      value,
+      pct: input > 0 ? (value / input) * 100 : 0,
+      tone: item.tone,
+      selected: item.id === selectedStageId,
+      stats: buildStageStats(item.id, stage),
+    };
+  });
+}
+
+function buildStageStats(stageId: string, stage?: PipelineStageSummary): StageStat[] {
+  const processed = stage?.processed ?? 0;
+  const skipped = stage?.skipped ?? 0;
+  const failed = stage?.failed ?? 0;
+  const waiting = stage?.waiting ?? 0;
+
+  if (stageId === "intake") {
+    return compactStats([
+      { label: "Passed", value: processed, tone: "passed" },
+      { label: "Pending", value: waiting, tone: "pending" },
+    ]);
+  }
+  if (stageId === "queue") {
+    return compactStats([
+      { label: "Passed", value: processed, tone: "passed" },
+      { label: "Rejected", value: skipped, tone: "rejected" },
+      { label: "Failed", value: failed, tone: "failed" },
+      { label: "Pending", value: waiting, tone: "pending" },
+    ]);
+  }
+  if (stageId === "run") {
+    return compactStats([
+      { label: "Passed", value: processed, tone: "passed" },
+      { label: "Rejected", value: skipped, tone: "rejected" },
+      { label: "Failed", value: failed, tone: "failed" },
+    ]);
+  }
+  if (stageId === "embeddings") {
+    return compactStats([
+      { label: "Passed", value: processed, tone: "passed" },
+      { label: "Skipped", value: skipped, tone: "skipped" },
+    ]);
+  }
+  if (stageId === "single_message_detection") {
+    return compactStats([
+      { label: "Candidates", value: processed, tone: "candidate" },
+      { label: "Rejected", value: skipped + failed, tone: "rejected" },
+    ]);
+  }
+  if (stageId === "clustering") {
+    return compactStats([
+      { label: "Passed", value: processed, tone: "passed" },
+      { label: "Rejected", value: skipped + failed, tone: "rejected" },
+      { label: "Candidates", value: processed, tone: "candidate" },
+    ]);
+  }
+  if (stageId === "llm_judge") {
+    return compactStats([
+      { label: "Accepted", value: processed, tone: "accepted" },
+      { label: "Rejected", value: skipped + failed, tone: "rejected" },
+    ]);
+  }
+  if (stageId === "material_generation" || stageId === "materials_publish") {
+    return compactStats([
+      { label: "Accepted", value: processed, tone: "accepted" },
+      { label: "Rejected", value: skipped + failed, tone: "rejected" },
+    ]);
+  }
+  return compactStats([
+    { label: "Passed", value: processed, tone: "passed" },
+    { label: "Skipped", value: skipped, tone: "skipped" },
+    { label: "Failed", value: failed, tone: "failed" },
+  ]);
+}
+
+function compactStats(stats: StageStat[]) {
+  return stats.filter((stat) => stat.value > 0);
+}
+
+function buildLosses(stages: ConveyorStage[]) {
+  const losses: Array<number | null> = [];
+  for (let i = 0; i < stages.length - 1; i += 1) {
+    const current = stages[i];
+    const next = stages[i + 1];
+    const loss = Math.max(current.value - next.value, 0);
+    losses.push(loss > 0 ? loss : null);
+  }
+  return losses.slice(0, 9);
+}
+
+function buildTableRows(messages: PipelineResultItem[], selectedStageId: string): TableRow[] {
+  return messages
+    .filter((message) => matchesStage(message, selectedStageId))
+    .slice(0, 50)
+    .map((message) => ({
+      rawId: message.id,
+      chat: message.author ?? "Неизвестный чат",
+      preview: truncate(message.text || "Сообщение без текста", 42),
+      accepted: isAccepted(message, selectedStageId),
+      reason: normalizeReason(message.classifierReason),
+      score: message.classifierScore ?? message.signalScore ?? null,
+      materialId: message.guideId,
+    }));
+}
+
+function matchesStage(message: PipelineResultItem, selectedStageId: string) {
+  if (selectedStageId === "raw_messages") return true;
+  if (selectedStageId === "embeddings") return message.embeddingStatus != null && message.embeddingStatus !== "NONE";
+  if (selectedStageId === "single_message_detection") return message.clusterCandidate != null;
+  if (selectedStageId === "clustering") return message.clusterCandidate === true;
+  if (selectedStageId === "llm_judge") return ["GUIDE_FOUND", "CLASSIFIED", "SKIPPED", "ERROR"].includes(message.status);
+  if (selectedStageId === "material_generation" || selectedStageId === "materials_publish") {
+    return message.guideId != null || message.status === "GUIDE_FOUND";
+  }
+  return true;
+}
+
+function isAccepted(message: PipelineResultItem, selectedStageId: string) {
+  if (selectedStageId === "material_generation" || selectedStageId === "materials_publish") {
+    return message.guideId != null || message.status === "GUIDE_FOUND";
+  }
+  if (selectedStageId === "llm_judge") {
+    return message.guideId != null || message.status === "GUIDE_FOUND";
+  }
+  return !["SKIPPED", "ERROR"].includes(message.status);
+}
+
+function topReasons(rows: TableRow[]) {
+  const counts = new Map<string, number>();
+  rows
+    .filter((row) => !row.accepted && row.reason !== "—")
+    .forEach((row) => counts.set(row.reason, (counts.get(row.reason) ?? 0) + 1));
+  return Array.from(counts.entries())
+    .sort((left, right) => right[1] - left[1])
+    .slice(0, 2);
+}
+
+function normalizeReason(reason: string | null) {
+  if (!reason) return "—";
+  return reason.replace(/\s+/g, "_").toUpperCase();
+}
+
+function startOfTodayIso() {
+  const now = new Date();
+  const date = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  return date.toISOString();
+}
+
+function truncate(value: string, length: number) {
+  return value.length > length ? `${value.slice(0, length - 1)}…` : value;
+}
+
+function formatCompactNumber(value: number) {
+  return new Intl.NumberFormat("ru-RU").format(value);
+}
+
+function formatPercent(value: number) {
+  return `${value.toFixed(value >= 10 ? 1 : 1)}%`;
+}
+
+function stageHref(stageId: string) {
+  return `/pipeline/stages/${stageId}`;
+}
+
+function iconTone(tone: Tone) {
+  return {
+    blue: "bg-[#e7f0ff] text-[#2f74eb]",
+    cyan: "bg-[#dff7f8] text-[#2ca9b5]",
+    green: "bg-[#e1f3e8] text-[#2ea355]",
+    yellow: "bg-[#f7efcf] text-[#b4871c]",
+    orange: "bg-[#fbe7d7] text-[#e67d1d]",
+    purple: "bg-[#efe4ff] text-[#7e59d1]",
+    teal: "bg-[#ddf5f0] text-[#239c88]",
+    red: "bg-[#fde5e7] text-[#d65662]",
+    gray: "bg-bg-card text-text-muted",
+  }[tone];
+}
+
+function flowBarTone(tone: Tone) {
+  return {
+    blue: "bg-[#5594e8]",
+    cyan: "bg-[#4bb8c6]",
+    green: "bg-[#5eaf71]",
+    yellow: "bg-[#d7ad3d]",
+    orange: "bg-[#df8b4e]",
+    purple: "bg-[#8870cf]",
+    teal: "bg-[#43a997]",
+    red: "bg-danger",
+    gray: "bg-text-muted",
+  }[tone];
+}
+
+function statDotTone(tone: StatTone) {
+  return {
+    passed: "bg-success",
+    accepted: "bg-success",
+    rejected: "bg-danger",
+    pending: "bg-warning",
+    failed: "bg-danger",
+    skipped: "bg-[#989085]",
+    candidate: "bg-[#8e6cf7]",
+  }[tone];
 }
