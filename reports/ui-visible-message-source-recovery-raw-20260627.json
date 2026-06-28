@@ -1,0 +1,624 @@
+﻿{
+    "runs": [
+        {
+            "error": "NO_MATERIAL_CANDIDATES",
+            "runId": 5055,
+            "status": "COMPLETED",
+            "runName": "live auto raw messages batch 5079",
+            "startedAt": "2026-06-26T23:29:19.787411+00:00",
+            "finishedAt": "2026-06-26T23:29:22.679814+00:00",
+            "totalMessages": 1,
+            "processedMessages": 1,
+            "providerCallsTotal": 0
+        },
+        {
+            "error": "NO_MATERIAL_CANDIDATES",
+            "runId": 5092,
+            "status": "COMPLETED",
+            "runName": "live auto raw messages batch 5119",
+            "startedAt": "2026-06-27T00:14:38.826291+00:00",
+            "finishedAt": "2026-06-27T00:14:40.413839+00:00",
+            "totalMessages": 1,
+            "processedMessages": 1,
+            "providerCallsTotal": 0
+        }
+    ],
+    "capCounts": {
+        "settings": {
+            "discussionSegmentDraftOnly": "1",
+            "discussionSegmentFreshOnly": "1",
+            "discussionSegmentGenerationMode": "CONTROLLED",
+            "discussionSegmentGenerationEnabled": "1",
+            "discussionSegmentSkipRiskSensitive": "1",
+            "discussionSegmentMaxMaterialsPerDay": "3",
+            "discussionSegmentRequireLlmAccepted": "1",
+            "discussionSegmentStopOnProviderError": "1",
+            "discussionSegmentControlledEnableTime": "2026-06-26T16:23:22Z",
+            "discussionSegmentStopOnGenerationError": "1",
+            "discussionSegmentMaxMaterialsPerChatTopicPerDay": "1"
+        },
+        "activeDiscussionMaterialsTotal": 3,
+        "discussionMaterialsOn20260627Utc": 0
+    },
+    "materials": [
+    ],
+    "capturedAt": "2026-06-27T10:50:10.388158+00:00",
+    "embeddings": [
+        {
+            "rawId": 11142,
+            "embeddingCount": 1
+        },
+        {
+            "rawId": 11193,
+            "embeddingCount": 1
+        }
+    ],
+    "targetChat": [
+        {
+            "title": "API SUPPORT | ModelHub",
+            "groupId": 38,
+            "chatList": "ChatListFolder",
+            "accountId": 1,
+            "isEnabled": true,
+            "activeDialog": true,
+            "positionOrder": 7655397030340072394,
+            "telegramChatId": -1003898985313,
+            "processingState": "ENABLED_PROCESSABLE",
+            "rawMessagesInRange": 244
+        }
+    ],
+    "runMessages": [
+        {
+            "rawId": 11142,
+            "runId": 5055,
+            "status": "CANDIDATE",
+            "llmUsed": false,
+            "updatedAt": "2026-06-26T23:29:22.679814+00:00",
+            "ruleDecision": "CANDIDATE",
+            "finalDecision": "REJECTED_SINGLE_MESSAGE",
+            "llmSkipReason": null,
+            "macroclusterId": null,
+            "microclusterId": null,
+            "datasetMessageId": 10121,
+            "replayRunMessageId": 7397,
+            "singleMessageScore": 0.51,
+            "singleMessageRejectionReason": "LOW_SINGLE_MESSAGE_SCORE"
+        },
+        {
+            "rawId": 11193,
+            "runId": 5092,
+            "status": "CANDIDATE",
+            "llmUsed": false,
+            "updatedAt": "2026-06-27T00:14:40.413839+00:00",
+            "ruleDecision": "CANDIDATE",
+            "finalDecision": "REJECTED_SINGLE_MESSAGE",
+            "llmSkipReason": null,
+            "macroclusterId": null,
+            "microclusterId": null,
+            "datasetMessageId": 10168,
+            "replayRunMessageId": 7444,
+            "singleMessageScore": 0,
+            "singleMessageRejectionReason": "TOO_SHORT"
+        }
+    ],
+    "traceStages": [
+        {
+            "rawId": 11142,
+            "runId": 5055,
+            "output": {
+                "stored": true
+            },
+            "status": "PROCESSED",
+            "stageId": "telegram_ingest",
+            "createdAt": "2026-06-26T23:28:48.857438+00:00",
+            "errorCode": null,
+            "stageName": "╨б╨▒╨╛╤А ╨╕╨╖ Telegram / ╨д╨╛╤А╤Г╨╝╨╛╨▓",
+            "updatedAt": "2026-06-26T23:29:19.787411+00:00",
+            "errorMessage": null
+        },
+        {
+            "rawId": 11142,
+            "runId": 5055,
+            "output": {
+                "stored": true
+            },
+            "status": "PROCESSED",
+            "stageId": "db_cache",
+            "createdAt": "2026-06-26T23:28:48.857438+00:00",
+            "errorCode": null,
+            "stageName": "DB-cache",
+            "updatedAt": "2026-06-26T23:29:19.787411+00:00",
+            "errorMessage": null
+        },
+        {
+            "rawId": 11142,
+            "runId": 5055,
+            "output": {
+                "source": "message_intelligence"
+            },
+            "status": "PROCESSED",
+            "stageId": "normalization",
+            "createdAt": "2026-06-26T23:28:48.857438+00:00",
+            "errorCode": null,
+            "stageName": "╨Э╨╛╤А╨╝╨░╨╗╨╕╨╖╨░╤Ж╨╕╤П",
+            "updatedAt": "2026-06-26T23:29:22.679814+00:00",
+            "errorMessage": null
+        },
+        {
+            "rawId": 11142,
+            "runId": 5055,
+            "output": {
+                "source": "rule_decision"
+            },
+            "status": "PROCESSED",
+            "stageId": "cleanup",
+            "createdAt": "2026-06-26T23:28:48.857438+00:00",
+            "errorCode": null,
+            "stageName": "╨Ю╤З╨╕╤Б╤В╨║╨░",
+            "updatedAt": "2026-06-26T23:29:22.679814+00:00",
+            "errorMessage": null
+        },
+        {
+            "rawId": 11142,
+            "runId": 5055,
+            "output": {
+                "source": "dedupe_groups"
+            },
+            "status": "PROCESSED",
+            "stageId": "dedupe",
+            "createdAt": "2026-06-26T23:28:48.857438+00:00",
+            "errorCode": null,
+            "stageName": "╨Ф╨╡╨┤╤Г╨┐╨╗╨╕╨║╨░╤Ж╨╕╤П",
+            "updatedAt": "2026-06-26T23:29:22.679814+00:00",
+            "errorMessage": null
+        },
+        {
+            "rawId": 11142,
+            "runId": 5055,
+            "output": {
+                "source": "rule_scores"
+            },
+            "status": "PROCESSED",
+            "stageId": "rule_signals",
+            "createdAt": "2026-06-26T23:28:48.857438+00:00",
+            "errorCode": null,
+            "stageName": "Rule-╤Б╨╕╨│╨╜╨░╨╗╤Л",
+            "updatedAt": "2026-06-26T23:29:22.679814+00:00",
+            "errorMessage": null
+        },
+        {
+            "rawId": 11142,
+            "runId": 5055,
+            "output": {
+                "source": "message_classifications"
+            },
+            "status": "PROCESSED",
+            "stageId": "bootstrap_classification",
+            "createdAt": "2026-06-26T23:28:48.857438+00:00",
+            "errorCode": null,
+            "stageName": "Bootstrap-╨║╨╗╨░╤Б╤Б╨╕╤Д╨╕╨║╨░╤Ж╨╕╤П",
+            "updatedAt": "2026-06-26T23:29:22.679814+00:00",
+            "errorMessage": null
+        },
+        {
+            "rawId": 11142,
+            "runId": 5055,
+            "output": {
+                "source": "message_embeddings"
+            },
+            "status": "PROCESSED",
+            "stageId": "embeddings",
+            "createdAt": "2026-06-26T23:28:48.857438+00:00",
+            "errorCode": null,
+            "stageName": "Embeddings",
+            "updatedAt": "2026-06-26T23:29:22.679814+00:00",
+            "errorMessage": null
+        },
+        {
+            "rawId": 11142,
+            "runId": 5055,
+            "output": {
+            },
+            "status": "SKIPPED",
+            "stageId": "clustering",
+            "createdAt": "2026-06-26T23:28:48.857438+00:00",
+            "errorCode": "NO_MATERIAL_CANDIDATES",
+            "stageName": "╨Ъ╨╗╨░╤Б╤В╨╡╤А╨╕╨╖╨░╤Ж╨╕╤П",
+            "updatedAt": "2026-06-26T23:29:22.679814+00:00",
+            "errorMessage": "No cluster or single-message material candidate was produced"
+        },
+        {
+            "rawId": 11142,
+            "runId": 5055,
+            "output": {
+                "source": "replay_run_messages"
+            },
+            "status": "PROCESSED",
+            "stageId": "single_message_detection",
+            "createdAt": "2026-06-26T23:28:48.857438+00:00",
+            "errorCode": null,
+            "stageName": "Single-message ╨┤╨╡╤В╨╡╨║╤Ж╨╕╤П",
+            "updatedAt": "2026-06-26T23:29:22.679814+00:00",
+            "errorMessage": null
+        },
+        {
+            "rawId": 11142,
+            "runId": 5055,
+            "output": {
+            },
+            "status": "SKIPPED",
+            "stageId": "llm_judge",
+            "createdAt": "2026-06-26T23:28:48.857438+00:00",
+            "errorCode": "NO_MATERIAL_CANDIDATES",
+            "stageName": "LLM Judge",
+            "updatedAt": "2026-06-26T23:29:22.679814+00:00",
+            "errorMessage": "No cluster or single-message material candidate was produced"
+        },
+        {
+            "rawId": 11142,
+            "runId": 5055,
+            "output": {
+            },
+            "status": "SKIPPED",
+            "stageId": "material_generation",
+            "createdAt": "2026-06-26T23:28:48.857438+00:00",
+            "errorCode": "NO_MATERIAL_CANDIDATES",
+            "stageName": "╨У╨╡╨╜╨╡╤А╨░╤Ж╨╕╤П ╨╝╨░╤В╨╡╤А╨╕╨░╨╗╨╛╨▓",
+            "updatedAt": "2026-06-26T23:29:22.679814+00:00",
+            "errorMessage": "No cluster or single-message material candidate was produced"
+        },
+        {
+            "rawId": 11142,
+            "runId": 5055,
+            "output": {
+            },
+            "status": "SKIPPED",
+            "stageId": "materials_publish",
+            "createdAt": "2026-06-26T23:28:48.857438+00:00",
+            "errorCode": "NO_MATERIAL_CANDIDATES",
+            "stageName": "╨Я╤Г╨▒╨╗╨╕╨║╨░╤Ж╨╕╤П ╨▓ ╨Ь╨░╤В╨╡╤А╨╕╨░╨╗╤Л",
+            "updatedAt": "2026-06-26T23:29:22.679814+00:00",
+            "errorMessage": "No cluster or single-message material candidate was produced"
+        },
+        {
+            "rawId": 11193,
+            "runId": 5092,
+            "output": {
+                "stored": true
+            },
+            "status": "PROCESSED",
+            "stageId": "telegram_ingest",
+            "createdAt": "2026-06-27T00:14:07.542815+00:00",
+            "errorCode": null,
+            "stageName": "╨б╨▒╨╛╤А ╨╕╨╖ Telegram / ╨д╨╛╤А╤Г╨╝╨╛╨▓",
+            "updatedAt": "2026-06-27T00:14:38.826291+00:00",
+            "errorMessage": null
+        },
+        {
+            "rawId": 11193,
+            "runId": 5092,
+            "output": {
+                "stored": true
+            },
+            "status": "PROCESSED",
+            "stageId": "db_cache",
+            "createdAt": "2026-06-27T00:14:07.542815+00:00",
+            "errorCode": null,
+            "stageName": "DB-cache",
+            "updatedAt": "2026-06-27T00:14:38.826291+00:00",
+            "errorMessage": null
+        },
+        {
+            "rawId": 11193,
+            "runId": 5092,
+            "output": {
+                "source": "message_intelligence"
+            },
+            "status": "PROCESSED",
+            "stageId": "normalization",
+            "createdAt": "2026-06-27T00:14:07.542815+00:00",
+            "errorCode": null,
+            "stageName": "╨Э╨╛╤А╨╝╨░╨╗╨╕╨╖╨░╤Ж╨╕╤П",
+            "updatedAt": "2026-06-27T00:14:40.413839+00:00",
+            "errorMessage": null
+        },
+        {
+            "rawId": 11193,
+            "runId": 5092,
+            "output": {
+                "source": "rule_decision"
+            },
+            "status": "PROCESSED",
+            "stageId": "cleanup",
+            "createdAt": "2026-06-27T00:14:07.542815+00:00",
+            "errorCode": null,
+            "stageName": "╨Ю╤З╨╕╤Б╤В╨║╨░",
+            "updatedAt": "2026-06-27T00:14:40.413839+00:00",
+            "errorMessage": null
+        },
+        {
+            "rawId": 11193,
+            "runId": 5092,
+            "output": {
+                "source": "dedupe_groups"
+            },
+            "status": "PROCESSED",
+            "stageId": "dedupe",
+            "createdAt": "2026-06-27T00:14:07.542815+00:00",
+            "errorCode": null,
+            "stageName": "╨Ф╨╡╨┤╤Г╨┐╨╗╨╕╨║╨░╤Ж╨╕╤П",
+            "updatedAt": "2026-06-27T00:14:40.413839+00:00",
+            "errorMessage": null
+        },
+        {
+            "rawId": 11193,
+            "runId": 5092,
+            "output": {
+                "source": "rule_scores"
+            },
+            "status": "PROCESSED",
+            "stageId": "rule_signals",
+            "createdAt": "2026-06-27T00:14:07.542815+00:00",
+            "errorCode": null,
+            "stageName": "Rule-╤Б╨╕╨│╨╜╨░╨╗╤Л",
+            "updatedAt": "2026-06-27T00:14:40.413839+00:00",
+            "errorMessage": null
+        },
+        {
+            "rawId": 11193,
+            "runId": 5092,
+            "output": {
+                "source": "message_classifications"
+            },
+            "status": "PROCESSED",
+            "stageId": "bootstrap_classification",
+            "createdAt": "2026-06-27T00:14:07.542815+00:00",
+            "errorCode": null,
+            "stageName": "Bootstrap-╨║╨╗╨░╤Б╤Б╨╕╤Д╨╕╨║╨░╤Ж╨╕╤П",
+            "updatedAt": "2026-06-27T00:14:40.413839+00:00",
+            "errorMessage": null
+        },
+        {
+            "rawId": 11193,
+            "runId": 5092,
+            "output": {
+                "source": "message_embeddings"
+            },
+            "status": "PROCESSED",
+            "stageId": "embeddings",
+            "createdAt": "2026-06-27T00:14:07.542815+00:00",
+            "errorCode": null,
+            "stageName": "Embeddings",
+            "updatedAt": "2026-06-27T00:14:40.413839+00:00",
+            "errorMessage": null
+        },
+        {
+            "rawId": 11193,
+            "runId": 5092,
+            "output": {
+            },
+            "status": "SKIPPED",
+            "stageId": "clustering",
+            "createdAt": "2026-06-27T00:14:07.542815+00:00",
+            "errorCode": "NO_MATERIAL_CANDIDATES",
+            "stageName": "╨Ъ╨╗╨░╤Б╤В╨╡╤А╨╕╨╖╨░╤Ж╨╕╤П",
+            "updatedAt": "2026-06-27T00:14:40.413839+00:00",
+            "errorMessage": "No cluster or single-message material candidate was produced"
+        },
+        {
+            "rawId": 11193,
+            "runId": 5092,
+            "output": {
+                "source": "replay_run_messages"
+            },
+            "status": "PROCESSED",
+            "stageId": "single_message_detection",
+            "createdAt": "2026-06-27T00:14:07.542815+00:00",
+            "errorCode": null,
+            "stageName": "Single-message ╨┤╨╡╤В╨╡╨║╤Ж╨╕╤П",
+            "updatedAt": "2026-06-27T00:14:40.413839+00:00",
+            "errorMessage": null
+        },
+        {
+            "rawId": 11193,
+            "runId": 5092,
+            "output": {
+            },
+            "status": "SKIPPED",
+            "stageId": "llm_judge",
+            "createdAt": "2026-06-27T00:14:07.542815+00:00",
+            "errorCode": "NO_MATERIAL_CANDIDATES",
+            "stageName": "LLM Judge",
+            "updatedAt": "2026-06-27T00:14:40.413839+00:00",
+            "errorMessage": "No cluster or single-message material candidate was produced"
+        },
+        {
+            "rawId": 11193,
+            "runId": 5092,
+            "output": {
+            },
+            "status": "SKIPPED",
+            "stageId": "material_generation",
+            "createdAt": "2026-06-27T00:14:07.542815+00:00",
+            "errorCode": "NO_MATERIAL_CANDIDATES",
+            "stageName": "╨У╨╡╨╜╨╡╤А╨░╤Ж╨╕╤П ╨╝╨░╤В╨╡╤А╨╕╨░╨╗╨╛╨▓",
+            "updatedAt": "2026-06-27T00:14:40.413839+00:00",
+            "errorMessage": "No cluster or single-message material candidate was produced"
+        },
+        {
+            "rawId": 11193,
+            "runId": 5092,
+            "output": {
+            },
+            "status": "SKIPPED",
+            "stageId": "materials_publish",
+            "createdAt": "2026-06-27T00:14:07.542815+00:00",
+            "errorCode": "NO_MATERIAL_CANDIDATES",
+            "stageName": "╨Я╤Г╨▒╨╗╨╕╨║╨░╤Ж╨╕╤П ╨▓ ╨Ь╨░╤В╨╡╤А╨╕╨░╨╗╤Л",
+            "updatedAt": "2026-06-27T00:14:40.413839+00:00",
+            "errorMessage": "No cluster or single-message material candidate was produced"
+        }
+    ],
+    "selectedHits": [
+        {
+            "rank": 1,
+            "uiId": "U01",
+            "links": [
+                {
+                    "url": "https://openai.com/index/previewing-gpt-5-6-sol/",
+                    "domain": "openai.com",
+                    "source": "CAPTION",
+                    "visibleUrl": true
+                }
+            ],
+            "rawId": 11142,
+            "topicId": 5697961984,
+            "hasLinks": true,
+            "ingestedAt": "2026-06-26T23:28:48.857438+00:00",
+            "senderName": "╨Р╨╗╨╡╨║╤Б╨░╨╜╨┤╤А",
+            "contentType": "MessagePhoto",
+            "messageDate": "2026-06-26T23:28:47+00:00",
+            "sourceField": "raw_messages.caption",
+            "textPreview": "╨Ш╤В╨░╨║, ╨▓╤Б╤В╤А╨╡╤З╨░╨╣╤В╨╡: GPT-5.6 \n\nhttps://openai.com/index/previewing-gpt-5-6-sol/\n\n╨Р╨╜╨╛╨╜╤Б╨╕╤А╨╛╨▓╨░╨╗╨╕ ╤В╤А╨╕ ╨╝╨╛╨┤╨╡╨╗╨╕, ╨▓ ╤З╨╡╤Б╤В╤М ╤Б╨╛╨╗╨╜╨╡╤З╨╜╨╛╨╣ ╤Б╨╕╤Б╤В╨╡╨╝╤Л (╤Б ╤Б╨░╨╝╨╛╨╛╤Ж╨╡╨╜╨║╨╛╨╣ ╤Г ╤Б╨╛╨╖╨┤╨░╤В╨╡╨╗╨╡╨╣ ╨▓╤Б╨╡ ╨╛╨║): \n\n1. Sol тАУ ╤Б╨░╨╝╨░╤П ╨║╤А╤Г╨┐╨╜╨░╤П ╨╕ ╨║╤А╤Г╤В╨░╤П. ╨Э╨░ ╨╝╨╜╨╛╨│╨╕╤Е ╨▒╨╡╨╜╤З╨╝╨░╤А╨║╨░╤Е ╨╛╨▒╤Е╨╛╨┤╨╕╤В Mythos, ╨╕ ╨┐╤А╨╕ ╤Н╤В╨╛╨╝ ╨┤╨╡╤И╨╡╨▓╨╗╨╡ ╨▓ ╨┤╨▓╨░ ╤А╨░╨╖╨░. ╨Я╤А╨╕ ╤Н╤В╨╛╨╝ ╨░╨▓╤В╨╛╤А╤Л ╨┐╨╕╤И╤Г╤В, ╤З╤В╨╛ ╨╝╨╛╨┤╨╡╨╗╤М ╨╕╤Б╨┐╨╛╨╗╤М╨╖╤Г╨╡╤В ╨▓ ╤В╤А╨╕ ╤А╨░╨╖╨░ ╨╝╨╡╨╜╤М╤И╨╡ ╤В╨╛╨║╨╡╨╜╨╛╨▓. ╨Т ╤Ж╨╡╨╗╨╛╨╝ ╤Н╨║╨╛╨╜╨╛╨╝╨╕╤П ╨▓ 5-6 ╤А╨░╨╖ (╨╜╤Г ╤В╨╕╨┐╨░). \n\n2. Terra тАУ ╨┐╤А╨╛╨╝╨╡╨╢╤Г╤В╨╛╤З╨╜╤Л╨╣ ╨▓╨░╤А╨╕╨░╨╜╤В. ╨г╨╢╨╡ ╨▓ ╤В╤А╨╕ ╤А╨░╨╖╨░ ╨┤╨╡╤И╨╡╨▓╨╗╨╡ Mythos, ╤Г╨▓╨╡╤А╨╡╨╜╨╜╨╛ ╨╛╨▒╤Е╨╛╨┤╨╕╤В Opus 4.8. \n\n3. Luna тАУ ╤Б╨░╨╝╤Л╨╣ ╨┤╨╡╤И╨╡╨▓╨░╤П ╨╕ ╨▒╤Л╤Б╤В╤А╨░╤П, ╨╜╨╛ ╨┐╨╛ ╤А╨╡╨╖╤Г╨╗╤М╤В╨░╤В╨░╨╝ ╨▓╤Б╨╡ ╨╡╤Й╨╡ ╤Е╨╛╤А╨╛╤И╨░. \n\n╨С╨╡╨╜╤З╨╝╨░╤А╨║╨╛╨▓ ╨┐╨╛╨║╨░╨╖╨░╨╗╨╕ ╨╝╨░╨╗╨╛╨▓╨░╤В╨╛, ╤В╨░╨║ ╤З╤В╨╛ ╨╜╨░ ╨┤╤А╤Г╨│╨╕╨╡ ╨╖╨░╨╝╨╡╤А╤Л ╨╡╤Й╨╡ ╨┐╨╛╤Б╨╝╨╛╤В╤А╨╕╨╝. ╨Ю╨▒╤Й╨╕╨╣ ╨┤╨╛╤Б╤В╤Г╨┐ ╨╛╨▒╨╡╤Й╨░╤О╤В ╨▓ ╨▒╨╗╨╕╨╢╨░╨╣╤И╨╕╨╡ ╨╜╨╡╨┤╨╡╨╗╨╕, ╨┐╨╛╨║╨░ ╤З╤В╨╛ ╨╝╨╛╨┤╨╡╨╗╨╕ ╨▓╤Л╤И╨╗╨╕ ╤В╨╛╨╗╤М╨║╨╛ ╨┤╨╗╤П ╨╛╨│╤А╨░╨╜╨╕╤З╨╡╨╜╨╜╨╛╨╣ ╨│╤А╤Г╨┐╨┐╤Л ╤В╨╡╤Б╤В╨╡╤А╨╛╨▓. \n\n╨е╨╛╤В╤М ╨▒╤Л ╨╜╨╡ ╨┐╨╛╨▓╤В╨╛╤А╨╕╨╗╨░╤Б╤М ╨╕╤Б╤В╨╛╤А╨╕╤П ╤Б Fable ЁЯЩП",
+            "matchedTerms": [
+                "openai",
+                "gpt-5.6",
+                "sol",
+                "terra",
+                "luna",
+                "fable",
+                "raw_json:gpt-5.6"
+            ],
+            "expectedLabel": "GPT-5.6 Sol message",
+            "messageDateMsk": "2026-06-27T02:28:47",
+            "senderUsername": "razved_toot",
+            "telegramChatId": -1003898985313,
+            "messageThreadId": 5697961984,
+            "telegramMessageId": 5697961984
+        },
+        {
+            "rank": 1,
+            "uiId": "U02",
+            "links": [
+                {
+                    "url": "https://openai.com/index/previewing-gpt-5-6-sol/",
+                    "domain": "openai.com",
+                    "source": "CAPTION",
+                    "visibleUrl": true
+                }
+            ],
+            "rawId": 11142,
+            "topicId": 5697961984,
+            "hasLinks": true,
+            "ingestedAt": "2026-06-26T23:28:48.857438+00:00",
+            "senderName": "╨Р╨╗╨╡╨║╤Б╨░╨╜╨┤╤А",
+            "contentType": "MessagePhoto",
+            "messageDate": "2026-06-26T23:28:47+00:00",
+            "sourceField": "raw_messages.caption",
+            "textPreview": "╨Ш╤В╨░╨║, ╨▓╤Б╤В╤А╨╡╤З╨░╨╣╤В╨╡: GPT-5.6 \n\nhttps://openai.com/index/previewing-gpt-5-6-sol/\n\n╨Р╨╜╨╛╨╜╤Б╨╕╤А╨╛╨▓╨░╨╗╨╕ ╤В╤А╨╕ ╨╝╨╛╨┤╨╡╨╗╨╕, ╨▓ ╤З╨╡╤Б╤В╤М ╤Б╨╛╨╗╨╜╨╡╤З╨╜╨╛╨╣ ╤Б╨╕╤Б╤В╨╡╨╝╤Л (╤Б ╤Б╨░╨╝╨╛╨╛╤Ж╨╡╨╜╨║╨╛╨╣ ╤Г ╤Б╨╛╨╖╨┤╨░╤В╨╡╨╗╨╡╨╣ ╨▓╤Б╨╡ ╨╛╨║): \n\n1. Sol тАУ ╤Б╨░╨╝╨░╤П ╨║╤А╤Г╨┐╨╜╨░╤П ╨╕ ╨║╤А╤Г╤В╨░╤П. ╨Э╨░ ╨╝╨╜╨╛╨│╨╕╤Е ╨▒╨╡╨╜╤З╨╝╨░╤А╨║╨░╤Е ╨╛╨▒╤Е╨╛╨┤╨╕╤В Mythos, ╨╕ ╨┐╤А╨╕ ╤Н╤В╨╛╨╝ ╨┤╨╡╤И╨╡╨▓╨╗╨╡ ╨▓ ╨┤╨▓╨░ ╤А╨░╨╖╨░. ╨Я╤А╨╕ ╤Н╤В╨╛╨╝ ╨░╨▓╤В╨╛╤А╤Л ╨┐╨╕╤И╤Г╤В, ╤З╤В╨╛ ╨╝╨╛╨┤╨╡╨╗╤М ╨╕╤Б╨┐╨╛╨╗╤М╨╖╤Г╨╡╤В ╨▓ ╤В╤А╨╕ ╤А╨░╨╖╨░ ╨╝╨╡╨╜╤М╤И╨╡ ╤В╨╛╨║╨╡╨╜╨╛╨▓. ╨Т ╤Ж╨╡╨╗╨╛╨╝ ╤Н╨║╨╛╨╜╨╛╨╝╨╕╤П ╨▓ 5-6 ╤А╨░╨╖ (╨╜╤Г ╤В╨╕╨┐╨░). \n\n2. Terra тАУ ╨┐╤А╨╛╨╝╨╡╨╢╤Г╤В╨╛╤З╨╜╤Л╨╣ ╨▓╨░╤А╨╕╨░╨╜╤В. ╨г╨╢╨╡ ╨▓ ╤В╤А╨╕ ╤А╨░╨╖╨░ ╨┤╨╡╤И╨╡╨▓╨╗╨╡ Mythos, ╤Г╨▓╨╡╤А╨╡╨╜╨╜╨╛ ╨╛╨▒╤Е╨╛╨┤╨╕╤В Opus 4.8. \n\n3. Luna тАУ ╤Б╨░╨╝╤Л╨╣ ╨┤╨╡╤И╨╡╨▓╨░╤П ╨╕ ╨▒╤Л╤Б╤В╤А╨░╤П, ╨╜╨╛ ╨┐╨╛ ╤А╨╡╨╖╤Г╨╗╤М╤В╨░╤В╨░╨╝ ╨▓╤Б╨╡ ╨╡╤Й╨╡ ╤Е╨╛╤А╨╛╤И╨░. \n\n╨С╨╡╨╜╤З╨╝╨░╤А╨║╨╛╨▓ ╨┐╨╛╨║╨░╨╖╨░╨╗╨╕ ╨╝╨░╨╗╨╛╨▓╨░╤В╨╛, ╤В╨░╨║ ╤З╤В╨╛ ╨╜╨░ ╨┤╤А╤Г╨│╨╕╨╡ ╨╖╨░╨╝╨╡╤А╤Л ╨╡╤Й╨╡ ╨┐╨╛╤Б╨╝╨╛╤В╤А╨╕╨╝. ╨Ю╨▒╤Й╨╕╨╣ ╨┤╨╛╤Б╤В╤Г╨┐ ╨╛╨▒╨╡╤Й╨░╤О╤В ╨▓ ╨▒╨╗╨╕╨╢╨░╨╣╤И╨╕╨╡ ╨╜╨╡╨┤╨╡╨╗╨╕, ╨┐╨╛╨║╨░ ╤З╤В╨╛ ╨╝╨╛╨┤╨╡╨╗╨╕ ╨▓╤Л╤И╨╗╨╕ ╤В╨╛╨╗╤М╨║╨╛ ╨┤╨╗╤П ╨╛╨│╤А╨░╨╜╨╕╤З╨╡╨╜╨╜╨╛╨╣ ╨│╤А╤Г╨┐╨┐╤Л ╤В╨╡╤Б╤В╨╡╤А╨╛╨▓. \n\n╨е╨╛╤В╤М ╨▒╤Л ╨╜╨╡ ╨┐╨╛╨▓╤В╨╛╤А╨╕╨╗╨░╤Б╤М ╨╕╤Б╤В╨╛╤А╨╕╤П ╤Б Fable ЁЯЩП",
+            "matchedTerms": [
+                "gpt-5.6",
+                "mythos",
+                "fable"
+            ],
+            "expectedLabel": "GPT-5.6 government approval message",
+            "messageDateMsk": "2026-06-27T02:28:47",
+            "senderUsername": "razved_toot",
+            "telegramChatId": -1003898985313,
+            "messageThreadId": 5697961984,
+            "telegramMessageId": 5697961984
+        },
+        {
+            "rank": 1,
+            "uiId": "U03",
+            "links": [
+                {
+                    "url": "https://lolz.live/threads/10020722/",
+                    "domain": "lolz.live",
+                    "source": "TEXT",
+                    "visibleUrl": true
+                }
+            ],
+            "rawId": 11193,
+            "topicId": 5705302016,
+            "hasLinks": true,
+            "ingestedAt": "2026-06-27T00:14:07.542815+00:00",
+            "senderName": "Store",
+            "contentType": "MessageText",
+            "messageDate": "2026-06-27T00:14:07+00:00",
+            "sourceField": "raw_messages.text",
+            "textPreview": "https://lolz.live/threads/10020722/\n\n╨Я╨╛╤З╨╕╤В╨░╨╣╤В╨╡ ╨╜╨░ ╨┤╨╛╤Б╤Г╨│╨╡, ╨┐╨╛╨╗╨╡╨╖╨╜╨╛",
+            "matchedTerms": [
+                "text:lolz.live",
+                "message_links:lolz.live",
+                "read_later",
+                "useful"
+            ],
+            "expectedLabel": "Link-only lolz.live message",
+            "messageDateMsk": "2026-06-27T03:14:07",
+            "senderUsername": "storelzt",
+            "telegramChatId": -1003898985313,
+            "messageThreadId": 5705302016,
+            "telegramMessageId": 5705302016
+        },
+        {
+            "rank": 1,
+            "uiId": "U04",
+            "links": [
+                {
+                    "url": "https://openai.com/index/previewing-gpt-5-6-sol/",
+                    "domain": "openai.com",
+                    "source": "CAPTION",
+                    "visibleUrl": true
+                }
+            ],
+            "rawId": 11142,
+            "topicId": 5697961984,
+            "hasLinks": true,
+            "ingestedAt": "2026-06-26T23:28:48.857438+00:00",
+            "senderName": "╨Р╨╗╨╡╨║╤Б╨░╨╜╨┤╤А",
+            "contentType": "MessagePhoto",
+            "messageDate": "2026-06-26T23:28:47+00:00",
+            "sourceField": "raw_messages.caption",
+            "textPreview": "╨Ш╤В╨░╨║, ╨▓╤Б╤В╤А╨╡╤З╨░╨╣╤В╨╡: GPT-5.6 \n\nhttps://openai.com/index/previewing-gpt-5-6-sol/\n\n╨Р╨╜╨╛╨╜╤Б╨╕╤А╨╛╨▓╨░╨╗╨╕ ╤В╤А╨╕ ╨╝╨╛╨┤╨╡╨╗╨╕, ╨▓ ╤З╨╡╤Б╤В╤М ╤Б╨╛╨╗╨╜╨╡╤З╨╜╨╛╨╣ ╤Б╨╕╤Б╤В╨╡╨╝╤Л (╤Б ╤Б╨░╨╝╨╛╨╛╤Ж╨╡╨╜╨║╨╛╨╣ ╤Г ╤Б╨╛╨╖╨┤╨░╤В╨╡╨╗╨╡╨╣ ╨▓╤Б╨╡ ╨╛╨║): \n\n1. Sol тАУ ╤Б╨░╨╝╨░╤П ╨║╤А╤Г╨┐╨╜╨░╤П ╨╕ ╨║╤А╤Г╤В╨░╤П. ╨Э╨░ ╨╝╨╜╨╛╨│╨╕╤Е ╨▒╨╡╨╜╤З╨╝╨░╤А╨║╨░╤Е ╨╛╨▒╤Е╨╛╨┤╨╕╤В Mythos, ╨╕ ╨┐╤А╨╕ ╤Н╤В╨╛╨╝ ╨┤╨╡╤И╨╡╨▓╨╗╨╡ ╨▓ ╨┤╨▓╨░ ╤А╨░╨╖╨░. ╨Я╤А╨╕ ╤Н╤В╨╛╨╝ ╨░╨▓╤В╨╛╤А╤Л ╨┐╨╕╤И╤Г╤В, ╤З╤В╨╛ ╨╝╨╛╨┤╨╡╨╗╤М ╨╕╤Б╨┐╨╛╨╗╤М╨╖╤Г╨╡╤В ╨▓ ╤В╤А╨╕ ╤А╨░╨╖╨░ ╨╝╨╡╨╜╤М╤И╨╡ ╤В╨╛╨║╨╡╨╜╨╛╨▓. ╨Т ╤Ж╨╡╨╗╨╛╨╝ ╤Н╨║╨╛╨╜╨╛╨╝╨╕╤П ╨▓ 5-6 ╤А╨░╨╖ (╨╜╤Г ╤В╨╕╨┐╨░). \n\n2. Terra тАУ ╨┐╤А╨╛╨╝╨╡╨╢╤Г╤В╨╛╤З╨╜╤Л╨╣ ╨▓╨░╤А╨╕╨░╨╜╤В. ╨г╨╢╨╡ ╨▓ ╤В╤А╨╕ ╤А╨░╨╖╨░ ╨┤╨╡╤И╨╡╨▓╨╗╨╡ Mythos, ╤Г╨▓╨╡╤А╨╡╨╜╨╜╨╛ ╨╛╨▒╤Е╨╛╨┤╨╕╤В Opus 4.8. \n\n3. Luna тАУ ╤Б╨░╨╝╤Л╨╣ ╨┤╨╡╤И╨╡╨▓╨░╤П ╨╕ ╨▒╤Л╤Б╤В╤А╨░╤П, ╨╜╨╛ ╨┐╨╛ ╤А╨╡╨╖╤Г╨╗╤М╤В╨░╤В╨░╨╝ ╨▓╤Б╨╡ ╨╡╤Й╨╡ ╤Е╨╛╤А╨╛╤И╨░. \n\n╨С╨╡╨╜╤З╨╝╨░╤А╨║╨╛╨▓ ╨┐╨╛╨║╨░╨╖╨░╨╗╨╕ ╨╝╨░╨╗╨╛╨▓╨░╤В╨╛, ╤В╨░╨║ ╤З╤В╨╛ ╨╜╨░ ╨┤╤А╤Г╨│╨╕╨╡ ╨╖╨░╨╝╨╡╤А╤Л ╨╡╤Й╨╡ ╨┐╨╛╤Б╨╝╨╛╤В╤А╨╕╨╝. ╨Ю╨▒╤Й╨╕╨╣ ╨┤╨╛╤Б╤В╤Г╨┐ ╨╛╨▒╨╡╤Й╨░╤О╤В ╨▓ ╨▒╨╗╨╕╨╢╨░╨╣╤И╨╕╨╡ ╨╜╨╡╨┤╨╡╨╗╨╕, ╨┐╨╛╨║╨░ ╤З╤В╨╛ ╨╝╨╛╨┤╨╡╨╗╨╕ ╨▓╤Л╤И╨╗╨╕ ╤В╨╛╨╗╤М╨║╨╛ ╨┤╨╗╤П ╨╛╨│╤А╨░╨╜╨╕╤З╨╡╨╜╨╜╨╛╨╣ ╨│╤А╤Г╨┐╨┐╤Л ╤В╨╡╤Б╤В╨╡╤А╨╛╨▓. \n\n╨е╨╛╤В╤М ╨▒╤Л ╨╜╨╡ ╨┐╨╛╨▓╤В╨╛╤А╨╕╨╗╨░╤Б╤М ╨╕╤Б╤В╨╛╤А╨╕╤П ╤Б Fable ЁЯЩП",
+            "matchedTerms": [
+                "intro",
+                "gpt-5.6",
+                "openai_url_text",
+                "openai_url_link",
+                "terra",
+                "luna",
+                "mythos",
+                "fable"
+            ],
+            "expectedLabel": "Long GPT-5.6 announcement from Aleksandr",
+            "messageDateMsk": "2026-06-27T02:28:47",
+            "senderUsername": "razved_toot",
+            "telegramChatId": -1003898985313,
+            "messageThreadId": 5697961984,
+            "telegramMessageId": 5697961984
+        }
+    ],
+    "providerCalls": [
+    ],
+    "datasetMessages": [
+        {
+            "rawId": 11142,
+            "datasetId": 5051,
+            "messageDate": "2026-06-26T23:28:47+00:00",
+            "textPreview": "╨Ш╤В╨░╨║, ╨▓╤Б╤В╤А╨╡╤З╨░╨╣╤В╨╡: GPT-5.6 \n\nhttps://openai.com/index/previewing-gpt-5-6-sol/\n\n╨Р╨╜╨╛╨╜╤Б╨╕╤А╨╛╨▓╨░╨╗╨╕ ╤В╤А╨╕ ╨╝╨╛╨┤╨╡╨╗╨╕, ╨▓ ╤З╨╡╤Б╤В╤М ╤Б╨╛╨╗╨╜╨╡╤З╨╜╨╛╨╣ ╤Б╨╕╤Б╤В╨╡╨╝╤Л (╤Б ╤Б╨░╨╝╨╛╨╛╤Ж╨╡╨╜╨║╨╛╨╣ ╤Г ╤Б╨╛╨╖╨┤╨░╤В╨╡╨╗╨╡╨╣ ╨▓╤Б╨╡ ╨╛╨║): \n\n1. Sol тАУ ╤Б╨░╨╝╨░╤П ╨║╤А╤Г╨┐╨╜╨░╤П ╨╕ ╨║╤А╤Г╤В╨░╤П. ╨Э╨░ ╨╝╨╜╨╛╨│╨╕╤Е ╨▒╨╡╨╜╤З╨╝╨░╤А╨║╨░╤Е ╨╛╨▒╤Е╨╛╨┤╨╕╤В Mythos, ╨╕ ╨┐╤А╨╕ ╤Н╤В╨╛╨╝ ╨┤╨╡╤И╨╡╨▓╨╗╨╡ ╨▓ ╨┤╨▓╨░ ╤А╨░╨╖╨░. ╨Я╤А╨╕ ╤Н╤В╨╛╨╝ ╨░╨▓╤В╨╛╤А╤Л ╨┐╨╕╤И╤Г╤В, ╤З╤В╨╛ ╨╝╨╛╨┤╨╡╨╗╤М ╨╕╤Б╨┐╨╛╨╗╤М╨╖╤Г╨╡╤В ╨▓ ╤В╤А╨╕ ╤А╨░╨╖╨░ ╨╝╨╡╨╜╤М╤И╨╡ ╤В╨╛╨║╨╡╨╜╨╛╨▓. ╨Т ╤Ж╨╡╨╗╨╛╨╝ ╤Н╨║╨╛╨╜╨╛╨╝╨╕╤П ╨▓ 5-6 ╤А╨░╨╖ (╨╜╤Г ╤В╨╕╨┐╨░). \n\n2. Terra тАУ ╨┐╤А╨╛╨╝╨╡╨╢╤Г╤В╨╛╤З╨╜╤Л╨╣ ╨▓╨░╤А╨╕╨░╨╜╤В. ╨г╨╢╨╡ ╨▓ ╤В╤А╨╕ ╤А╨░╨╖╨░ ╨┤╨╡╤И╨╡╨▓╨╗╨╡ Mythos, ╤Г╨▓╨╡╤А╨╡╨╜╨╜╨╛ ╨╛╨▒╤Е╨╛╨┤╨╕╤В Opus 4.8. \n\n3. Luna тАУ ╤Б╨░╨╝╤Л╨╣ ╨┤╨╡╤И╨╡╨▓╨░╤П ╨╕ ╨▒╤Л╤Б╤В╤А╨░╤П, ╨╜╨╛ ╨┐╨╛ ╤А╨╡╨╖╤Г╨╗╤М╤В╨░╤В╨░╨╝ ╨▓╤Б╨╡ ╨╡╤Й╨╡ ╤Е╨╛╤А╨╛╤И╨░. \n\n╨С╨╡╨╜╤З╨╝╨░╤А╨║╨╛╨▓ ╨┐╨╛╨║╨░╨╖╨░╨╗╨╕ ╨╝╨░╨╗╨╛╨▓╨░╤В╨╛, ╤В╨░╨║ ╤З╤В╨╛ ╨╜╨░ ╨┤╤А╤Г╨│╨╕╨╡ ╨╖╨░╨╝╨╡╤А╤Л ╨╡╤Й╨╡ ╨┐╨╛╤Б╨╝╨╛╤В╤А╨╕╨╝. ╨Ю╨▒╤Й╨╕╨╣ ╨┤╨╛╤Б╤В╤Г╨┐ ╨╛╨▒╨╡╤Й╨░╤О╤В ╨▓ ╨▒╨╗╨╕╨╢╨░╨╣╤И╨╕╨╡ ╨╜╨╡╨┤╨╡╨╗╨╕, ╨┐╨╛╨║╨░ ╤З╤В╨╛ ╨╝╨╛╨┤╨╡╨╗╨╕ ╨▓╤Л╤И╨╗╨╕ ╤В╨╛╨╗╤М╨║╨╛ ╨┤╨╗╤П ╨╛╨│╤А╨░╨╜╨╕╤З╨╡╨╜╨╜╨╛╨╣ ╨│╤А╤Г╨┐╨┐╤Л ╤В╨╡╤Б╤В╨╡╤А╨╛╨▓. \n\n╨е╨╛╤В╤М ╨▒╤Л ╨╜╨╡ ╨┐╨╛╨▓╤В╨╛╤А╨╕╨╗╨░╤Б╤М ╨╕╤Б╤В╨╛╤А╨╕╤П ╤Б Fable ЁЯЩП",
+            "datasetMessageId": 10121,
+            "telegramMessageId": 5697961984
+        },
+        {
+            "rawId": 11193,
+            "datasetId": 5088,
+            "messageDate": "2026-06-27T00:14:07+00:00",
+            "textPreview": "https://lolz.live/threads/10020722/\n\n╨Я╨╛╤З╨╕╤В╨░╨╣╤В╨╡ ╨╜╨░ ╨┤╨╛╤Б╤Г╨│╨╡, ╨┐╨╛╨╗╨╡╨╖╨╜╨╛",
+            "datasetMessageId": 10168,
+            "telegramMessageId": 5705302016
+        }
+    ],
+    "discussionSegments": [
+    ]
+}

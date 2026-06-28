@@ -1,25 +1,19 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import {
-  SquaresFour,
-  DeviceMobile,
-  UsersThree,
-  ChatCircleText,
   BookOpenText,
-  FlowArrow,
   Brain,
   ChartLineUp,
+  ChatCircleText,
+  DeviceMobile,
+  FlowArrow,
   GearSix,
   MagnifyingGlass,
+  SquaresFour,
+  UsersThree,
 } from "@phosphor-icons/react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
 
 interface SearchItem {
   label: string;
@@ -30,15 +24,69 @@ interface SearchItem {
 }
 
 const searchItems: SearchItem[] = [
-  { label: "Сводка", route: "/dashboard", icon: SquaresFour, category: "Overview", keywords: ["dashboard", "сводка", "операционная"] },
-  { label: "Telegram-аккаунты", route: "/accounts", icon: DeviceMobile, category: "Telegram", keywords: ["accounts", "аккаунты", "reader", "tdlib"] },
-  { label: "Группы", route: "/groups", icon: UsersThree, category: "Telegram", keywords: ["groups", "группы", "chats", "чаты"] },
-  { label: "Просмотр чатов", route: "/chat-viewer", icon: ChatCircleText, category: "Telegram", keywords: ["chat", "чаты", "messages", "сообщения"] },
-  { label: "Гайды", route: "/guides", icon: BookOpenText, category: "Processing", keywords: ["guides", "гайды", "инструкции", "kanban"] },
-  { label: "Правила", route: "/rules", icon: FlowArrow, category: "Processing", keywords: ["rules", "правила", "классификаторы", "pipeline"] },
-  { label: "AI-провайдеры", route: "/ai-providers", icon: Brain, category: "Processing", keywords: ["ai", "providers", "промпты", "models", "llm"] },
-  { label: "Мониторинг", route: "/monitoring", icon: ChartLineUp, category: "System", keywords: ["monitoring", "мониторинг", "tokens", "токены", "cost", "errors"] },
-  { label: "Настройки", route: "/settings", icon: GearSix, category: "System", keywords: ["settings", "настройки", "конфигурация", "limits"] },
+  {
+    label: "Сводка",
+    route: "/dashboard",
+    icon: SquaresFour,
+    category: "Обзор",
+    keywords: ["dashboard", "overview", "operations", "сводка"],
+  },
+  {
+    label: "Telegram-аккаунты",
+    route: "/accounts",
+    icon: DeviceMobile,
+    category: "Telegram",
+    keywords: ["accounts", "reader", "tdlib", "аккаунты"],
+  },
+  {
+    label: "Группы",
+    route: "/groups",
+    icon: UsersThree,
+    category: "Telegram",
+    keywords: ["groups", "chats", "группы"],
+  },
+  {
+    label: "Просмотр чатов",
+    route: "/groups",
+    icon: ChatCircleText,
+    category: "Telegram",
+    keywords: ["chat", "messages", "viewer", "чаты", "сообщения"],
+  },
+  {
+    label: "Материалы",
+    route: "/materials",
+    icon: BookOpenText,
+    category: "Обработка",
+    keywords: ["materials", "guides", "news", "faq", "risks", "материалы", "гайды"],
+  },
+  {
+    label: "Классификаторы",
+    route: "/classifiers",
+    icon: FlowArrow,
+    category: "Обработка",
+    keywords: ["rules", "classifiers", "pipeline", "классификаторы", "правила"],
+  },
+  {
+    label: "AI-провайдеры",
+    route: "/ai",
+    icon: Brain,
+    category: "Обработка",
+    keywords: ["ai", "providers", "prompts", "models", "llm", "провайдеры"],
+  },
+  {
+    label: "Мониторинг",
+    route: "/dashboard",
+    icon: ChartLineUp,
+    category: "Система",
+    keywords: ["monitoring", "tokens", "cost", "errors", "мониторинг"],
+  },
+  {
+    label: "Настройки",
+    route: "/settings",
+    icon: GearSix,
+    category: "Система",
+    keywords: ["settings", "configuration", "limits", "настройки"],
+  },
 ];
 
 export function CommandPalette() {
@@ -47,10 +95,10 @@ export function CommandPalette() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
-        e.preventDefault();
-        setOpen((prev) => !prev);
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key === "k") {
+        event.preventDefault();
+        setOpen((previous) => !previous);
         setQuery("");
       }
     };
@@ -60,19 +108,21 @@ export function CommandPalette() {
 
   const filtered = query.trim()
     ? searchItems.filter((item) => {
-        const q = query.toLowerCase();
+        const normalizedQuery = query.toLowerCase();
         return (
-          item.label.toLowerCase().includes(q) ||
-          item.keywords.some((k) => k.includes(q)) ||
-          item.category.toLowerCase().includes(q)
+          item.label.toLowerCase().includes(normalizedQuery)
+          || item.keywords.some((keyword) => keyword.includes(normalizedQuery))
+          || item.category.toLowerCase().includes(normalizedQuery)
         );
       })
     : searchItems;
 
-  const grouped = filtered.reduce<Record<string, SearchItem[]>>((acc, item) => {
-    if (!acc[item.category]) acc[item.category] = [];
-    acc[item.category].push(item);
-    return acc;
+  const grouped = filtered.reduce<Record<string, SearchItem[]>>((accumulator, item) => {
+    if (!accumulator[item.category]) {
+      accumulator[item.category] = [];
+    }
+    accumulator[item.category].push(item);
+    return accumulator;
   }, {});
 
   const handleSelect = (route: string) => {
@@ -83,40 +133,38 @@ export function CommandPalette() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="sm:max-w-lg p-0 gap-0 overflow-hidden">
+      <DialogContent className="gap-0 overflow-hidden p-0 sm:max-w-lg">
         <DialogHeader className="sr-only">
           <DialogTitle>Поиск и навигация</DialogTitle>
         </DialogHeader>
-        {/* Search input */}
         <div className="flex items-center border-b border-border-subtle px-4">
           <MagnifyingGlass size={16} weight="regular" className="mr-2 shrink-0 text-text-weak" />
           <input
-            className="flex-1 h-12 bg-transparent text-sm text-text-strong placeholder:text-text-weak focus:outline-none"
-            placeholder="Поиск страниц, групп, гайдов..."
+            className="h-12 flex-1 bg-transparent text-sm text-text-strong placeholder:text-text-weak focus:outline-none"
+            placeholder="Поиск страниц, групп и материалов..."
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(event) => setQuery(event.target.value)}
             autoFocus
           />
           <kbd className="ml-2 pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border border-border-subtle bg-bg-app px-1.5 font-mono text-[10px] font-medium text-text-weak">
             Esc
           </kbd>
         </div>
-        {/* Results */}
         <div className="max-h-[300px] overflow-y-auto py-2">
           {Object.entries(grouped).map(([category, items]) => (
             <div key={category}>
-              <div className="px-4 py-1.5 text-xs font-semibold text-text-weak uppercase tracking-wider">
+              <div className="px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-text-weak">
                 {category}
               </div>
               {items.map((item) => (
                 <button
-                  key={item.route}
-                  className="w-full flex items-center gap-3 px-4 py-2 text-sm text-text-default hover:bg-bg-app transition-colors cursor-pointer"
+                  key={`${item.route}-${item.label}`}
+                  className="flex w-full cursor-pointer items-center gap-3 px-4 py-2 text-sm text-text-default transition-colors hover:bg-bg-app"
                   onClick={() => handleSelect(item.route)}
                 >
-                  <item.icon size={16} weight="regular" className="text-text-muted shrink-0" />
+                  <item.icon size={16} weight="regular" className="shrink-0 text-text-muted" />
                   <span className="flex-1 text-left">{item.label}</span>
-                  <Badge variant="outline" className="text-[10px] shrink-0">
+                  <Badge variant="outline" className="shrink-0 text-[10px]">
                     {item.route}
                   </Badge>
                 </button>
@@ -129,16 +177,24 @@ export function CommandPalette() {
             </div>
           )}
         </div>
-        {/* Footer hint */}
-        <div className="border-t border-border-subtle px-4 py-2 flex items-center gap-4 text-xs text-text-weak">
+        <div className="flex items-center gap-4 border-t border-border-subtle px-4 py-2 text-xs text-text-weak">
           <span>
-            <kbd className="inline-flex h-4 items-center rounded border border-border-subtle bg-bg-app px-1 font-mono text-[10px]">↑↓</kbd> навигация
+            <kbd className="inline-flex h-4 items-center rounded border border-border-subtle bg-bg-app px-1 font-mono text-[10px]">
+              ↑↓
+            </kbd>{" "}
+            навигация
           </span>
           <span>
-            <kbd className="inline-flex h-4 items-center rounded border border-border-subtle bg-bg-app px-1 font-mono text-[10px]">↵</kbd> открыть
+            <kbd className="inline-flex h-4 items-center rounded border border-border-subtle bg-bg-app px-1 font-mono text-[10px]">
+              ↵
+            </kbd>{" "}
+            открыть
           </span>
           <span>
-            <kbd className="inline-flex h-4 items-center rounded border border-border-subtle bg-bg-app px-1 font-mono text-[10px]">Esc</kbd> закрыть
+            <kbd className="inline-flex h-4 items-center rounded border border-border-subtle bg-bg-app px-1 font-mono text-[10px]">
+              Esc
+            </kbd>{" "}
+            закрыть
           </span>
         </div>
       </DialogContent>

@@ -1,303 +1,260 @@
-import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
-import {
-  CheckCircle,
-  ClockCounterClockwise,
-  Cpu,
-  FloppyDisk,
-  SpinnerGap,
-  TestTube,
-  Trash,
-  WarningCircle,
-  XCircle,
-} from "@phosphor-icons/react";
+import { useState } from "react";
+import { CheckCircle, PencilSimple, Plus, SpinnerGap, Trash } from "@phosphor-icons/react";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { PageHeaderCard } from "@/components/domain/page-header-card";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import {
-  useCreateProviderMutation,
-  useDeleteProviderMutation,
-  useProvidersQuery,
-  useTestProviderMutation,
-  useUpdateProviderMutation,
-  type TestProviderResult,
-} from "@/shared/api/providersApi";
-import { displayProviderStatus, type AIProvider } from "@/shared/types";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { deleteJsonAuth, getJsonAuth, patchJsonAuth, postJsonAuth } from "@/shared/api/http";
+import { queryClient } from "@/shared/api/queryClient";
 
-type ProviderTestState = {
-  providerId: string;
-  providerName: string;
-  result: TestProviderResult;
-  testedAt: string;
-};
-
-function formatLatency(latencyMs: number | null) {
-  if (latencyMs == null) return "—";
-  return latencyMs < 1000 ? `${latencyMs} мс` : `${(latencyMs / 1000).toFixed(1)} с`;
+interface Provider {
+  id: number;
+  name: string;
+  type: string;
+  baseUrl: string | null;
+  apiKeyRef: string | null;
+  enabled: boolean;
+  priority: number;
+  healthStatus: string;
+  lastHealthCheckAt: string | null;
 }
 
-function ProviderCard({
-  provider,
-  isTesting,
-  testState,
-  onTest,
-  onDelete,
-}: {
-  provider: AIProvider;
-  isTesting: boolean;
-  testState: ProviderTestState | null;
-  onTest: (provider: AIProvider) => void;
-  onDelete: (provider: AIProvider) => void;
-}) {
-  const statusVariant = provider.status === "ERROR" ? "danger" : "outline";
-  const resultVariant =
-    provider.lastTestResult === "OK" || provider.lastTestResult === "PIPELINE_OK"
-      ? "success"
-      : "warning";
+interface ProviderFormState {
+  id: number;
+  name: string;
+  type: string;
+  baseUrl: string;
+  apiKeyRef: string;
+}
 
-  return (
-    <Card className={provider.lastError ? "border-danger/30 bg-danger-soft/30" : undefined}>
-      <CardContent className="p-4">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <div className="flex items-center gap-2">
-              <div className="text-sm font-semibold text-text-strong">{provider.name}</div>
-              <Badge variant="outline">{provider.protocol}</Badge>
-            </div>
-            <div className="mt-1 text-xs text-text-muted">{provider.endpointUrl}</div>
-            <div className="mt-2 flex flex-wrap gap-2">
-              <Badge variant="outline">{provider.model ?? "model не указан"}</Badge>
-              <Badge variant={provider.hasApiKey ? "success" : "warning"}>
-                {provider.hasApiKey ? "API key задан" : "API key отсутствует"}
-              </Badge>
-              {provider.lastError && <Badge variant="danger">API problem</Badge>}
-            </div>
-          </div>
-          <Badge variant={statusVariant}>{displayProviderStatus(provider.status)}</Badge>
-        </div>
+const emptyProvider: ProviderFormState = {
+  id: 0,
+  name: "",
+  type: "OPENAI_COMPATIBLE",
+  baseUrl: "",
+  apiKeyRef: "",
+};
 
-        <div className="mt-4 flex flex-wrap gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-1.5"
-            onClick={() => onTest(provider)}
-            disabled={isTesting}
-          >
-            {isTesting ? <SpinnerGap size={14} className="animate-spin" /> : <TestTube size={14} />}
-            {isTesting ? "Проверяю..." : "Проверить"}
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-1.5 text-danger hover:text-danger"
-            onClick={() => onDelete(provider)}
-            disabled={isTesting}
-          >
-            <Trash size={14} />
-            Удалить
-          </Button>
-        </div>
-
-        {testState && (
-          <Alert variant={testState.result.success ? "success" : "danger"} className="mt-4">
-            {testState.result.success ? (
-              <CheckCircle size={18} weight="fill" />
-            ) : (
-              <XCircle size={18} weight="fill" />
-            )}
-            <AlertTitle>
-              {testState.result.success ? "Проверка прошла успешно" : "Проверка не прошла"}
-            </AlertTitle>
-            <AlertDescription>
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-                <span>Задержка: {formatLatency(testState.result.latencyMs)}</span>
-                <span>Время: {new Date(testState.testedAt).toLocaleTimeString("ru-RU")}</span>
-              </div>
-              {testState.result.error && (
-                <div className="mt-2 whitespace-pre-wrap break-words">{testState.result.error}</div>
-              )}
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {!testState && provider.lastTestedAt && provider.lastTestResult && (
-          <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-text-muted">
-            <ClockCounterClockwise size={14} />
-            <span>
-              Последняя проверка: {new Date(provider.lastTestedAt).toLocaleString("ru-RU")}
-            </span>
-            <Badge variant={resultVariant}>{provider.lastTestResult}</Badge>
-          </div>
-        )}
-
-        {provider.lastError && (
-          <Alert variant="danger" className="mt-4">
-            <WarningCircle size={18} weight="fill" />
-            <AlertTitle>Последняя ошибка API</AlertTitle>
-            <AlertDescription>
-              <div className="whitespace-pre-wrap break-words">{provider.lastError}</div>
-            </AlertDescription>
-          </Alert>
-        )}
-      </CardContent>
-    </Card>
-  );
+function healthVariant(status?: string): "success" | "danger" | "warning" | "outline" {
+  if (!status) return "outline";
+  if (["OK", "SUCCESS", "UP"].includes(status)) return "success";
+  if (["MISSING_API_KEY", "DOWN", "MODEL_WORKER_DOWN", "MODEL_NOT_CONFIGURED", "FAILED", "ERROR"].includes(status)) return "danger";
+  return "warning";
 }
 
 export function AiProvidersPage() {
-  const providersQuery = useProvidersQuery();
-  const createProvider = useCreateProviderMutation();
-  const updateProvider = useUpdateProviderMutation();
-  const testProvider = useTestProviderMutation();
-  const deleteProvider = useDeleteProviderMutation();
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [form, setForm] = useState<ProviderFormState>(emptyProvider);
 
-  const providers = providersQuery.data ?? [];
-  const [name, setName] = useState("");
-  const [protocol, setProtocol] = useState("OPENAI_COMPATIBLE");
-  const [endpointUrl, setEndpointUrl] = useState("");
-  const [apiKey, setApiKey] = useState("");
-  const [model, setModel] = useState("");
-  const [testState, setTestState] = useState<ProviderTestState | null>(null);
+  const providers = useQuery({
+    queryKey: ["ai-v2-providers"],
+    queryFn: () => getJsonAuth<Provider[]>("/api/v2/ai/providers"),
+  });
 
-  const activeProvider = useMemo(
-    () => providers.find((provider) => provider.status !== "DISABLED" && provider.status !== "ERROR"),
-    [providers],
-  );
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: ["ai-v2-providers"] });
 
-  const saveProvider = () => {
-    const existing = providers.find((provider) => provider.name === name);
-    if (existing) {
-      updateProvider.mutate({
-        id: existing.id,
-        protocol,
-        endpointUrl,
-        apiKey: apiKey || undefined,
-        model: model || undefined,
-      });
-      return;
-    }
+  const saveProvider = useMutation({
+    mutationFn: () => {
+      const body = {
+        name: form.name,
+        type: form.type,
+        baseUrl: form.baseUrl || null,
+        apiKeyRef: form.apiKeyRef || null,
+        enabled: true,
+        priority: 100,
+      };
+      return form.id
+        ? patchJsonAuth(`/api/v2/ai/providers/${form.id}`, body)
+        : postJsonAuth("/api/v2/ai/providers", body);
+    },
+    onSuccess: () => {
+      setDialogOpen(false);
+      setForm(emptyProvider);
+      invalidate();
+    },
+  });
 
-    createProvider.mutate({
-      name,
-      protocol,
-      endpointUrl,
-      apiKey: apiKey || undefined,
-      model: model || undefined,
+  const deleteProvider = useMutation({
+    mutationFn: (id: number) => deleteJsonAuth(`/api/v2/ai/providers/${id}`),
+    onSuccess: invalidate,
+  });
+
+  const activateProvider = useMutation({
+    mutationFn: async (provider: Provider) => {
+      const current = providers.data ?? [];
+      await Promise.all(
+        current.map((item) =>
+          patchJsonAuth(`/api/v2/ai/providers/${item.id}`, { enabled: item.id === provider.id })
+        )
+      );
+    },
+    onSuccess: invalidate,
+  });
+
+  function openCreate() {
+    setForm(emptyProvider);
+    setDialogOpen(true);
+  }
+
+  function openEdit(provider: Provider) {
+    setForm({
+      id: provider.id,
+      name: provider.name,
+      type: provider.type,
+      baseUrl: provider.baseUrl ?? "",
+      apiKeyRef: provider.apiKeyRef ?? "",
     });
-  };
-
-  const runProviderTest = (provider: AIProvider) => {
-    setTestState(null);
-    testProvider.mutate(provider.id, {
-      onSuccess: (result) => {
-        setTestState({
-          providerId: provider.id,
-          providerName: provider.name,
-          result,
-          testedAt: new Date().toISOString(),
-        });
-      },
-      onError: (error) => {
-        setTestState({
-          providerId: provider.id,
-          providerName: provider.name,
-          result: {
-            success: false,
-            latencyMs: null,
-            error: error instanceof Error ? error.message : "Unknown error",
-          },
-          testedAt: new Date().toISOString(),
-        });
-      },
-    });
-  };
+    setDialogOpen(true);
+  }
 
   return (
     <div className="flex flex-col gap-5">
       <PageHeaderCard
-        title="AI провайдеры"
-        description="Здесь находятся реальные подключенные провайдеры и управление ими. Промпты вынесены на отдельную страницу."
-        actions={{ onRefresh: () => providersQuery.refetch() }}
-      >
-        <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-border-subtle pt-4 text-sm text-text-muted">
-          <span>Промпты и тестирование шаблонов снова доступны отдельно.</span>
-          <Link to="/prompts" className="font-medium text-brand-blue hover:underline">
-            Открыть промпты
-          </Link>
-        </div>
-      </PageHeaderCard>
+        title="AI-провайдеры"
+        description="Выберите активного провайдера или добавьте новый. Ключи не показываются: сохраняется только ссылка на env/secret."
+      />
 
-      {testState && (
-        <Alert variant={testState.result.success ? "success" : "danger"}>
-          {testState.result.success ? (
-            <CheckCircle size={18} weight="fill" />
-          ) : (
-            <WarningCircle size={18} weight="fill" />
-          )}
-          <AlertTitle>
-            {testState.providerName}:{" "}
-            {testState.result.success ? "подключение работает" : "проверка не прошла"}
-          </AlertTitle>
-          <AlertDescription>
-            <div>Задержка: {formatLatency(testState.result.latencyMs)}</div>
-            {testState.result.error && (
-              <div className="mt-1 whitespace-pre-wrap">{testState.result.error}</div>
-            )}
-          </AlertDescription>
-        </Alert>
-      )}
-
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex items-center gap-2 text-sm font-semibold text-text-strong">
-            <FloppyDisk size={16} />
-            Добавить или обновить провайдера
-          </div>
-          <div className="mt-4 grid gap-3 md:grid-cols-2">
-            <Input placeholder="Имя провайдера" value={name} onChange={(event) => setName(event.target.value)} />
-            <Input placeholder="Протокол" value={protocol} onChange={(event) => setProtocol(event.target.value)} />
-            <Input placeholder="Endpoint URL" value={endpointUrl} onChange={(event) => setEndpointUrl(event.target.value)} />
-            <Input placeholder="Model" value={model} onChange={(event) => setModel(event.target.value)} />
-            <div className="md:col-span-2">
-              <Input placeholder="API key" value={apiKey} onChange={(event) => setApiKey(event.target.value)} />
-            </div>
-          </div>
-          <div className="mt-4 flex flex-wrap items-center gap-3">
-            <Button
-              variant="primary"
-              className="gap-1.5"
-              onClick={saveProvider}
-              disabled={!name || !endpointUrl || createProvider.isPending || updateProvider.isPending}
-            >
-              <Cpu size={16} />
-              Сохранить
-            </Button>
-            {activeProvider && (
-              <div className="text-xs text-text-muted">
-                Активный провайдер:{" "}
-                <span className="font-medium text-text-strong">{activeProvider.name}</span>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      <div className="grid gap-4 xl:grid-cols-2">
-        {providers.map((provider) => (
+      <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
+        {(providers.data ?? []).map((provider) => (
           <ProviderCard
             key={provider.id}
             provider={provider}
-            isTesting={testProvider.isPending && testProvider.variables === provider.id}
-            testState={testState?.providerId === provider.id ? testState : null}
-            onTest={runProviderTest}
-            onDelete={(currentProvider) => deleteProvider.mutate(currentProvider.id)}
+            pending={activateProvider.isPending || deleteProvider.isPending}
+            onActivate={() => activateProvider.mutate(provider)}
+            onEdit={() => openEdit(provider)}
+            onDelete={() => {
+              if (window.confirm(`Удалить провайдера ${provider.name}?`)) {
+                deleteProvider.mutate(provider.id);
+              }
+            }}
           />
         ))}
+
+        <button
+          type="button"
+          onClick={openCreate}
+          className="min-h-[190px] rounded-[28px] border border-dashed border-brand-yellow/70 bg-warning-soft/55 p-5 text-left transition hover:border-brand-yellow hover:bg-warning-soft"
+        >
+          <div className="flex h-full flex-col items-center justify-center gap-3 text-text-strong">
+            <span className="grid h-14 w-14 place-items-center rounded-2xl bg-bg-card shadow-sm">
+              <Plus size={28} weight="bold" className="text-warning" />
+            </span>
+            <div className="text-center">
+              <div className="font-semibold">Добавить провайдера</div>
+              <div className="mt-1 text-sm text-text-muted">Открыть форму настройки</div>
+            </div>
+          </div>
+        </button>
+      </div>
+
+      {providers.isLoading && (
+        <div className="inline-flex items-center gap-2 rounded-2xl border border-border-subtle bg-bg-card px-4 py-3 text-sm text-text-muted">
+          <SpinnerGap className="animate-spin" /> Загружаем провайдеров...
+        </div>
+      )}
+
+      <ProviderDialog
+        open={dialogOpen}
+        form={form}
+        pending={saveProvider.isPending}
+        onOpenChange={setDialogOpen}
+        onFormChange={setForm}
+        onSubmit={() => saveProvider.mutate()}
+      />
+    </div>
+  );
+}
+
+function ProviderCard({ provider, pending, onActivate, onEdit, onDelete }: { provider: Provider; pending: boolean; onActivate: () => void; onEdit: () => void; onDelete: () => void }) {
+  return (
+    <div
+      className={`min-h-[190px] rounded-[28px] border p-5 transition ${
+        provider.enabled
+          ? "border-brand-yellow bg-warning-soft shadow-[0_18px_45px_rgba(223,180,69,0.18)]"
+          : "border-border-subtle bg-bg-card hover:border-brand-blue/40"
+      }`}
+    >
+      <div className="flex h-full flex-col justify-between gap-4">
+        <div>
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <h2 className="truncate text-lg font-semibold text-text-strong">{provider.name}</h2>
+                {provider.enabled && <CheckCircle size={18} weight="fill" className="text-warning" />}
+              </div>
+              <div className="mt-1 text-sm text-text-muted">{provider.type}</div>
+            </div>
+            <Badge variant={provider.enabled ? "success" : "outline"}>{provider.enabled ? "активный" : "неактивный"}</Badge>
+          </div>
+
+          <div className="mt-4 space-y-2 text-sm">
+            <div className="truncate text-text-muted">{provider.baseUrl ?? "Base URL не задан"}</div>
+            <div className="flex flex-wrap gap-2">
+              <Badge variant={provider.apiKeyRef ? "success" : "danger"}>{provider.apiKeyRef ? "Ключ задан" : "Ключ не задан"}</Badge>
+              <Badge variant={healthVariant(provider.healthStatus)}>{provider.healthStatus}</Badge>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" variant={provider.enabled ? "secondary" : "primary"} disabled={pending || provider.enabled} onClick={onActivate}>
+            Выбрать активным
+          </Button>
+          <Button size="sm" variant="outline" onClick={onEdit}>
+            <PencilSimple size={14} />
+            Редактировать
+          </Button>
+          <Button size="sm" variant="destructive" onClick={onDelete}>
+            <Trash size={14} />
+            Удалить
+          </Button>
+        </div>
       </div>
     </div>
+  );
+}
+
+function ProviderDialog({ open, form, pending, onOpenChange, onFormChange, onSubmit }: { open: boolean; form: ProviderFormState; pending: boolean; onOpenChange: (open: boolean) => void; onFormChange: (form: ProviderFormState) => void; onSubmit: () => void }) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-xl">
+        <DialogHeader>
+          <DialogTitle>{form.id ? "Редактировать провайдера" : "Добавить провайдера"}</DialogTitle>
+          <DialogDescription>
+            Введите данные подключения. Секретное значение ключа сюда не вставляем: используйте env/secret ref.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="grid gap-3">
+          <Input placeholder="Название" value={form.name} onChange={(event) => onFormChange({ ...form, name: event.target.value })} />
+          <select className="rounded-xl border border-border-subtle bg-bg-elevated px-3 py-2" value={form.type} onChange={(event) => onFormChange({ ...form, type: event.target.value })}>
+            <option value="OPENAI_COMPATIBLE">OpenAI-compatible</option>
+            <option value="MODELHUB">ModelHub</option>
+            <option value="OPENAI">OpenAI</option>
+            <option value="ANTHROPIC_COMPATIBLE">Anthropic-compatible</option>
+            <option value="CUSTOM">Custom</option>
+          </select>
+          <Input placeholder="Base URL" value={form.baseUrl} onChange={(event) => onFormChange({ ...form, baseUrl: event.target.value })} />
+          <Input placeholder="API key env ref, например MODELHUB_API_KEY" value={form.apiKeyRef} onChange={(event) => onFormChange({ ...form, apiKeyRef: event.target.value })} />
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Отменить</Button>
+          <Button disabled={!form.name.trim() || pending} onClick={onSubmit}>
+            {pending && <SpinnerGap className="animate-spin" />}
+            {form.id ? "Сохранить" : "Добавить"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

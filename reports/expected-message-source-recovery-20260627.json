@@ -1,0 +1,78 @@
+{
+  "capturedAt": "2026-06-27T11:02:52.583Z",
+  "statuses": [
+    {
+      "id": "M01",
+      "status": "FOUND_UI_EQUIVALENT",
+      "rawIds": "11142",
+      "note": "Maps to U01/U04 long GPT-5.6 Sol caption in API SUPPORT | ModelHub; outside previous exact window."
+    },
+    {
+      "id": "M02",
+      "status": "NOT_FOUND",
+      "rawIds": "",
+      "note": "PlusVibeAPI-specific content not recovered in target chat search."
+    },
+    {
+      "id": "M03",
+      "status": "NOT_FOUND",
+      "rawIds": "",
+      "note": "Specific proxy-risk/model-substitution/log-resale content not recovered in target chat search."
+    },
+    {
+      "id": "M04",
+      "status": "NOT_FOUND",
+      "rawIds": "",
+      "note": "Figma Config content not recovered in target chat search."
+    },
+    {
+      "id": "M05",
+      "status": "FOUND_SIMILAR",
+      "rawIds": "",
+      "note": "Codex mentions exist in broader-day search, but this UI reconciliation did not recover the requested outage/quota message."
+    },
+    {
+      "id": "M06",
+      "status": "FOUND_UI_EQUIVALENT",
+      "rawIds": "11142",
+      "note": "Government/access-policy wording may be part of the same long GPT-5.6 caption or related UI item; recovered hit did not match every named source snippet."
+    },
+    {
+      "id": "M07",
+      "status": "FOUND_SIMILAR",
+      "rawIds": "11142",
+      "note": "Fable/Mythos/GPT-5.6 context appears in raw 11142; exact Claude iOS loophole text not recovered here."
+    },
+    {
+      "id": "M08",
+      "status": "NOT_FOUND",
+      "rawIds": "",
+      "note": "Referral/bot abuse content not recovered in this target-chat UI source search."
+    },
+    {
+      "id": "M09",
+      "status": "FOUND_SIMILAR",
+      "rawIds": "",
+      "note": "OpenMontage-like candidate was previously found as broader-day raw 11484, outside U01-U04 target set."
+    },
+    {
+      "id": "M10",
+      "status": "NOT_FOUND",
+      "rawIds": "",
+      "note": "sensors_discord_bot not recovered in target chat search."
+    },
+    {
+      "id": "M11",
+      "status": "FOUND_EXACT",
+      "rawIds": "11193",
+      "note": "lolz.live link-only message recovered from /groups API and raw_messages.text."
+    },
+    {
+      "id": "M12",
+      "status": "NOT_FOUND",
+      "rawIds": "",
+      "note": "feedback-only useful-guide text not recovered in target chat search."
+    }
+  ],
+  "source": "ui-visible-message-source-recovery-20260627.json"
+}

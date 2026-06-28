@@ -1,0 +1,16 @@
+{
+    "settings": {
+        "discussionSegmentDraftOnly": "1",
+        "discussionSegmentFreshOnly": "1",
+        "discussionSegmentGenerationMode": "CONTROLLED",
+        "discussionSegmentGenerationEnabled": "1",
+        "discussionSegmentSkipRiskSensitive": "1",
+        "discussionSegmentMaxMaterialsPerDay": "3",
+        "discussionSegmentRequireLlmAccepted": "1",
+        "discussionSegmentStopOnProviderError": "1",
+        "discussionSegmentControlledEnableTime": "2026-06-26T16:21:57Z",
+        "discussionSegmentStopOnGenerationError": "1",
+        "discussionSegmentMaxMaterialsPerChatTopicPerDay": "1"
+    },
+    "enableTime": "2026-06-26T16:23:22Z"
+}

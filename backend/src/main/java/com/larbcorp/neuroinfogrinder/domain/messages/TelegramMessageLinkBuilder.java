@@ -14,39 +14,54 @@ public final class TelegramMessageLinkBuilder {
 
     public static TelegramMessageLink buildLink(GroupEntity group, MessageEntity message) {
         if (group == null || message == null || message.getTelegramMessageId() == null) {
-            return new TelegramMessageLink(null, false, "Ссылка недоступна: отсутствует группа или message metadata");
+            return unavailable("Link unavailable: missing group or message metadata");
         }
+
+        String topicSegment = topicSegment(group, message);
+        String messageSegment = String.valueOf(message.getTelegramMessageId());
 
         if (group.getUsername() != null && !group.getUsername().isBlank()) {
             return new TelegramMessageLink(
-                "https://t.me/" + group.getUsername().trim() + "/" + message.getTelegramMessageId(),
+                "https://t.me/" + group.getUsername().trim() + "/" + topicSegment + messageSegment,
                 true,
                 null
             );
         }
 
-        String rawChatId = String.valueOf(group.getTelegramChatId());
-        if (!rawChatId.startsWith("-100")) {
-            return new TelegramMessageLink(
-                null,
-                false,
-                "Ссылка недоступна: нет public username или недостаточно Telegram metadata"
-            );
-        }
-
-        String normalizedChatId = rawChatId.substring(4);
-        if (normalizedChatId.isBlank()) {
-            return new TelegramMessageLink(
-                null,
-                false,
-                "Ссылка недоступна: не удалось вычислить internal chat id"
-            );
+        String normalizedChatId = normalizeInternalChatId(group.getTelegramChatId());
+        if (normalizedChatId == null || normalizedChatId.isBlank()) {
+            return unavailable("Link unavailable: missing public username or Telegram chat metadata");
         }
 
         return new TelegramMessageLink(
-            "https://t.me/c/" + normalizedChatId + "/" + message.getTelegramMessageId(),
+            "https://t.me/c/" + normalizedChatId + "/" + topicSegment + messageSegment,
             true,
             null
         );
+    }
+
+    private static TelegramMessageLink unavailable(String reason) {
+        return new TelegramMessageLink(null, false, reason);
+    }
+
+    private static String topicSegment(GroupEntity group, MessageEntity message) {
+        return Boolean.TRUE.equals(group.getForum()) && message.getTopicId() != null
+            ? message.getTopicId() + "/"
+            : "";
+    }
+
+    private static String normalizeInternalChatId(Long telegramChatId) {
+        if (telegramChatId == null) {
+            return null;
+        }
+
+        String rawChatId = String.valueOf(telegramChatId).trim();
+        if (rawChatId.startsWith("-100") && rawChatId.length() > 4) {
+            return rawChatId.substring(4);
+        }
+        if (rawChatId.matches("\\d+")) {
+            return rawChatId;
+        }
+        return null;
     }
 }

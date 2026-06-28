@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { memo, useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
@@ -15,6 +15,20 @@ interface GroupListPanelProps {
   onToggleShowDisabled: (value: boolean) => void;
 }
 
+function formatMessageCounters(group: Group) {
+  if (group.rawMessagesLast24h != null) {
+    return `${group.rawMessagesLast24h.toLocaleString()} за 24ч`;
+  }
+  if (group.rawMessagesTotal != null) {
+    return group.rawMessagesTotal === 0 ? "0 сообщений" : `Всего ${group.rawMessagesTotal.toLocaleString()}`;
+  }
+  return "—";
+}
+
+function processingBadge(group: Group) {
+  return group.processingState === "ENABLED_PROCESSABLE" ? "on" : "off";
+}
+
 export function GroupListPanel({
   groups,
   isLoading,
@@ -25,15 +39,22 @@ export function GroupListPanel({
 }: GroupListPanelProps) {
   const [search, setSearch] = useState("");
 
+  // Pin a stable display order so background polling (updated counters,
+  // live message activity) cannot reorder the list and make chats jump.
+  const stableGroups = useMemo(
+    () => [...groups].sort((a, b) => Number(a.id) - Number(b.id)),
+    [groups]
+  );
+
   const filtered = useMemo(
     () =>
-      groups.filter(
+      stableGroups.filter(
         (g) =>
           g.title.toLowerCase().includes(search.toLowerCase()) ||
           String(g.telegramChatId).includes(search) ||
           (g.username ?? "").toLowerCase().includes(search.toLowerCase())
       ),
-    [groups, search]
+    [stableGroups, search]
   );
 
   return (
@@ -88,53 +109,12 @@ export function GroupListPanel({
             </div>
           ) : (
             filtered.map((group) => (
-              <button
+              <GroupListRow
                 key={group.id}
-                onClick={() => onSelectGroup(group)}
-                className={`rounded-lg px-3 py-2 text-left transition-colors ${
-                  selectedGroupId === group.id
-                    ? "bg-brand-blue-soft text-text-strong"
-                    : "text-text-default hover:bg-bg-app"
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  {/* Avatar-like circle */}
-                  <div
-                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-semibold ${
-                      selectedGroupId === group.id
-                        ? "bg-brand-blue/20 text-brand-blue"
-                        : "bg-bg-elevated text-text-muted"
-                    }`}
-                  >
-                    {group.title.charAt(0).toUpperCase()}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-1.5">
-                      <span className="truncate text-sm font-medium">
-                        {group.title}
-                      </span>
-                      {group.forum && (
-                        <Hash
-                          size={12}
-                          weight="regular"
-                          className="shrink-0 text-brand-blue"
-                        />
-                      )}
-                    </div>
-                    <div className="mt-0.5 flex items-center gap-2 text-xs text-text-muted">
-                      <span>
-                        {Number(group.messagesPerDay).toLocaleString()}/д
-                      </span>
-                      <Badge
-                        variant={group.enabled ? "success" : "outline"}
-                        className="px-1.5 py-0 text-[10px]"
-                      >
-                        {group.enabled ? "on" : "off"}
-                      </Badge>
-                    </div>
-                  </div>
-                </div>
-              </button>
+                group={group}
+                selected={selectedGroupId === group.id}
+                onSelect={onSelectGroup}
+              />
             ))
           )}
         </div>
@@ -142,3 +122,69 @@ export function GroupListPanel({
     </div>
   );
 }
+
+interface GroupListRowProps {
+  group: Group;
+  selected: boolean;
+  onSelect: (group: Group) => void;
+}
+
+const GroupListRow = memo(
+  function GroupListRow({ group, selected, onSelect }: GroupListRowProps) {
+    return (
+      <button
+        onClick={() => onSelect(group)}
+        className={`rounded-lg px-3 py-2 text-left transition-colors ${
+          selected
+            ? "bg-brand-blue-soft text-text-strong"
+            : "text-text-default hover:bg-bg-app"
+        }`}
+      >
+        <div className="flex items-center gap-2">
+          {/* Avatar-like circle */}
+          <div
+            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-semibold ${
+              selected
+                ? "bg-brand-blue/20 text-brand-blue"
+                : "bg-bg-elevated text-text-muted"
+            }`}
+          >
+            {group.title.charAt(0).toUpperCase()}
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1.5">
+              <span className="truncate text-sm font-medium">
+                {group.title}
+              </span>
+              {group.forum && (
+                <Hash
+                  size={12}
+                  weight="regular"
+                  className="shrink-0 text-brand-blue"
+                />
+              )}
+            </div>
+            <div className="mt-0.5 flex items-center gap-2 text-xs text-text-muted">
+              <span>{formatMessageCounters(group)}</span>
+              <Badge
+                variant={group.processingState === "ENABLED_PROCESSABLE" ? "success" : "outline"}
+                className="px-1.5 py-0 text-[10px]"
+              >
+                {processingBadge(group)}
+              </Badge>
+            </div>
+          </div>
+        </div>
+      </button>
+    );
+  },
+  (prev, next) =>
+    prev.selected === next.selected &&
+    prev.onSelect === next.onSelect &&
+    prev.group.id === next.group.id &&
+    prev.group.title === next.group.title &&
+    prev.group.forum === next.group.forum &&
+    prev.group.processingState === next.group.processingState &&
+    prev.group.rawMessagesLast24h === next.group.rawMessagesLast24h &&
+    prev.group.rawMessagesTotal === next.group.rawMessagesTotal
+);

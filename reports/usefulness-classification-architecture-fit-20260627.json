@@ -1,0 +1,144 @@
+{
+  "status": "READ_ONLY_AUDIT_DESIGN",
+  "createdAt": "2026-06-27",
+  "changedCode": false,
+  "recommendedOption": "B",
+  "recommendation": "Add a small internal MessageUsefulnessClassifier called by existing ReplayV2Service.singleMessageDetection. It must not be a parallel pipeline and must not create materials directly.",
+  "currentArchitecture": {
+    "orchestrator": "ReplayV2Service.processExistingRun",
+    "flow": [
+      "normalizeFeaturesRules",
+      "bertClassification",
+      "embeddings",
+      "clustering",
+      "ranking",
+      "dedupe",
+      "singleMessageDetection",
+      "discussionSegmentDetection",
+      "llm"
+    ],
+    "candidateTypes": ["SINGLE_MESSAGE", "DISCUSSION_SEGMENT", "MICRO_CLUSTER", "MACRO_CLUSTER"],
+    "providerStages": ["LLM_CLUSTER_JUDGE_AND_ROUTING", "DISCUSSION_SEGMENT_JUDGE", "KNOWLEDGE_GENERATION"]
+  },
+  "filesInspected": [
+    {
+      "file": "backend/2.0/src/main/java/com/larbcorp/neuroinfogrinder2/replay/ReplayV2Service.java",
+      "methods": [
+        "processExistingRun lines 121-160",
+        "normalizeFeaturesRules lines 162-178",
+        "features lines 2011-2032",
+        "labels line 2033",
+        "singleMessageDetection lines 2078-2158",
+        "discussionSegmentDetection lines 2187-2210",
+        "scoreDiscussionWindow lines 2220-2260",
+        "discussionEligibleForControlledGeneration lines 2320-2365",
+        "llm lines 538-609",
+        "loadMessages lines 2724-2732"
+      ]
+    },
+    {
+      "file": "backend/2.0/src/main/java/com/larbcorp/neuroinfogrinder2/replay/ModelWorkerClient.java",
+      "methods": ["classify lines 62-72", "embedBatch lines 74-83"]
+    },
+    {
+      "file": "backend/2.0/src/main/java/com/larbcorp/neuroinfogrinder2/api/Stage1ReadService.java",
+      "methods": ["messageMapper lines 1175+", "preferredText lines 1382-1386"]
+    },
+    {
+      "file": "backend/2.0/src/main/java/com/larbcorp/neuroinfogrinder2/pipeline/AutoPipelineService.java",
+      "methods": ["dataset_messages insert lines 262-266"]
+    },
+    {
+      "file": "backend/2.0/src/main/java/com/larbcorp/neuroinfogrinder2/materials/KnowledgeMaterialService.java",
+      "methods": ["sourceMessages", "traceStages", "providerCalls"]
+    },
+    {
+      "file": "backend/2.0/src/main/resources/db/migration/V4__full_intelligence_replay_pipeline.sql",
+      "tables": ["message_intelligence", "message_classifications", "replay_run_messages", "pipeline_message_trace"]
+    },
+    {
+      "file": "backend/2.0/src/main/resources/db/migration/V24__discussion_segments.sql",
+      "tables": ["discussion_segments", "discussion_segment_sources"]
+    }
+  ],
+  "inputNormalization": {
+    "replayUsesCaption": true,
+    "replayExpression": "coalesce(message.text(), message.caption(), '')",
+    "uiUsesCaption": true,
+    "uiMethod": "Stage1ReadService.preferredText(text, caption)",
+    "rawJsonTextFallbackCurrentlyUsed": false,
+    "finding": "raw 11142 was rejected because of scoring/routing, not because caption was ignored. raw_json/link-preview fallback may still be useful for sparse link messages."
+  },
+  "currentLabels": {
+    "deterministic": [
+      "ERROR_LOG_WITH_FIX",
+      "API_OR_CONFIG_SNIPPET",
+      "PRICING_OR_ACCESS_SIGNAL",
+      "RESOURCE_LINK_COLLECTION",
+      "QUESTION_WITH_VALUABLE_ANSWER",
+      "NOISE_OR_CHAT"
+    ],
+    "trainingArtifactLabels": ["GUIDE", "NOTE", "TROUBLESHOOTING_NOTE", "COMPARISON_INSIGHT", "PRICE_ACCESS_CARD", "RESOURCE_CARD", "RISK_NOTE", "NEWS_SIGNAL", "TREND_CLUSTER", "NONE"],
+    "trainingRoleLabels": ["QUESTION", "ANSWER", "ERROR_LOG", "FIX", "ANNOUNCEMENT", "PRICE_OR_ACCESS", "RESOURCE_LINK", "PROMO", "CHAT", "RISK", "CODE_OR_CONFIG", "COMPARISON"]
+  },
+  "rejectionReasons": {
+    "quality": ["LOW_SINGLE_MESSAGE_SCORE", "TOO_SHORT", "CHAT_CONTEXT_ONLY", "SUPPRESSED_BY_CLASSIFIER", "DISCUSSION_SEGMENT_REJECTED_LOW_VALUE_ADJACENT", "LLM_REJECTED", "LOW_CONFIDENCE"],
+    "technical": ["NO_EMBEDDING", "MODEL_WORKER_DOWN", "MODEL_WORKER_DEGRADED", "GENERATION_PROVIDER_ERROR", "BUDGET_BLOCKED", "DRY_RUN_GENERATION_DISABLED"],
+    "duplicate": ["DUPLICATE", "DISCUSSION_SEGMENT_REJECTED_OVERLAP_DUPLICATE", "DISCUSSION_SEGMENT_REJECTED_DUPLICATE_MATERIAL"],
+    "safety": ["DISCUSSION_SEGMENT_REJECTED_RISK_SENSITIVE_CONTROLLED_MODE", "DISCUSSION_SEGMENT_NEEDS_MORE_CONTEXT", "UNSAFE", "UNSAFE_OR_POLICY_RISK"],
+    "capFreshness": ["DISCUSSION_SEGMENT_REJECTED_NOT_FRESH_AFTER_ENABLE_TIME", "DISCUSSION_SEGMENT_REJECTED_DAILY_LIMIT", "DISCUSSION_SEGMENT_REJECTED_CHAT_TOPIC_DAILY_LIMIT"],
+    "recommendedSpecificReasons": ["NEEDS_LINK_ENRICHMENT", "LINK_ONLY", "NEWS_SUMMARY_MODE_NOT_ENABLED", "PROMO_ALONE", "ABUSE_OR_FRAUD", "RISK_SENSITIVE_MANUAL_ONLY", "ENTITY_ONLY"]
+  },
+  "proposedClasses": [
+    {"class": "PRACTICAL_GUIDE", "route": "SINGLE_MESSAGE", "materialType": "GUIDE"},
+    {"class": "NEWS_UPDATE", "route": "SINGLE_MESSAGE_ROUTE_VARIANT", "materialType": "SUMMARY_OR_REFERENCE"},
+    {"class": "RESOURCE_REFERENCE", "route": "SINGLE_MESSAGE_ROUTE_VARIANT", "materialType": "REFERENCE"},
+    {"class": "STATUS_OUTAGE", "route": "SINGLE_MESSAGE_ROUTE_VARIANT", "materialType": "GUIDE_OR_SUMMARY"},
+    {"class": "QNA", "route": "SINGLE_MESSAGE", "materialType": "ANSWER"},
+    {"class": "LINK_WITH_CONTEXT", "route": "SINGLE_MESSAGE_ROUTE_VARIANT", "materialType": "REFERENCE_OR_SUMMARY"},
+    {"class": "LINK_ONLY", "route": "REJECT", "reason": "NEEDS_LINK_ENRICHMENT"},
+    {"class": "PROMO", "route": "REJECT_OR_CONTEXT_ONLY", "reason": "PROMO_ALONE"},
+    {"class": "ABUSE_OR_FRAUD", "route": "REJECT", "reason": "ABUSE_OR_FRAUD"},
+    {"class": "ACCESS_CIRCUMVENTION", "route": "REJECT_OR_MANUAL", "reason": "RISK_SENSITIVE_MANUAL_ONLY"},
+    {"class": "ENTITY_ONLY", "route": "REJECT", "reason": "ENTITY_ONLY"},
+    {"class": "NOISE", "route": "REJECT", "reason": "LOW_VALUE"}
+  ],
+  "optionAssessment": {
+    "A": {"summary": "Extend existing scoring", "pros": ["minimal change", "directly fixes current reasons"], "cons": ["ReplayV2Service gets larger", "less reusable", "harder UI explanations"]},
+    "B": {"summary": "Add internal MessageUsefulnessClassifier", "pros": ["fits existing pipeline", "keeps ReplayV2Service as orchestrator", "structured traceable classes", "reusable later"], "cons": ["new internal component and tests"]},
+    "C": {"summary": "Extend worker /classify", "pros": ["worker already receives text/features"], "cons": ["too coupled to model worker", "not ideal for deterministic product routing/reasons"]}
+  },
+  "dataModelImpact": {
+    "schemaChangeInitiallyRequired": false,
+    "useExistingFields": [
+      "replay_run_messages.single_message_signals_json",
+      "replay_run_messages.single_message_score_breakdown_json",
+      "replay_run_messages.single_message_rejection_reason",
+      "pipeline_message_trace.output_json",
+      "discussion_segments.signals_json",
+      "discussion_segments.suppression_reasons_json"
+    ]
+  },
+  "uiTraceImpact": {
+    "eventualFields": ["contentClass", "usefulnessClass", "sourceContextClass", "safetyClass", "candidateRoute", "proposedMaterialType", "scoreDimensions", "positiveSignals", "negativeSignals", "rejectionReason", "explanation"],
+    "recommendedSource": "existing single_message_* JSON fields and pipeline_message_trace.output_json"
+  },
+  "nextImplementationPlan": [
+    "Add MessageUsefulnessClassifier under replay/pipeline package.",
+    "Call it inside singleMessageDetection before generic TOO_SHORT/LOW_SINGLE_MESSAGE_SCORE finalization.",
+    "Map new usefulness classes to route-specific score thresholds and proposed material types.",
+    "Map link/promo/abuse/entity/access-circumvention cases to specific rejection reasons.",
+    "Keep existing LLM judge, dedupe, caps/safety gates, and KNOWLEDGE_GENERATION stages.",
+    "Persist class/signals in existing JSON fields and trace output.",
+    "Add regression fixtures without hardcoding production raw ids."
+  ],
+  "mustNotChange": [
+    "No parallel useful-message pipeline",
+    "No bypass of LLM judge/dedupe/caps/safety",
+    "No auto-publish",
+    "No prompt/provider/threshold/settings changes without approval",
+    "No Telegram/session/proxy changes",
+    "No backlog/reprocess",
+    "No hardcoded production raw ids in production logic"
+  ]
+}

@@ -1,0 +1,13 @@
+﻿kind,version,description,success
+flyway,24,discussion segments,true
+(1 row)
+kind,table_name,description,success
+table,discussion_segment_sources,exists,true
+table,discussion_segments,exists,true
+(2 rows)
+kind,version,description,success
+knowledge_before,17,all_active,true
+(1 row)
+kind,version,description,success
+discussion_materials_before,0,discussion_segment_materials,true
+(1 row)

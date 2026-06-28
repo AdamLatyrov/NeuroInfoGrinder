@@ -46,6 +46,31 @@ class SignalScorerTest {
     }
 
     @Test
+    void scoresGeneralCrmProblemDiscussionAboveThreshold() {
+        MessageEntity question = new MessageEntity();
+        question.setText("Показал CRM программу друзьям: все теряются на первом экране. Кто как решал онбординг и сбор обратной связи?");
+        question.setIsBot(false);
+
+        SignalScore questionScore = signalScorer.score(question);
+
+        assertThat(questionScore.score()).isGreaterThanOrEqualTo(0.3);
+        assertThat(questionScore.labels()).doesNotContain("NOT_USEFUL");
+    }
+
+    @Test
+    void scoresGeneralWorkflowPainWithoutAiMarkersAboveThreshold() {
+        MessageEntity message = new MessageEntity();
+        message.setText("В CRM пользователи теряются на первом экране, онбординг непонятный");
+        message.setIsBot(false);
+
+        SignalScore score = signalScorer.score(message);
+
+        assertThat(score.score()).isGreaterThanOrEqualTo(0.3);
+        assertThat(score.labels()).contains("PRACTICAL_PROBLEM", "BUSINESS_PROCESS");
+        assertThat(score.labels()).doesNotContain("NOT_USEFUL");
+    }
+
+    @Test
     void keepsAiAccessDemandMessagesAboveSkipThreshold() {
         assertUsefulLead("где покупать гифты клода по норм цене", "AI_ACCESS_DEMAND", "PROVIDER_MENTION");
         assertUsefulLead("никто не знает где можно безлимитный апи клауда купить?", "AI_ACCESS_DEMAND", "PAIN_LIMITS");
@@ -56,6 +81,7 @@ class SignalScorerTest {
         assertUsefulLead("Сторонние китайские сервисы пополнения берут от 148 до 238 юаней в месяц",
             "PAYMENT_WORKAROUND");
         assertUsefulLead("я очень быстро эти лимиты убиваю", "PAIN_LIMITS");
+        assertUsefulLead("есть абуз канвы бизнес?", "PAYMENT_WORKAROUND", "AI_ACCESS_DEMAND");
     }
 
     @Test
@@ -79,7 +105,7 @@ class SignalScorerTest {
         assertThat(score.score()).isLessThan(0.3);
         assertThat(score.labels()).isEmpty();
         assertThat(score.matchedSignals()).isEmpty();
-        assertThat(score.classificationReason()).isEqualTo("No AI access/payment/provider demand signals");
+        assertThat(score.classificationReason()).isEqualTo("No useful demand/problem signals");
     }
 
     private void assertUsefulLead(String text, String... expectedLabels) {

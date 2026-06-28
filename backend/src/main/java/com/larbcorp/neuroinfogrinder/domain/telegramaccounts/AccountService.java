@@ -34,53 +34,55 @@ public class AccountService {
     }
 
     @Transactional(readOnly = true)
-    public List<AccountResponse> getAll() {
-        return accountRepository.findAll().stream()
+    public List<AccountResponse> getAll(Long ownerUserId) {
+        return accountRepository.findByOwnerUserIdOrderByCreatedAtAsc(ownerUserId).stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
-    public AccountResponse getById(Long id) {
-        TelegramAccountEntity account = accountRepository.findById(id)
+    public AccountResponse getById(Long ownerUserId, Long id) {
+        TelegramAccountEntity account = accountRepository.findByIdAndOwnerUserId(id, ownerUserId)
                 .orElseThrow(() -> new IllegalArgumentException("Account not found: " + id));
         return toResponse(account);
     }
 
     @Transactional
-    public AccountResponse create(CreateAccountRequest request) {
-        TelegramAccountEntity account = accountRepository.findByPhone(request.phone())
+    public AccountResponse create(Long ownerUserId, CreateAccountRequest request) {
+        TelegramAccountEntity account = accountRepository.findByPhoneAndOwnerUserId(request.phone(), ownerUserId)
                 .orElseGet(TelegramAccountEntity::new);
+        account.setOwnerUserId(ownerUserId);
         account.setPhone(request.phone());
-        TelegramAuthStateResponse authState = telegramTdlibService.submitPhoneNumber(request.phone());
+        account = accountRepository.save(account);
+        TelegramAuthStateResponse authState = telegramTdlibService.submitPhoneNumber(account.getId(), request.phone());
         applyAuthState(account, authState);
         account = accountRepository.save(account);
         return toResponse(account);
     }
 
     @Transactional
-    public AccountResponse submitCode(Long id, SubmitCodeRequest request) {
-        TelegramAccountEntity account = accountRepository.findById(id)
+    public AccountResponse submitCode(Long ownerUserId, Long id, SubmitCodeRequest request) {
+        TelegramAccountEntity account = accountRepository.findByIdAndOwnerUserId(id, ownerUserId)
                 .orElseThrow(() -> new IllegalArgumentException("Account not found: " + id));
-        TelegramAuthStateResponse authState = telegramTdlibService.submitCode(request.code());
+        TelegramAuthStateResponse authState = telegramTdlibService.submitCode(account.getId(), request.code());
         applyAuthState(account, authState);
         account = accountRepository.save(account);
         return toResponse(account);
     }
 
     @Transactional
-    public AccountResponse submitPassword(Long id, SubmitPasswordRequest request) {
-        TelegramAccountEntity account = accountRepository.findById(id)
+    public AccountResponse submitPassword(Long ownerUserId, Long id, SubmitPasswordRequest request) {
+        TelegramAccountEntity account = accountRepository.findByIdAndOwnerUserId(id, ownerUserId)
                 .orElseThrow(() -> new IllegalArgumentException("Account not found: " + id));
-        TelegramAuthStateResponse authState = telegramTdlibService.submitPassword(request.password());
+        TelegramAuthStateResponse authState = telegramTdlibService.submitPassword(account.getId(), request.password());
         applyAuthState(account, authState);
         account = accountRepository.save(account);
         return toResponse(account);
     }
 
     @Transactional
-    public AccountResponse updateProxy(Long id, UpdateProxyRequest request) {
-        TelegramAccountEntity account = accountRepository.findById(id)
+    public AccountResponse updateProxy(Long ownerUserId, Long id, UpdateProxyRequest request) {
+        TelegramAccountEntity account = accountRepository.findByIdAndOwnerUserId(id, ownerUserId)
                 .orElseThrow(() -> new IllegalArgumentException("Account not found: " + id));
         if (request.proxyType() != null) {
             account.setProxyType(request.proxyType());
@@ -102,8 +104,8 @@ public class AccountService {
     }
 
     @Transactional
-    public AccountResponse reconnect(Long id) {
-        TelegramAccountEntity account = accountRepository.findById(id)
+    public AccountResponse reconnect(Long ownerUserId, Long id) {
+        TelegramAccountEntity account = accountRepository.findByIdAndOwnerUserId(id, ownerUserId)
                 .orElseThrow(() -> new IllegalArgumentException("Account not found: " + id));
         account.setStatus("CONNECTED");
         account.setLastError(null);
@@ -112,11 +114,13 @@ public class AccountService {
     }
 
     @Transactional
-    public void delete(Long id) {
-        if (!accountRepository.existsById(id)) {
+    public void delete(Long ownerUserId, Long id) {
+        TelegramAccountEntity account = accountRepository.findByIdAndOwnerUserId(id, ownerUserId)
+                .orElseThrow(() -> new IllegalArgumentException("Account not found: " + id));
+        if (!account.getOwnerUserId().equals(ownerUserId)) {
             throw new IllegalArgumentException("Account not found: " + id);
         }
-        accountRepository.deleteById(id);
+        accountRepository.deleteById(account.getId());
     }
 
     private void applyAuthState(TelegramAccountEntity account, TelegramAuthStateResponse authState) {
@@ -163,7 +167,7 @@ public class AccountService {
                 account.getLastName(),
                 account.getStatus(),
                 proxy,
-                (int) groupRepository.countByAccountId(account.getId()),
+                (int) groupRepository.countByAccountIdAndOwnerUserId(account.getId(), account.getOwnerUserId()),
                 0L,
                 account.getLastSyncAt()
         );

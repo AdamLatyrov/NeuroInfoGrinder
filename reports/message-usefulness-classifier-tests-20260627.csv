@@ -1,0 +1,11 @@
+test,fixture,expected_class,actual_class,expected_route,actual_route,expected_material_type,actual_material_type,expected_reject_reason,actual_reject_reason,result
+GptModelReleaseClassifiesAsNewsUpdateCandidate,GPT-5.6-like model release post,NEWS_UPDATE,NEWS_UPDATE,SINGLE_MESSAGE,SINGLE_MESSAGE,SUMMARY_OR_REFERENCE,REFERENCE,,,
+GithubResourceClassifiesAsResourceReferenceCandidate,OpenMontage-like GitHub/resource post,RESOURCE_REFERENCE,RESOURCE_REFERENCE,SINGLE_MESSAGE,SINGLE_MESSAGE,REFERENCE,REFERENCE,,,
+GithubResourceWithHiddenLinkContextClassifiesAsResourceReferenceCandidate,GitHub/resource post with hidden-link-style context,RESOURCE_REFERENCE,RESOURCE_REFERENCE,SINGLE_MESSAGE,SINGLE_MESSAGE,REFERENCE,REFERENCE,,,
+CodexOutageClassifiesAsStatusOutageCandidate,Codex outage/quota-like post,STATUS_OUTAGE,STATUS_OUTAGE,SINGLE_MESSAGE,SINGLE_MESSAGE,GUIDE_OR_SUMMARY,GUIDE,,,
+ProxyRiskPostClassifiesAsPracticalGuideCandidate,API proxy risk post,PRACTICAL_GUIDE_OR_RESOURCE_REFERENCE,PRACTICAL_GUIDE,SINGLE_MESSAGE,SINGLE_MESSAGE,GUIDE_OR_REFERENCE,GUIDE,,,
+LinkOnlyMessageRejectsWithNeedsLinkEnrichment,lolz.live style link-only,LINK_ONLY,LINK_ONLY,REJECT,REJECT,,,NEEDS_LINK_ENRICHMENT,NEEDS_LINK_ENRICHMENT,PASS
+PromoAloneRejectsWithoutCandidate,PlusVibeAPI-style promo alone,PROMO_ALONE,PROMO_ALONE,REJECT,REJECT,,,PROMO_ALONE,PROMO_ALONE,PASS
+ReferralBotAbuseRejectsAsFraud,Referral bot abuse,ABUSE_OR_FRAUD,ABUSE_OR_FRAUD,REJECT,REJECT,,,ABUSE_OR_FRAUD,ABUSE_OR_FRAUD,PASS
+AccessCircumventionRejectsAsManualOnlyRisk,Claude/Fable bypass how-to,ACCESS_CIRCUMVENTION,ACCESS_CIRCUMVENTION,REJECT,REJECT,,,RISK_SENSITIVE_MANUAL_ONLY,RISK_SENSITIVE_MANUAL_ONLY,PASS
+EntityOnlyRejectsWithoutGenericTooShort,Entity-only bot handle,ENTITY_ONLY,ENTITY_ONLY,REJECT,REJECT,,,ENTITY_ONLY,ENTITY_ONLY,PASS

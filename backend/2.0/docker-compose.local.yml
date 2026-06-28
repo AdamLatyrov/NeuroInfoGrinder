@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: neuroinfogrinder2-postgres-local
+    environment:
+      POSTGRES_DB: neuroinfogrinder2_dev
+      POSTGRES_USER: neuroinfogrinder2
+      POSTGRES_PASSWORD: neuroinfogrinder2_local
+    ports:
+      - "127.0.0.1:55432:5432"
+    volumes:
+      - neuroinfogrinder2-postgres-local:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U neuroinfogrinder2 -d neuroinfogrinder2_dev"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  neuroinfogrinder2-postgres-local:

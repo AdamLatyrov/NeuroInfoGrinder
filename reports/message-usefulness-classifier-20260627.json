@@ -1,0 +1,75 @@
+{
+  "date": "2026-06-27",
+  "scope": "backend single-message usefulness classifier",
+  "filesChanged": [
+    "backend/2.0/src/main/java/com/larbcorp/neuroinfogrinder2/replay/MessageUsefulnessClassifier.java",
+    "backend/2.0/src/main/java/com/larbcorp/neuroinfogrinder2/replay/MessageUsefulnessResult.java",
+    "backend/2.0/src/main/java/com/larbcorp/neuroinfogrinder2/replay/ReplayV2Service.java",
+    "backend/2.0/src/test/java/com/larbcorp/neuroinfogrinder2/replay/MessageUsefulnessClassifierTest.java",
+    "reports/message-usefulness-classifier-20260627.md",
+    "reports/message-usefulness-classifier-20260627.json",
+    "reports/message-usefulness-classifier-tests-20260627.csv",
+    "reports/message-usefulness-classifier-dry-run-20260627.csv"
+  ],
+  "classesAdded": [
+    "MessageUsefulnessClassifier",
+    "MessageUsefulnessResult"
+  ],
+  "integrationPoint": "ReplayV2Service.singleMessageDetection",
+  "supportedClasses": [
+    "PRACTICAL_GUIDE",
+    "NEWS_UPDATE",
+    "RESOURCE_REFERENCE",
+    "STATUS_OUTAGE",
+    "QNA",
+    "LINK_WITH_CONTEXT",
+    "LINK_ONLY",
+    "PROMO_ALONE",
+    "ABUSE_OR_FRAUD",
+    "ACCESS_CIRCUMVENTION",
+    "ENTITY_ONLY",
+    "LOW_VALUE"
+  ],
+  "traceFields": [
+    "contentClass",
+    "usefulnessClass",
+    "sourceContextClass",
+    "safetyClass",
+    "candidateRoute",
+    "proposedMaterialType",
+    "overallScore",
+    "scoreDimensions",
+    "positiveSignals",
+    "negativeSignals",
+    "rejectReason",
+    "humanReason"
+  ],
+  "tests": {
+    "redPhase": "mvn -Dtest=MessageUsefulnessClassifierTest test failed before implementation because MessageUsefulnessClassifier and MessageUsefulnessResult did not exist",
+    "targeted": "mvn -Dtest=MessageUsefulnessClassifierTest test: 10 tests, 0 failures",
+    "fullSuite": "mvn test: 80 tests, 0 failures, 0 errors"
+  },
+  "dryRun": {
+    "mode": "read-only production sample fetched from raw_messages; no requeue; no provider calls; no material creation",
+    "targets": [
+      { "rawId": 11142, "contentClass": "NEWS_UPDATE", "candidateRoute": "SINGLE_MESSAGE", "proposedMaterialType": "REFERENCE", "llmJudgeEligible": true },
+      { "rawId": 11193, "contentClass": "LINK_ONLY", "candidateRoute": "REJECT", "rejectReason": "NEEDS_LINK_ENRICHMENT", "llmJudgeEligible": false },
+      { "rawId": 11484, "contentClass": "RESOURCE_REFERENCE", "candidateRoute": "SINGLE_MESSAGE", "proposedMaterialType": "REFERENCE", "llmJudgeEligible": true }
+    ],
+    "randomRecentRows": 20,
+    "falsePositiveCount": 0,
+    "falseNegativeCount": 0
+  },
+  "noChangeVerification": {
+    "parallelPipelineCreated": false,
+    "discussionSegmentChanged": false,
+    "clusterLogicChanged": false,
+    "settingsChanged": false,
+    "providerConfigChanged": false,
+    "globalThresholdChanged": false,
+    "telegramSessionTouched": false,
+    "materialsCreatedByTask": false,
+    "autoPublishChanged": false
+  },
+  "recommendation": "Allow controlled LLM judge for NEWS_UPDATE, RESOURCE_REFERENCE, and STATUS_OUTAGE single-message candidates while keeping generation, dedupe, caps, and safety gates authoritative."
+}

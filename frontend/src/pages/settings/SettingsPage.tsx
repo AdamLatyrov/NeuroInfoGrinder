@@ -1,574 +1,132 @@
-import { useState } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { ArrowClockwise, CheckCircle, Flask, WarningCircle } from "@phosphor-icons/react";
 import { PageHeaderCard } from "@/components/domain/page-header-card";
-import { UsersSettingsPanel } from "@/components/domain/users-settings-panel";
-import { EmptyState } from "@/components/domain/empty-state";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
-import { Progress } from "@/components/ui/progress";
-import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  useSettingsQuery,
-  useUpdateSettingsMutation,
-} from "@/shared/api/settingsApi";
-import { useTokenSummaryQuery } from "@/shared/api/monitorApi";
-import type {
-  AppSettings,
-  ProcessingMode,
-  PublicationMode,
-} from "@/shared/types";
-import { GearSix, SpinnerGap } from "@phosphor-icons/react";
-import {
-  getMessageRefreshSeconds,
-  setMessageRefreshSeconds,
-  getTelegramSyncSeconds,
-  setTelegramSyncSeconds,
-} from "@/shared/ui-settings";
+import { getJsonAuth, postJsonAuth } from "@/shared/api/http";
+import { queryClient } from "@/shared/api/queryClient";
 
-function SaveButton({ pending, onClick }: { pending: boolean; onClick: () => void }) {
-  return (
-    <Button variant="primary" size="sm" onClick={onClick} disabled={pending}>
-      {pending ? (
-        <>
-          <SpinnerGap size={16} weight="regular" className="mr-2 animate-spin" />
-          Сохранение...
-        </>
-      ) : (
-        "Сохранить"
-      )}
-    </Button>
-  );
-}
+type Threshold = { key: string; value: string; type: string; description: string; safeMin: string | null; safeMax: string | null; defaultValue: string | null };
+type WorkerStatus = { reachable: boolean; status: string; classifierStatus: string; classifierName: string; embeddingStatus: string; embeddingName: string; embeddingDimension: number; degraded: boolean; lastError?: string | null };
+type SettingsOverview = {
+  pipeline?: { latestRunStatus?: string | null; mainBlocker?: string | null; explanation?: string | null; autoPipelineEnabledCount?: number; workerStatus?: string | null; generatedMaterials?: number };
+  thresholds?: Threshold[];
+  worker?: WorkerStatus;
+  providers?: { providers?: Array<Record<string, unknown>>; routes?: Array<Record<string, unknown>>; promptRoutes?: { routes?: Array<Record<string, unknown>> } };
+  promptRoutes?: { routes?: Array<Record<string, unknown>> };
+  autoPipeline?: Array<Record<string, unknown>>;
+};
 
 export function SettingsPage() {
-  const settingsQuery = useSettingsQuery();
-  const updateSettingsMutation = useUpdateSettingsMutation();
-  const tokenSummaryQuery = useTokenSummaryQuery();
+  const settings = useQuery({ queryKey: ["settings-v2"], queryFn: () => getJsonAuth<SettingsOverview>("/api/v2/settings"), refetchInterval: 10000 });
+  const updateThreshold = useMutation({
+    mutationFn: ({ key, value }: { key: string; value: string }) => postJsonAuth(`/api/v2/pipeline/settings/${key}`, { value, updatedBy: "settings-ui" }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["settings-v2"] }),
+  });
+  const providerTest = useMutation({ mutationFn: (id: number) => postJsonAuth(`/api/v2/ai/providers/${id}/test`, {}) });
+  const data = settings.data;
+  const providers = data?.providers?.providers ?? [];
+  const routes = data?.promptRoutes?.routes ?? data?.providers?.promptRoutes?.routes ?? [];
 
-  const [localSettings, setLocalSettings] = useState<AppSettings | null>(null);
-  const settings = localSettings ?? settingsQuery.data ?? null;
-
-  // UI settings (localStorage-based)
-  const [msgRefresh, setMsgRefresh] = useState(getMessageRefreshSeconds);
-  const [tgSync, setTgSync] = useState(getTelegramSyncSeconds);
-
-  const saveMsgRefresh = (value: number) => {
-    const clamped = Math.max(0.1, value);
-    setMsgRefresh(clamped);
-    setMessageRefreshSeconds(clamped);
-  };
-
-  const saveTgSync = (value: number) => {
-    const clamped = Math.max(1, value);
-    setTgSync(clamped);
-    setTelegramSyncSeconds(clamped);
-  };
-
-  const dailyUsage = tokenSummaryQuery.data?.totalTokensToday ?? 0;
-  const dailyUsagePct =
-    settings && settings.limits.dailyTokenLimit > 0
-      ? Math.min(100, (dailyUsage / settings.limits.dailyTokenLimit) * 100)
-      : 0;
-
-  const handleSave = () => {
-    if (settings) {
-      updateSettingsMutation.mutate(settings, {
-        onSuccess: (saved) => setLocalSettings(saved),
-      });
-    }
-  };
-
-  const updatePublication = <K extends keyof AppSettings["publication"]>(
-    key: K,
-    value: AppSettings["publication"][K]
-  ) => {
-    if (!settings) return;
-    setLocalSettings((prev) => ({
-      ...(prev ?? settings),
-      publication: { ...(prev ?? settings).publication, [key]: value },
-    }));
-  };
-
-  const updateProcessing = <K extends keyof AppSettings["processing"]>(
-    key: K,
-    value: AppSettings["processing"][K]
-  ) => {
-    if (!settings) return;
-    setLocalSettings((prev) => ({
-      ...(prev ?? settings),
-      processing: { ...(prev ?? settings).processing, [key]: value },
-    }));
-  };
-
-  const updateChainWindow = <
-    K extends keyof AppSettings["processing"]["chainWindow"]
-  >(
-    key: K,
-    value: AppSettings["processing"]["chainWindow"][K]
-  ) => {
-    if (!settings) return;
-    setLocalSettings((prev) => ({
-      ...(prev ?? settings),
-      processing: {
-        ...(prev ?? settings).processing,
-        chainWindow: {
-          ...(prev ?? settings).processing.chainWindow,
-          [key]: value,
-        },
-      },
-    }));
-  };
-
-  const updateFilters = <K extends keyof AppSettings["filters"]>(
-    key: K,
-    value: AppSettings["filters"][K]
-  ) => {
-    if (!settings) return;
-    setLocalSettings((prev) => ({
-      ...(prev ?? settings),
-      filters: { ...(prev ?? settings).filters, [key]: value },
-    }));
-  };
-
-  const updateLimits = <K extends keyof AppSettings["limits"]>(
-    key: K,
-    value: AppSettings["limits"][K]
-  ) => {
-    if (!settings) return;
-    setLocalSettings((prev) => ({
-      ...(prev ?? settings),
-      limits: { ...(prev ?? settings).limits, [key]: value },
-    }));
-  };
-
-  const updateNotifications = <K extends keyof AppSettings["notifications"]>(
-    key: K,
-    value: AppSettings["notifications"][K]
-  ) => {
-    if (!settings) return;
-    setLocalSettings((prev) => ({
-      ...(prev ?? settings),
-      notifications: {
-        ...(prev ?? settings).notifications,
-        [key]: value,
-      },
-    }));
-  };
-
-  if (settingsQuery.isLoading) {
-    return (
-      <div className="flex flex-col gap-5">
-        <PageHeaderCard
-          title="Настройки"
-          description="Глобальная конфигурация системы NeuroInfoGrinder"
-        />
-        <div className="flex items-center justify-center py-20">
-          <SpinnerGap size={24} weight="regular" className="animate-spin text-text-muted" />
-        </div>
+  return <div className="flex flex-col gap-5">
+    <PageHeaderCard title="Настройки" description="Понятные параметры конвейера: что сейчас включено, на что влияет и нужно ли перезапускать сервис.">
+      <div className="flex flex-wrap gap-2">
+        <Button variant="outline" size="sm" onClick={() => settings.refetch()}><ArrowClockwise size={16} />Обновить</Button>
+        <Badge variant="outline">Режим: редактируемые безопасные thresholds</Badge>
       </div>
-    );
-  }
+    </PageHeaderCard>
 
-  if (!settings) {
-    return (
-      <div className="flex flex-col gap-5">
-        <PageHeaderCard
-          title="Настройки"
-          description="Глобальная конфигурация системы NeuroInfoGrinder"
-        />
-        <EmptyState
-          icon={GearSix}
-          title="Настройки недоступны"
-          description="Не удалось загрузить настройки. Проверьте подключение к серверу."
-          action={
-            <Button variant="outline" size="sm" onClick={() => settingsQuery.refetch()}>
-              Попробовать снова
-            </Button>
-          }
-        />
-      </div>
-    );
-  }
+    {settings.isError ? <Card><CardContent className="p-5 text-danger">/api/v2/settings недоступен. Проверь backend deploy.</CardContent></Card> : null}
 
-  return (
-    <div className="flex flex-col gap-5">
-      <PageHeaderCard
-        title="Настройки"
-        description="Глобальная конфигурация системы NeuroInfoGrinder"
-        pipelineNote={`Режим публикации: ${settings.publication.mode}`}
-      >
-        <div className="mt-3 flex items-center gap-2">
-          <span className="text-sm text-text-muted">Текущий режим:</span>
-          <Badge
-            variant={
-              settings.publication.mode === "Automatic"
-                ? "success"
-                : settings.publication.mode === "With moderation"
-                ? "warning"
-                : "default"
-            }
-          >
-            {settings.publication.mode === "Automatic"
-              ? "Автопубликация"
-              : settings.publication.mode === "With moderation"
-              ? "Ручное ревью"
-              : "Смешанный"}
-          </Badge>
-        </div>
-      </PageHeaderCard>
-
-      <Tabs defaultValue="publication">
-        <TabsList>
-          <TabsTrigger value="publication">Публикация</TabsTrigger>
-          <TabsTrigger value="processing">Обработка</TabsTrigger>
-          <TabsTrigger value="interface">Интерфейс</TabsTrigger>
-          <TabsTrigger value="limits">Лимиты</TabsTrigger>
-          <TabsTrigger value="notifications">Уведомления</TabsTrigger>
-          <TabsTrigger value="roles">Пользователи</TabsTrigger>
-          <TabsTrigger value="storage">Хранение и аудит</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="publication">
-          <Card>
-            <CardContent className="p-5">
-              <h3 className="mb-4 text-sm font-semibold text-text-strong">
-                Настройки публикации
-              </h3>
-              <div className="grid max-w-xl grid-cols-[200px_1fr] items-center gap-x-4 gap-y-4">
-                <span className="text-sm text-text-muted">Target группа</span>
-                <Input
-                  value={settings.publication.targetGroupTitle ?? "Не настроено"}
-                  readOnly
-                />
-
-                <span className="text-sm text-text-muted">Режим публикации</span>
-                <Select
-                  value={settings.publication.mode}
-                  onValueChange={(value) =>
-                    updatePublication("mode", value as PublicationMode)
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Automatic">Автопубликация</SelectItem>
-                    <SelectItem value="With moderation">Ручное ревью</SelectItem>
-                    <SelectItem value="Mixed">Смешанный</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <Separator className="my-4" />
-              <SaveButton
-                pending={updateSettingsMutation.isPending}
-                onClick={handleSave}
-              />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="processing">
-          <Card>
-            <CardContent className="p-5">
-              <h3 className="mb-4 text-sm font-semibold text-text-strong">
-                Настройки обработки
-              </h3>
-              <div className="grid max-w-xl grid-cols-[200px_1fr] items-center gap-x-4 gap-y-4">
-                <span className="text-sm text-text-muted">Режим обработки</span>
-                <Select
-                  value={settings.processing.mode}
-                  onValueChange={(value) =>
-                    updateProcessing("mode", value as ProcessingMode)
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="New only">Только новые</SelectItem>
-                    <SelectItem value="Full backfill">Полный backfill</SelectItem>
-                  </SelectContent>
-                </Select>
-
-                <span className="text-sm text-text-muted">Интервал опроса (сек)</span>
-                <Input
-                  type="number"
-                  value={settings.processing.pollIntervalSeconds}
-                  onChange={(event) =>
-                    updateProcessing("pollIntervalSeconds", Number(event.target.value))
-                  }
-                />
-
-                <span className="text-sm text-text-muted">Time window (мин)</span>
-                <Input
-                  type="number"
-                  value={settings.processing.chainWindow.timeWindowMinutes}
-                  onChange={(event) =>
-                    updateChainWindow("timeWindowMinutes", Number(event.target.value))
-                  }
-                />
-
-                <span className="text-sm text-text-muted">Мин. сообщений</span>
-                <Input
-                  type="number"
-                  value={settings.processing.chainWindow.minMessagesForProcessing}
-                  onChange={(event) =>
-                    updateChainWindow(
-                      "minMessagesForProcessing",
-                      Number(event.target.value)
-                    )
-                  }
-                />
-
-                <span className="text-sm text-text-muted">Макс. сообщений в цепочке</span>
-                <Input
-                  type="number"
-                  value={settings.processing.chainWindow.maxMessagesPerChain}
-                  onChange={(event) =>
-                    updateChainWindow("maxMessagesPerChain", Number(event.target.value))
-                  }
-                />
-
-                <span className="text-sm text-text-muted">Включать replies</span>
-                <Switch
-                  checked={settings.processing.chainWindow.includeReplies}
-                  onCheckedChange={(value) =>
-                    updateChainWindow("includeReplies", value)
-                  }
-                />
-
-                <span className="text-sm text-text-muted">Пропускать ботов</span>
-                <Switch
-                  checked={settings.filters.skipBots}
-                  onCheckedChange={(value) => updateFilters("skipBots", value)}
-                />
-
-                <span className="text-sm text-text-muted">Мин. длина сообщения</span>
-                <Input
-                  type="number"
-                  value={settings.filters.minMessageLength}
-                  onChange={(event) =>
-                    updateFilters("minMessageLength", Number(event.target.value))
-                  }
-                />
-
-                <span className="text-sm text-text-muted">Blacklist слова</span>
-                <Input
-                  value={settings.filters.blacklistWords.join(", ")}
-                  onChange={(event) =>
-                    updateFilters(
-                      "blacklistWords",
-                      event.target.value
-                        .split(",")
-                        .map((word) => word.trim())
-                        .filter(Boolean)
-                    )
-                  }
-                />
-              </div>
-              <Separator className="my-4" />
-              <SaveButton
-                pending={updateSettingsMutation.isPending}
-                onClick={handleSave}
-              />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="interface">
-          <Card>
-            <CardContent className="p-5">
-              <h3 className="mb-4 text-sm font-semibold text-text-strong">
-                Настройки интерфейса
-              </h3>
-              <p className="mb-4 text-sm text-text-muted">
-                Управление частотой обновления данных в реальном времени. Изменения применяются мгновенно.
-              </p>
-              <div className="grid max-w-xl grid-cols-[220px_1fr] items-center gap-x-4 gap-y-4">
-                <div>
-                  <span className="text-sm text-text-strong">Обновление сообщений</span>
-                  <p className="text-xs text-text-muted mt-0.5">
-                    Как часто список сообщений обновляется из базы данных
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="number"
-                    step={0.1}
-                    min={0.1}
-                    value={msgRefresh}
-                    onChange={(event) => saveMsgRefresh(Number(event.target.value))}
-                    className="h-8 w-24 text-right font-mono-value text-sm"
-                  />
-                  <span className="text-sm text-text-muted">сек</span>
-                  <Badge
-                    variant={msgRefresh <= 1 ? "warning" : msgRefresh <= 3 ? "default" : "success"}
-                    className="text-xs"
-                  >
-                    {msgRefresh <= 1 ? "Очень часто" : msgRefresh <= 3 ? "Часто" : msgRefresh <= 10 ? "Умеренно" : "Редко"}
-                  </Badge>
-                </div>
-
-                <div>
-                  <span className="text-sm text-text-strong">Синхронизация с Telegram</span>
-                  <p className="text-xs text-text-muted mt-0.5">
-                    Как часто новые сообщения подтягиваются из Telegram
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="number"
-                    step={1}
-                    min={1}
-                    value={tgSync}
-                    onChange={(event) => saveTgSync(Number(event.target.value))}
-                    className="h-8 w-24 text-right font-mono-value text-sm"
-                  />
-                  <span className="text-sm text-text-muted">сек</span>
-                  <Badge
-                    variant={tgSync <= 5 ? "warning" : tgSync <= 30 ? "default" : "success"}
-                    className="text-xs"
-                  >
-                    {tgSync <= 5 ? "Очень часто" : tgSync <= 30 ? "Стандарт" : "Редко"}
-                  </Badge>
-                </div>
-              </div>
-              <Separator className="my-4" />
-              <p className="text-xs text-text-weak italic">
-                Эти настройки хранятся в браузере и не требуют сохранения на сервере. Применяются ко всем открытым вкладкам.
-              </p>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="limits">
-          <Card>
-            <CardContent className="p-5">
-              <h3 className="mb-4 text-sm font-semibold text-text-strong">
-                Лимиты токенов
-              </h3>
-              <div className="grid max-w-xl grid-cols-[200px_1fr] items-center gap-x-4 gap-y-4">
-                <span className="text-sm text-text-muted">Daily token limit</span>
-                <Input
-                  type="number"
-                  value={settings.limits.dailyTokenLimit}
-                  onChange={(event) =>
-                    updateLimits("dailyTokenLimit", Number(event.target.value))
-                  }
-                />
-
-                <span className="text-sm text-text-muted">Monthly token limit</span>
-                <Input
-                  type="number"
-                  value={settings.limits.monthlyTokenLimit}
-                  onChange={(event) =>
-                    updateLimits("monthlyTokenLimit", Number(event.target.value))
-                  }
-                />
-
-                <span className="text-sm text-text-muted">Alert threshold %</span>
-                <Input
-                  type="number"
-                  value={settings.limits.alertThresholdPercent}
-                  onChange={(event) =>
-                    updateLimits("alertThresholdPercent", Number(event.target.value))
-                  }
-                />
-              </div>
-
-              <Separator className="my-4" />
-
-              <div className="mb-4">
-                <div className="mb-1 flex justify-between text-sm">
-                  <span className="text-text-muted">Daily usage</span>
-                  <span className="font-mono-value">
-                    {(dailyUsage / 1_000_000).toFixed(2)}M /{" "}
-                    {(settings.limits.dailyTokenLimit / 1_000_000).toFixed(0)}M
-                  </span>
-                </div>
-                <Progress value={dailyUsagePct} className="h-3" />
-                <div className="mt-1 flex justify-between text-xs text-text-weak">
-                  <span>{dailyUsagePct.toFixed(0)}% использовано</span>
-                  <span>Alert at {settings.limits.alertThresholdPercent}%</span>
-                </div>
-              </div>
-
-              <SaveButton
-                pending={updateSettingsMutation.isPending}
-                onClick={handleSave}
-              />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="notifications">
-          <Card>
-            <CardContent className="p-5">
-              <h3 className="mb-4 text-sm font-semibold text-text-strong">
-                Уведомления
-              </h3>
-              <div className="grid max-w-xl grid-cols-[200px_1fr] items-center gap-x-4 gap-y-4">
-                <span className="text-sm text-text-muted">Telegram chat</span>
-                <Input
-                  value={settings.notifications.telegramChat ?? ""}
-                  onChange={(event) =>
-                    updateNotifications("telegramChat", event.target.value)
-                  }
-                />
-
-                <span className="text-sm text-text-muted">Webhook URL</span>
-                <Input
-                  value={settings.notifications.webhookUrl ?? ""}
-                  onChange={(event) =>
-                    updateNotifications("webhookUrl", event.target.value)
-                  }
-                />
-              </div>
-              <Separator className="my-4" />
-              <SaveButton
-                pending={updateSettingsMutation.isPending}
-                onClick={handleSave}
-              />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="roles">
-          <UsersSettingsPanel />
-        </TabsContent>
-
-        <TabsContent value="storage">
-          <Card>
-            <CardContent className="p-5">
-              <h3 className="mb-4 text-sm font-semibold text-text-strong">
-                Хранение и аудит
-              </h3>
-              <div className="grid max-w-xl grid-cols-[200px_1fr] items-center gap-x-4 gap-y-4">
-                <span className="text-sm text-text-muted">Retention messages</span>
-                <Input value="30 дней" readOnly />
-
-                <span className="text-sm text-text-muted">Retention guides</span>
-                <Input value="Бессрочно" readOnly />
-
-                <span className="text-sm text-text-muted">Export logs</span>
-                <Button variant="outline" size="sm">
-                  Скачать CSV
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+    <div className="grid gap-4 xl:grid-cols-3">
+      <StatusCard title="Конвейер" rows={[
+        ["Статус обработки", (data?.pipeline?.autoPipelineEnabledCount ?? 0) > 0 ? "включена для выбранных чатов" : "выключена / scope не выбран"],
+        ["Активных scope", data?.pipeline?.autoPipelineEnabledCount ?? 0],
+        ["Последний run", data?.pipeline?.latestRunStatus ?? "нет данных"],
+        ["Главная причина остановки", data?.pipeline?.mainBlocker ?? "нет"],
+        ["Материалов", data?.pipeline?.generatedMaterials ?? 0],
+      ]} />
+      <StatusCard title="Worker health" rows={[
+        ["Worker", data?.worker?.reachable ? data.worker.status : "DOWN"],
+        ["BGE-M3", data?.worker?.embeddingStatus ?? "UNKNOWN"],
+        ["dimension", data?.worker?.embeddingDimension ?? 1024],
+        ["degraded", data?.worker?.degraded ? "true" : "false"],
+        ["Зачем важно", "без worker нет embeddings/classification"],
+      ]} />
+      <StatusCard title="LLM provider" rows={[
+        ["Провайдеров", providers.length],
+        ["Маршрутов", routes.length],
+        ["Статус", String(providers[0]?.healthStatus ?? providers[0]?.health_status ?? "UNKNOWN")],
+        ["Ключ", String(providers[0]?.configured ?? providers[0]?.keyConfigured ?? "см. provider card")],
+        ["Зачем важно", "решает judge/generation качество и стоимость"],
+      ]} />
     </div>
-  );
+
+    <Card>
+      <CardHeader><CardTitle>Настройки конвейера и пороги</CardTitle></CardHeader>
+      <CardContent className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+        {(data?.thresholds ?? []).map((item) => <ThresholdRow key={item.key} item={item} pending={updateThreshold.isPending} onSave={(value) => updateThreshold.mutate({ key: item.key, value })} />)}
+      </CardContent>
+    </Card>
+
+    <Card>
+      <CardHeader><CardTitle>Маршруты prompt stages</CardTitle></CardHeader>
+      <CardContent className="grid gap-3 lg:grid-cols-2">
+        {routes.map((route, index) => <div key={`${route.stage}-${index}`} className="rounded-2xl border border-border-subtle bg-bg-elevated p-4">
+          <div className="flex flex-wrap items-center gap-2"><Badge variant="outline">{String(route.stage)}</Badge><Badge variant={route.routeEnabled === false ? "danger" : "success"}>{route.routeEnabled === false ? "disabled" : "enabled"}</Badge></div>
+          <div className="mt-3 grid gap-2 text-sm text-text-muted">
+            <div>Провайдер: <span className="text-text-strong">{String(route.provider ?? "—")}</span></div>
+            <div>Модель: <span className="text-text-strong">{String(route.model ?? "—")}</span></div>
+            <div>Fallback: <span className="text-text-strong">{String(route.fallback ?? "—")}</span></div>
+            <div>Последняя ошибка: <span className="text-text-strong">{String(route.lastError ?? "—")}</span></div>
+            <div>Зачем важно: <span className="text-text-strong">выбирает модель для judge/generation</span></div>
+          </div>
+        </div>)}
+        {!routes.length ? <div className="rounded-2xl bg-bg-elevated p-4 text-sm text-text-muted">Маршруты не найдены.</div> : null}
+      </CardContent>
+    </Card>
+
+    <Card>
+      <CardHeader><CardTitle>AI providers</CardTitle></CardHeader>
+      <CardContent className="grid gap-3 lg:grid-cols-2">
+        {providers.map((provider) => <div key={String(provider.id)} className="rounded-2xl border border-border-subtle bg-bg-elevated p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2"><div className="font-semibold text-text-strong">{String(provider.name)}</div><Badge variant={provider.enabled === false ? "danger" : "success"}>{provider.enabled === false ? "disabled" : "enabled"}</Badge></div>
+          <div className="mt-2 text-sm text-text-muted">Base URL: {String(provider.baseUrl ?? "—")}</div>
+          <div className="mt-1 text-sm text-text-muted">Key status: {String(provider.apiKeyRef ? "configured by env ref" : "missing ref")}</div>
+          <Button className="mt-3" variant="outline" size="sm" disabled={providerTest.isPending} onClick={() => providerTest.mutate(Number(provider.id))}><Flask size={16} />Test provider</Button>
+        </div>)}
+      </CardContent>
+    </Card>
+  </div>;
+}
+
+function StatusCard({ title, rows }: { title: string; rows: Array<[string, unknown]> }) {
+  return <Card><CardHeader><CardTitle>{title}</CardTitle></CardHeader><CardContent className="space-y-2">{rows.map(([label, value]) => <div key={label} className="flex items-center justify-between gap-3 rounded-xl bg-bg-elevated px-3 py-2 text-sm"><span className="text-text-muted">{label}</span><span className="text-right font-medium text-text-strong">{String(value)}</span></div>)}</CardContent></Card>;
+}
+
+function ThresholdRow({ item, pending, onSave }: { item: Threshold; pending: boolean; onSave: (value: string) => void }) {
+  const id = `threshold-${item.key}`;
+  const description = settingDescription(item.key, item.description);
+  return <div className="rounded-2xl border border-border-subtle bg-bg-elevated p-4">
+    <div className="flex items-start justify-between gap-2"><div><label htmlFor={id} className="font-semibold text-text-strong">{item.key}</label><p className="mt-1 text-xs text-text-muted">{description}</p></div><div className="flex flex-col items-end gap-1"><Badge variant="outline">{item.type}</Badge><Badge variant="success">safe</Badge></div></div>
+    <div className="mt-3 grid gap-2 text-xs text-text-muted"><div><span className="font-semibold text-text-strong">Текущее значение:</span> {item.value}</div><div><span className="font-semibold text-text-strong">Allowed:</span> {item.safeMin ?? "—"}..{item.safeMax ?? "—"}</div><div><span className="font-semibold text-text-strong">Default:</span> {item.defaultValue ?? "—"}</div><div><span className="font-semibold text-text-strong">Влияние:</span> {settingImpact(item.key)}</div><div><span className="font-semibold text-text-strong">Restart required:</span> no</div></div>
+    <div className="mt-3 flex gap-2"><Input id={id} defaultValue={item.value} aria-label={`Новое значение ${item.key}`} onKeyDown={(event) => { if (event.key === "Enter") onSave((event.target as HTMLInputElement).value); }} /><Button variant="primary" size="sm" disabled={pending} onClick={() => { const input = document.getElementById(id) as HTMLInputElement | null; if (input) onSave(input.value); }}><CheckCircle size={16} />Сохранить</Button></div>
+  </div>;
+}
+
+function settingDescription(key: string, fallback: string) {
+  if (/threshold|score/i.test(key)) return "Порог принятия кандидата. Чем выше значение, тем меньше сообщений дойдёт до LLM/material.";
+  if (/max|limit/i.test(key)) return "Ограничение объёма обработки, чтобы защитить стоимость и стабильность.";
+  if (/discussion/i.test(key)) return "Параметр discussion segment: влияет на группировку цепочек сообщений.";
+  return fallback || "Параметр backend pipeline.";
+}
+
+function settingImpact(key: string) {
+  if (/judge/i.test(key)) return "влияет на переход от LLM Judge к generation";
+  if (/cluster/i.test(key)) return "влияет на попадание кластеров в LLM Judge";
+  if (/discussion/i.test(key)) return "влияет на multi-message grouping";
+  if (/single/i.test(key)) return "влияет на single-message candidates";
+  return "изменяет поведение pipeline без перезапуска";
 }

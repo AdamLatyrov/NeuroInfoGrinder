@@ -12,6 +12,7 @@ import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -44,51 +45,86 @@ public class GuideController {
         @RequestParam(required = false) String classifier,
         @RequestParam(required = false) Double minConfidence,
         @RequestParam(required = false) Double maxCost,
+        @RequestParam(required = false) Integer minUsefulness,
+        @RequestParam(required = false) Integer maxUsefulness,
+        @AuthenticationPrincipal Long ownerUserId,
         Pageable pageable
     ) {
+        Integer normalizedMinUsefulness = clampUsefulness(minUsefulness);
+        Integer normalizedMaxUsefulness = clampUsefulness(maxUsefulness);
+        if (normalizedMinUsefulness != null
+            && normalizedMaxUsefulness != null
+            && normalizedMinUsefulness > normalizedMaxUsefulness) {
+            throw new IllegalArgumentException("minUsefulness must be less than or equal to maxUsefulness");
+        }
         Page<GuideSummaryResponse> page = guideService
-            .getGuides(status, groupId, providerId, classifier, minConfidence, maxCost, pageable)
+            .getGuides(
+                ownerUserId,
+                status,
+                groupId,
+                providerId,
+                classifier,
+                minConfidence,
+                maxCost,
+                normalizedMinUsefulness,
+                normalizedMaxUsefulness,
+                pageable
+            )
             .map(guideService::toSummaryResponse);
         return PageResponse.from(page);
     }
 
     @GetMapping("/{id}")
-    public GuideDetailResponse getGuideDetail(@PathVariable Long id) {
-        return guideService.getGuideDetail(id);
+    public GuideDetailResponse getGuideDetail(@AuthenticationPrincipal Long ownerUserId,
+                                              @PathVariable Long id) {
+        return guideService.getGuideDetail(ownerUserId, id);
     }
 
     @PostMapping("/{id}/regenerate")
-    public GuideRegenerateResponse regenerate(@PathVariable Long id) {
-        return guideService.regenerate(id);
+    public GuideRegenerateResponse regenerate(@AuthenticationPrincipal Long ownerUserId,
+                                              @PathVariable Long id) {
+        return guideService.regenerate(ownerUserId, id);
     }
 
     @PatchMapping("/{id}/status")
-    public GuideSummaryResponse updateStatus(@PathVariable Long id,
+    public GuideSummaryResponse updateStatus(@AuthenticationPrincipal Long ownerUserId,
+                                              @PathVariable Long id,
                                               @Valid @RequestBody UpdateGuideStatusRequest request) {
-        return guideService.toSummaryResponse(guideService.updateStatus(id, request.status()));
+        return guideService.toSummaryResponse(guideService.updateStatus(ownerUserId, id, request.status()));
     }
 
     @PutMapping("/{id}/content")
-    public GuideSummaryResponse updateContent(@PathVariable Long id,
+    public GuideSummaryResponse updateContent(@AuthenticationPrincipal Long ownerUserId,
+                                               @PathVariable Long id,
                                                @Valid @RequestBody UpdateGuideContentRequest request) {
-        return guideService.toSummaryResponse(guideService.updateContent(id, request));
+        return guideService.toSummaryResponse(guideService.updateContent(ownerUserId, id, request));
     }
 
     @PostMapping("/{id}/mark-not-duplicate")
-    public GuideSummaryResponse markNotDuplicate(@PathVariable Long id) {
-        return guideService.toSummaryResponse(guideService.markNotDuplicate(id));
+    public GuideSummaryResponse markNotDuplicate(@AuthenticationPrincipal Long ownerUserId,
+                                                 @PathVariable Long id) {
+        return guideService.toSummaryResponse(guideService.markNotDuplicate(ownerUserId, id));
     }
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable Long id) {
-        guideService.delete(id);
+    public void delete(@AuthenticationPrincipal Long ownerUserId,
+                       @PathVariable Long id) {
+        guideService.delete(ownerUserId, id);
     }
 
     @PostMapping("/bulk-delete")
-    public BulkDeleteGuidesResponse bulkDelete(@Valid @RequestBody BulkDeleteGuidesRequest request) {
-        return new BulkDeleteGuidesResponse(guideService.bulkDelete(request.ids()));
+    public BulkDeleteGuidesResponse bulkDelete(@AuthenticationPrincipal Long ownerUserId,
+                                               @Valid @RequestBody BulkDeleteGuidesRequest request) {
+        return new BulkDeleteGuidesResponse(guideService.bulkDelete(ownerUserId, request.ids()));
     }
 
     public record BulkDeleteGuidesResponse(int deleted) {}
+
+    private Integer clampUsefulness(Integer value) {
+        if (value == null) {
+            return null;
+        }
+        return Math.max(0, Math.min(100, value));
+    }
 }

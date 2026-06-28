@@ -14,6 +14,8 @@ public class SettingsEntity extends BaseEntity {
 
     private Long publicationTargetGroupId;
 
+    private Long activeProviderId;
+
     @Column(nullable = false, length = 32)
     private String publicationMode = "WITH_MODERATION";
 

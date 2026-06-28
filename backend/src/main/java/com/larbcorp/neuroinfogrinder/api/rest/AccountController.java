@@ -8,6 +8,7 @@ import com.larbcorp.neuroinfogrinder.domain.telegramaccounts.dto.SubmitPasswordR
 import com.larbcorp.neuroinfogrinder.domain.telegramaccounts.dto.UpdateProxyRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -33,39 +34,48 @@ public class AccountController {
     }
 
     @GetMapping
-    public List<AccountResponse> getAll() {
-        return accountService.getAll();
+    public List<AccountResponse> getAll(@AuthenticationPrincipal Long ownerUserId) {
+        return accountService.getAll(ownerUserId);
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public AccountResponse create(@Valid @RequestBody CreateAccountRequest request) {
-        return accountService.create(request);
+    public AccountResponse create(@AuthenticationPrincipal Long ownerUserId,
+                                  @Valid @RequestBody CreateAccountRequest request) {
+        return accountService.create(ownerUserId, request);
     }
 
     @PostMapping("/{id}/code")
-    public AccountResponse submitCode(@PathVariable Long id, @Valid @RequestBody SubmitCodeRequest request) {
-        return accountService.submitCode(id, request);
+    public AccountResponse submitCode(@AuthenticationPrincipal Long ownerUserId,
+                                      @PathVariable Long id,
+                                      @Valid @RequestBody SubmitCodeRequest request) {
+        return accountService.submitCode(ownerUserId, id, request);
     }
 
     @PostMapping("/{id}/password")
-    public AccountResponse submitPassword(@PathVariable Long id, @Valid @RequestBody SubmitPasswordRequest request) {
-        return accountService.submitPassword(id, request);
+    public AccountResponse submitPassword(@AuthenticationPrincipal Long ownerUserId,
+                                          @PathVariable Long id,
+                                          @Valid @RequestBody SubmitPasswordRequest request) {
+        return accountService.submitPassword(ownerUserId, id, request);
     }
 
     @PatchMapping("/{id}/proxy")
-    public AccountResponse updateProxy(@PathVariable Long id, @Valid @RequestBody UpdateProxyRequest request) {
-        return accountService.updateProxy(id, request);
+    public AccountResponse updateProxy(@AuthenticationPrincipal Long ownerUserId,
+                                       @PathVariable Long id,
+                                       @Valid @RequestBody UpdateProxyRequest request) {
+        return accountService.updateProxy(ownerUserId, id, request);
     }
 
     @PostMapping("/{id}/reconnect")
-    public AccountResponse reconnect(@PathVariable Long id) {
-        return accountService.reconnect(id);
+    public AccountResponse reconnect(@AuthenticationPrincipal Long ownerUserId,
+                                     @PathVariable Long id) {
+        return accountService.reconnect(ownerUserId, id);
     }
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable Long id) {
-        accountService.delete(id);
+    public void delete(@AuthenticationPrincipal Long ownerUserId,
+                       @PathVariable Long id) {
+        accountService.delete(ownerUserId, id);
     }
 }

@@ -63,7 +63,15 @@ public class RuleRunner {
             boolean allConditionsMet = !matches.isEmpty() && matches.stream().allMatch(ConditionMatch::matched);
 
             String checkDetail = formatCheckDetail(matches);
-            checks.add(new RuleCheck(rule.getName(), rule.getActionType(), allConditionsMet, checkDetail));
+            checks.add(new RuleCheck(
+                rule.getId(),
+                rule.getName(),
+                rule.getActionType(),
+                allConditionsMet,
+                checkDetail,
+                rule.getConditionsJson(),
+                rule.getDescription()
+            ));
 
             if (!allConditionsMet) {
                 continue;

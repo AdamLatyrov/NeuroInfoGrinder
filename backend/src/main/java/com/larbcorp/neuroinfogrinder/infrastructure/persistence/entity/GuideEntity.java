@@ -26,7 +26,59 @@ public class GuideEntity extends BaseEntity {
     @Column(nullable = false)
     private Long groupId;
 
+    private Long ownerUserId;
+
     private Long rootMessageId;
+
+    private Long topicClusterId;
+
+    private Long topicClusterGuideCandidateId;
+
+    @Column(nullable = false, length = 32)
+    private String contentType = "GUIDE";
+
+    @Column(length = 64)
+    private String contentSubtype;
+
+    @Column(length = 512)
+    private String topicLabel;
+
+    @Column(columnDefinition = "TEXT")
+    private String topicSummary;
+
+    @Column(length = 512)
+    private String contentTitle;
+
+    @Column(columnDefinition = "TEXT")
+    private String contentSummary;
+
+    @Column(length = 256)
+    private String normalizedTopicKey;
+
+    private Integer contentQualityScore;
+
+    private Integer importanceScore;
+
+    private Integer actionabilityScore;
+
+    private Integer noveltyScore;
+
+    private Integer evidenceScore;
+
+    private Integer riskScore;
+
+    private Integer confidenceScore;
+
+    private Integer noiseScore;
+
+    @Column(columnDefinition = "TEXT")
+    private String routingReason;
+
+    @Column(length = 64)
+    private String safetyCategory;
+
+    @Column(length = 32)
+    private String publicationKind;
 
     private Long providerId;
 
@@ -48,6 +100,8 @@ public class GuideEntity extends BaseEntity {
     private Double duplicateScore;
 
     private Double confidence;
+
+    private Integer usefulnessScore;
 
     @Column(nullable = false)
     private Integer inputTokens = 0;

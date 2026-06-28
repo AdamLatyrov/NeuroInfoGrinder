@@ -1,0 +1,734 @@
+[
+  {
+    "segment_id": "S0024",
+    "fixture_or_new": "E01",
+    "proposed_type": "GUIDE",
+    "raw_ids": [
+      6062,
+      6064,
+      6069,
+      6070,
+      6071,
+      6078
+    ],
+    "source_count": 6,
+    "combined_score": 0.98,
+    "signals": [
+      "Q_AND_A_PAIR",
+      "PROBLEM_SOLUTION",
+      "ERROR_OR_STATUS_DIAGNOSIS",
+      "TECHNICAL_API_CACHE_COST",
+      "REPEATED_ENTITY",
+      "MULTI_MESSAGE_CONTEXT"
+    ],
+    "chat": "Vibemode",
+    "topic": "Баги и вопросы по API",
+    "account_id": 1,
+    "telegram_chat_id": -1003919536687,
+    "forum_topic_id": 1302,
+    "message_thread_id": 1302,
+    "sources": [
+      {
+        "order": 0,
+        "raw_id": 6062,
+        "dataset_message_id": 5103,
+        "message_date": "2026-06-25T22:14:10+00:00",
+        "text": "Чтобы в Hermes и подобных агентах fallback на другие модели делать нормально"
+      },
+      {
+        "order": 1,
+        "raw_id": 6064,
+        "dataset_message_id": 5113,
+        "message_date": "2026-06-25T22:14:19+00:00",
+        "text": "постараемся"
+      },
+      {
+        "order": 2,
+        "raw_id": 6069,
+        "dataset_message_id": 5114,
+        "message_date": "2026-06-25T22:14:43+00:00",
+        "text": "причем тут лимиты то? эти 2 дня у меня кодекс с обычно подпиской работает как всегда обычно. а апи провайдер думает ооочень долго. Я не наговариваю, я факт говорю"
+      },
+      {
+        "order": 3,
+        "raw_id": 6070,
+        "dataset_message_id": 5115,
+        "message_date": "2026-06-25T22:14:46+00:00",
+        "text": "но чаще всего зависит не от нас, а чаще всего все сбои на стороне кого то, но мы обязательно подумаем над этим! Спасибо!"
+      },
+      {
+        "order": 4,
+        "raw_id": 6071,
+        "dataset_message_id": 5120,
+        "message_date": "2026-06-25T22:14:56+00:00",
+        "text": "поинт какой"
+      },
+      {
+        "order": 5,
+        "raw_id": 6078,
+        "dataset_message_id": 5129,
+        "message_date": "2026-06-25T22:15:32+00:00",
+        "text": "я уже добавил статус доступности моделей, пока в работе"
+      }
+    ],
+    "reason_selected": "fixture E01"
+  },
+  {
+    "segment_id": "S0269",
+    "fixture_or_new": "E02",
+    "proposed_type": "GUIDE",
+    "raw_ids": [
+      6776,
+      6778,
+      6799,
+      6803,
+      6805,
+      6806
+    ],
+    "source_count": 6,
+    "combined_score": 0.98,
+    "signals": [
+      "Q_AND_A_PAIR",
+      "PROBLEM_SOLUTION",
+      "ERROR_OR_STATUS_DIAGNOSIS",
+      "TECHNICAL_API_CACHE_COST",
+      "REPEATED_ENTITY",
+      "MULTI_MESSAGE_CONTEXT"
+    ],
+    "chat": "Vibecoder Chat [Public]",
+    "topic": "Claude Code",
+    "account_id": 1,
+    "telegram_chat_id": -1002922797592,
+    "forum_topic_id": 106,
+    "message_thread_id": 106,
+    "sources": [
+      {
+        "order": 0,
+        "raw_id": 6776,
+        "dataset_message_id": 5825,
+        "message_date": "2026-06-26T06:51:33+00:00",
+        "text": "ну как по человечески. Кешироввние, в api на запись есть бабки. Дорого. Зато следующие токены вытаскиваются из кеша. Поэтому дешево. Так в апи.\n\nВ подписке то же самое, только вы не видите этого, оно под капотом"
+      },
+      {
+        "order": 1,
+        "raw_id": 6778,
+        "dataset_message_id": 5826,
+        "message_date": "2026-06-26T06:51:57+00:00",
+        "text": "потому выходит некоторые запросы жрут лимиты сразу, а некоторые нет (берутся из кеша)"
+      },
+      {
+        "order": 2,
+        "raw_id": 6799,
+        "dataset_message_id": 5849,
+        "message_date": "2026-06-26T06:53:47+00:00",
+        "text": "основные постулаты при кодинге\n- не ходить в туалет, не жрать и не делать паузы более 5 минут между запросами, кеш сбрасывается. Есть 1 часовой кеш у МАкс тарифов на подписке. Там жрать и ссать можно, но кеш по идее дороже уже, поэтому тратится может быстрее лимиты"
+      },
+      {
+        "order": 3,
+        "raw_id": 6803,
+        "dataset_message_id": 5852,
+        "message_date": "2026-06-26T06:54:07+00:00",
+        "text": "Ну так мы про это и возмущались что ХЗ как он там БЕРЕТ бывает элементарнейший хапрос сжирает тонну лимитов (лично было что 15% за 1 текстовый запрос на 1 А4 лист текста тупо! ) а бывает бл пол дня работает в коде правит 2000 строк и сжирает дай бог 10% \n\nон не зря удалили ЛОГИ токенов же)"
+      },
+      {
+        "order": 4,
+        "raw_id": 6805,
+        "dataset_message_id": 5853,
+        "message_date": "2026-06-26T06:54:19+00:00",
+        "text": "- не делать постоянно /new и /clear как советуют дебилы в ютубе"
+      },
+      {
+        "order": 5,
+        "raw_id": 6806,
+        "dataset_message_id": 5854,
+        "message_date": "2026-06-26T06:54:23+00:00",
+        "text": "жесть"
+      }
+    ],
+    "reason_selected": "fixture E02"
+  },
+  {
+    "segment_id": "S0132",
+    "fixture_or_new": "E04",
+    "proposed_type": "SUMMARY",
+    "raw_ids": [
+      6220,
+      6221,
+      6222,
+      6223,
+      6224,
+      6225
+    ],
+    "source_count": 6,
+    "combined_score": 1,
+    "signals": [
+      "PROBLEM_SOLUTION",
+      "ERROR_OR_STATUS_DIAGNOSIS",
+      "CHECKLIST_OR_LIST",
+      "TECHNICAL_API_CACHE_COST",
+      "PRODUCT_FEEDBACK_BURST",
+      "MULTI_MESSAGE_CONTEXT"
+    ],
+    "chat": "Vibe GIG Мастерская",
+    "topic": "Флудилка",
+    "account_id": 1,
+    "telegram_chat_id": -1003922856266,
+    "forum_topic_id": 142,
+    "message_thread_id": 142,
+    "sources": [
+      {
+        "order": 0,
+        "raw_id": 6220,
+        "dataset_message_id": 5269,
+        "message_date": "2026-06-25T23:30:54+00:00",
+        "text": "собираю ОС по кли"
+      },
+      {
+        "order": 1,
+        "raw_id": 6221,
+        "dataset_message_id": 5270,
+        "message_date": "2026-06-25T23:30:54+00:00",
+        "text": "на каком принципе мы основываемся: сделать работу простой, удобной и эффективной без ебли с кучей скиллов, плагинов и установок - интуитивно понятно, решая главную проблему вайбкодеров"
+      },
+      {
+        "order": 2,
+        "raw_id": 6222,
+        "dataset_message_id": 5271,
+        "message_date": "2026-06-25T23:30:54+00:00",
+        "text": "ГОРЕНИЕ ЖОПЫ"
+      },
+      {
+        "order": 3,
+        "raw_id": 6223,
+        "dataset_message_id": 5272,
+        "message_date": "2026-06-25T23:30:54+00:00",
+        "text": "поэтому мне нужно знать - от чего у тебя чаще всего горит жопа в ВК"
+      },
+      {
+        "order": 4,
+        "raw_id": 6224,
+        "dataset_message_id": 5273,
+        "message_date": "2026-06-25T23:30:54+00:00",
+        "text": "актуальный уже существующий список:\n\n1. кривой ии-слопный фронт\n2. объяснение агенту простых очевидных вещей которых он не знает, отчего ты вынужден тратить время и токены на инференс\n3. отсутствие фри моделей в агенте\n4. непонятный вырвиглазный больничный сложный интерфейс и огромное количество мусорного функционала\n5. отсутствие опенсурс фактора\n6. неумение агентов работать с узкими сферами на приличном уровне: парсинг, отказ работы с кибербезом\n7. типичные постоянно повторяющиесся ошибки деплоя\n8. отсутствие осведомленности о готовых опенсурс источников для ассетов, иных типов файлов / документации\n9. непомерные объемы траты токенов\n10. отсутствие оптимизации - нагрузка на устройство\n11. проблемы с работой с определенными моделями - сложности с настройкой тулл колс, деградация контекста"
+      },
+      {
+        "order": 5,
+        "raw_id": 6225,
+        "dataset_message_id": 5274,
+        "message_date": "2026-06-25T23:30:54+00:00",
+        "text": "если есть какие-то идеи - буду рад ОС"
+      }
+    ],
+    "reason_selected": "fixture E04"
+  },
+  {
+    "segment_id": "S0217",
+    "fixture_or_new": "E07",
+    "proposed_type": "SUMMARY",
+    "raw_ids": [
+      6341,
+      6360,
+      6538,
+      6539,
+      6540,
+      6543
+    ],
+    "source_count": 6,
+    "combined_score": 0.78,
+    "signals": [
+      "Q_AND_A_PAIR",
+      "CAREER_RESUME_SIGNAL",
+      "RISK_OR_CAUTION_SIGNAL",
+      "MULTI_MESSAGE_CONTEXT"
+    ],
+    "chat": "ОМ: Биохакинг",
+    "topic": 6411,
+    "account_id": 1,
+    "telegram_chat_id": -1001843792932,
+    "forum_topic_id": 6411,
+    "message_thread_id": 6411,
+    "sources": [
+      {
+        "order": 0,
+        "raw_id": 6341,
+        "dataset_message_id": 5390,
+        "message_date": "2026-06-26T02:35:20+00:00",
+        "text": "Здарова \nЕздил кто на психоделические ретриты? Хочу задать несколько вопросов"
+      },
+      {
+        "order": 1,
+        "raw_id": 6360,
+        "dataset_message_id": 5409,
+        "message_date": "2026-06-26T02:59:49+00:00",
+        "text": "Привет\nКакая цель?"
+      },
+      {
+        "order": 2,
+        "raw_id": 6538,
+        "dataset_message_id": 5587,
+        "message_date": "2026-06-26T04:37:15+00:00",
+        "text": "Я собираюсь провести иследование на эту тему. От \"решил что это нужно\" до \"последний интеграционный звонок от организации\""
+      },
+      {
+        "order": 3,
+        "raw_id": 6539,
+        "dataset_message_id": 5588,
+        "message_date": "2026-06-26T04:38:22+00:00",
+        "text": "Понял) \nА исследование в каком смысле?"
+      },
+      {
+        "order": 4,
+        "raw_id": 6540,
+        "dataset_message_id": 5589,
+        "message_date": "2026-06-26T04:50:24+00:00",
+        "text": "Как разные люди, имеющие разные опыты таких ретритов, видят весь процесс и какое мнение они теперь имеют на счет такой практики + какие бенефиты они приобрели. Вот)"
+      },
+      {
+        "order": 5,
+        "raw_id": 6543,
+        "dataset_message_id": 5592,
+        "message_date": "2026-06-26T05:03:23+00:00",
+        "text": "У меня есть знакомые (4 человек), которые ретритили.\n\nПосле ретритов их проблемы не решались, они чаще уходили в \"нужно жить в гармонии и по кайфу ваще\". \n\nУ всех после этого появились проблемы с целеполаганием типа \"у самурая есть только путь\". Моё  мнение - это плохо.\n\nПлюсом они начинают погружаться в шизотерику и становятся ёбнутыми. Можешь послушать Мацкевича и Маркес, Саня Ильин и Декабрист делали на них реакт =)\n\nЕсли хочешь какую-то болячку полечить / смысл жизни найти - ретрит это очень кривой способ достижения этих целей"
+      }
+    ],
+    "reason_selected": "fixture E07"
+  },
+  {
+    "segment_id": "S0021",
+    "fixture_or_new": "NEW",
+    "proposed_type": "GUIDE",
+    "raw_ids": [
+      6047,
+      6048,
+      6052,
+      6062,
+      6064,
+      6069
+    ],
+    "source_count": 6,
+    "combined_score": 0.98,
+    "signals": [
+      "Q_AND_A_PAIR",
+      "PROBLEM_SOLUTION",
+      "ERROR_OR_STATUS_DIAGNOSIS",
+      "TECHNICAL_API_CACHE_COST",
+      "REPEATED_ENTITY",
+      "MULTI_MESSAGE_CONTEXT"
+    ],
+    "chat": "Vibemode",
+    "topic": "Баги и вопросы по API",
+    "account_id": 1,
+    "telegram_chat_id": -1003919536687,
+    "forum_topic_id": 1302,
+    "message_thread_id": 1302,
+    "sources": [
+      {
+        "order": 0,
+        "raw_id": 6047,
+        "dataset_message_id": 5092,
+        "message_date": "2026-06-25T22:12:58+00:00",
+        "text": "100%, ру апи для РФ айпишников"
+      },
+      {
+        "order": 1,
+        "raw_id": 6048,
+        "dataset_message_id": 5093,
+        "message_date": "2026-06-25T22:13:05+00:00",
+        "text": "он по этому и r-api"
+      },
+      {
+        "order": 2,
+        "raw_id": 6052,
+        "dataset_message_id": 5102,
+        "message_date": "2026-06-25T22:13:38+00:00",
+        "text": "Очень хотелось бы страницу мониторинга, чтобы знать наверняка, какой API и какая модель работает, в идеале бы ещё по запросу списка моделей получать информацию о рабочих или не рабочих моделях"
+      },
+      {
+        "order": 3,
+        "raw_id": 6062,
+        "dataset_message_id": 5103,
+        "message_date": "2026-06-25T22:14:10+00:00",
+        "text": "Чтобы в Hermes и подобных агентах fallback на другие модели делать нормально"
+      },
+      {
+        "order": 4,
+        "raw_id": 6064,
+        "dataset_message_id": 5113,
+        "message_date": "2026-06-25T22:14:19+00:00",
+        "text": "постараемся"
+      },
+      {
+        "order": 5,
+        "raw_id": 6069,
+        "dataset_message_id": 5114,
+        "message_date": "2026-06-25T22:14:43+00:00",
+        "text": "причем тут лимиты то? эти 2 дня у меня кодекс с обычно подпиской работает как всегда обычно. а апи провайдер думает ооочень долго. Я не наговариваю, я факт говорю"
+      }
+    ],
+    "reason_selected": "top non-fixture by score/signals"
+  },
+  {
+    "segment_id": "S0266",
+    "fixture_or_new": "NEW",
+    "proposed_type": "GUIDE",
+    "raw_ids": [
+      6691,
+      6765,
+      6769,
+      6776,
+      6778,
+      6799
+    ],
+    "source_count": 6,
+    "combined_score": 0.98,
+    "signals": [
+      "Q_AND_A_PAIR",
+      "PROBLEM_SOLUTION",
+      "ERROR_OR_STATUS_DIAGNOSIS",
+      "TECHNICAL_API_CACHE_COST",
+      "REPEATED_ENTITY",
+      "MULTI_MESSAGE_CONTEXT"
+    ],
+    "chat": "Vibecoder Chat [Public]",
+    "topic": "Claude Code",
+    "account_id": 1,
+    "telegram_chat_id": -1002922797592,
+    "forum_topic_id": 106,
+    "message_thread_id": 106,
+    "sources": [
+      {
+        "order": 0,
+        "raw_id": 6691,
+        "dataset_message_id": 5740,
+        "message_date": "2026-06-26T06:40:47+00:00",
+        "text": "Тони Монтана хуев"
+      },
+      {
+        "order": 1,
+        "raw_id": 6765,
+        "dataset_message_id": 5816,
+        "message_date": "2026-06-26T06:49:55+00:00",
+        "text": "почитайте теорию как работает кеширование в антропике. В подписке оно тоже используется, как и в api. Именно на первых запросах в сессии основная часть падает в кеш на запись, а лимиты в подписке считай что деньги в апи, потому что все измеряется в нагрузке на мощности. Потому так все выходит. \n\nЭто не волшебство, а нагрузка на кеширование"
+      },
+      {
+        "order": 2,
+        "raw_id": 6769,
+        "dataset_message_id": 5815,
+        "message_date": "2026-06-26T06:50:22+00:00",
+        "text": "а по человечески? ))"
+      },
+      {
+        "order": 3,
+        "raw_id": 6776,
+        "dataset_message_id": 5825,
+        "message_date": "2026-06-26T06:51:33+00:00",
+        "text": "ну как по человечески. Кешироввние, в api на запись есть бабки. Дорого. Зато следующие токены вытаскиваются из кеша. Поэтому дешево. Так в апи.\n\nВ подписке то же самое, только вы не видите этого, оно под капотом"
+      },
+      {
+        "order": 4,
+        "raw_id": 6778,
+        "dataset_message_id": 5826,
+        "message_date": "2026-06-26T06:51:57+00:00",
+        "text": "потому выходит некоторые запросы жрут лимиты сразу, а некоторые нет (берутся из кеша)"
+      },
+      {
+        "order": 5,
+        "raw_id": 6799,
+        "dataset_message_id": 5849,
+        "message_date": "2026-06-26T06:53:47+00:00",
+        "text": "основные постулаты при кодинге\n- не ходить в туалет, не жрать и не делать паузы более 5 минут между запросами, кеш сбрасывается. Есть 1 часовой кеш у МАкс тарифов на подписке. Там жрать и ссать можно, но кеш по идее дороже уже, поэтому тратится может быстрее лимиты"
+      }
+    ],
+    "reason_selected": "top non-fixture by score/signals"
+  },
+  {
+    "segment_id": "S0222",
+    "fixture_or_new": "NEW",
+    "proposed_type": "SUMMARY",
+    "raw_ids": [
+      6543,
+      6571,
+      6574,
+      6575,
+      6591,
+      6592
+    ],
+    "source_count": 6,
+    "combined_score": 0.88,
+    "signals": [
+      "Q_AND_A_PAIR",
+      "RESOURCE_LINK_WITH_EXPLANATION",
+      "CAREER_RESUME_SIGNAL",
+      "RISK_OR_CAUTION_SIGNAL",
+      "MULTI_MESSAGE_CONTEXT"
+    ],
+    "chat": "ОМ: Биохакинг",
+    "topic": 6411,
+    "account_id": 1,
+    "telegram_chat_id": -1001843792932,
+    "forum_topic_id": 6411,
+    "message_thread_id": 6411,
+    "sources": [
+      {
+        "order": 0,
+        "raw_id": 6543,
+        "dataset_message_id": 5592,
+        "message_date": "2026-06-26T05:03:23+00:00",
+        "text": "У меня есть знакомые (4 человек), которые ретритили.\n\nПосле ретритов их проблемы не решались, они чаще уходили в \"нужно жить в гармонии и по кайфу ваще\". \n\nУ всех после этого появились проблемы с целеполаганием типа \"у самурая есть только путь\". Моё  мнение - это плохо.\n\nПлюсом они начинают погружаться в шизотерику и становятся ёбнутыми. Можешь послушать Мацкевича и Маркес, Саня Ильин и Декабрист делали на них реакт =)\n\nЕсли хочешь какую-то болячку полечить / смысл жизни найти - ретрит это очень кривой способ достижения этих целей"
+      },
+      {
+        "order": 1,
+        "raw_id": 6571,
+        "dataset_message_id": 5620,
+        "message_date": "2026-06-26T05:30:05+00:00",
+        "text": "Если есть инфа какие ретриты они конкретно посещали, то буду рад знать"
+      },
+      {
+        "order": 2,
+        "raw_id": 6574,
+        "dataset_message_id": 5623,
+        "message_date": "2026-06-26T05:30:48+00:00",
+        "text": "Дай ссылки плиз, если не сложно"
+      },
+      {
+        "order": 3,
+        "raw_id": 6575,
+        "dataset_message_id": 5624,
+        "message_date": "2026-06-26T05:31:18+00:00",
+        "text": "https://www.youtube.com/live/IaFbBfD3IcA?si=7-MUzKNpUtqGikck"
+      },
+      {
+        "order": 4,
+        "raw_id": 6591,
+        "dataset_message_id": 5640,
+        "message_date": "2026-06-26T05:44:26+00:00",
+        "text": "Ты работал с такими людьми?"
+      },
+      {
+        "order": 5,
+        "raw_id": 6592,
+        "dataset_message_id": 5641,
+        "message_date": "2026-06-26T05:51:39+00:00",
+        "text": "Работал) \nТакие начинают бегать по потолку, когда оказывается, что можно формулировать и путь на 10/10, и цель на 10/10. Причём это делается за 40-60 минутов\n\nЕщё интересное наблюдение - тревожность у некоторых людей отцепляется просто постановкой очень хорошей цели. Цели, в которую их тревожная голова с удовольствием погрузится. Появляется цель - и они начинают делать, а не гонять мысли по лобной доле 😁"
+      }
+    ],
+    "reason_selected": "top non-fixture by score/signals"
+  },
+  {
+    "segment_id": "S0135",
+    "fixture_or_new": "NEW",
+    "proposed_type": "GUIDE",
+    "raw_ids": [
+      6223,
+      6224,
+      6225,
+      6226,
+      6258,
+      6259
+    ],
+    "source_count": 6,
+    "combined_score": 0.8,
+    "signals": [
+      "PROBLEM_SOLUTION",
+      "ERROR_OR_STATUS_DIAGNOSIS",
+      "CHECKLIST_OR_LIST",
+      "TECHNICAL_API_CACHE_COST",
+      "MULTI_MESSAGE_CONTEXT"
+    ],
+    "chat": "Vibe GIG Мастерская",
+    "topic": "Флудилка",
+    "account_id": 1,
+    "telegram_chat_id": -1003922856266,
+    "forum_topic_id": 142,
+    "message_thread_id": 142,
+    "sources": [
+      {
+        "order": 0,
+        "raw_id": 6223,
+        "dataset_message_id": 5272,
+        "message_date": "2026-06-25T23:30:54+00:00",
+        "text": "поэтому мне нужно знать - от чего у тебя чаще всего горит жопа в ВК"
+      },
+      {
+        "order": 1,
+        "raw_id": 6224,
+        "dataset_message_id": 5273,
+        "message_date": "2026-06-25T23:30:54+00:00",
+        "text": "актуальный уже существующий список:\n\n1. кривой ии-слопный фронт\n2. объяснение агенту простых очевидных вещей которых он не знает, отчего ты вынужден тратить время и токены на инференс\n3. отсутствие фри моделей в агенте\n4. непонятный вырвиглазный больничный сложный интерфейс и огромное количество мусорного функционала\n5. отсутствие опенсурс фактора\n6. неумение агентов работать с узкими сферами на приличном уровне: парсинг, отказ работы с кибербезом\n7. типичные постоянно повторяющиесся ошибки деплоя\n8. отсутствие осведомленности о готовых опенсурс источников для ассетов, иных типов файлов / документации\n9. непомерные объемы траты токенов\n10. отсутствие оптимизации - нагрузка на устройство\n11. проблемы с работой с определенными моделями - сложности с настройкой тулл колс, деградация контекста"
+      },
+      {
+        "order": 2,
+        "raw_id": 6225,
+        "dataset_message_id": 5274,
+        "message_date": "2026-06-25T23:30:54+00:00",
+        "text": "если есть какие-то идеи - буду рад ОС"
+      },
+      {
+        "order": 3,
+        "raw_id": 6226,
+        "dataset_message_id": 5275,
+        "message_date": "2026-06-25T23:31:01+00:00",
+        "text": "это по \"SINGULAR\""
+      },
+      {
+        "order": 4,
+        "raw_id": 6258,
+        "dataset_message_id": 5307,
+        "message_date": "2026-06-25T23:48:38+00:00",
+        "text": "я надеюсь глм не решил туда раточку засунуть"
+      },
+      {
+        "order": 5,
+        "raw_id": 6259,
+        "dataset_message_id": 5308,
+        "message_date": "2026-06-25T23:48:51+00:00",
+        "text": "он чёт там сделал вроде, затести"
+      }
+    ],
+    "reason_selected": "top non-fixture by score/signals"
+  },
+  {
+    "segment_id": "S0109",
+    "fixture_or_new": "NEW",
+    "proposed_type": "ANSWER",
+    "raw_ids": [
+      6038,
+      6040,
+      6041,
+      6072,
+      6077,
+      6107
+    ],
+    "source_count": 6,
+    "combined_score": 0.78,
+    "signals": [
+      "Q_AND_A_PAIR",
+      "RESOURCE_LINK_WITH_EXPLANATION",
+      "REPEATED_ENTITY",
+      "MULTI_MESSAGE_CONTEXT"
+    ],
+    "chat": "Vibe GIG Мастерская",
+    "topic": "Флудилка",
+    "account_id": 1,
+    "telegram_chat_id": -1003922856266,
+    "forum_topic_id": 142,
+    "message_thread_id": 142,
+    "sources": [
+      {
+        "order": 0,
+        "raw_id": 6038,
+        "dataset_message_id": 5087,
+        "message_date": "2026-06-25T22:12:03+00:00",
+        "text": "как ахуенно"
+      },
+      {
+        "order": 1,
+        "raw_id": 6040,
+        "dataset_message_id": 5088,
+        "message_date": "2026-06-25T22:12:18+00:00",
+        "text": "Круто оч"
+      },
+      {
+        "order": 2,
+        "raw_id": 6041,
+        "dataset_message_id": 5089,
+        "message_date": "2026-06-25T22:12:28+00:00",
+        "text": "я чую сарказм"
+      },
+      {
+        "order": 3,
+        "raw_id": 6072,
+        "dataset_message_id": 5122,
+        "message_date": "2026-06-25T22:15:24+00:00",
+        "text": "Не, серьзено"
+      },
+      {
+        "order": 4,
+        "raw_id": 6077,
+        "dataset_message_id": 5121,
+        "message_date": "2026-06-25T22:15:30+00:00",
+        "text": "Это типо хдрезка?"
+      },
+      {
+        "order": 5,
+        "raw_id": 6107,
+        "dataset_message_id": 5156,
+        "message_date": "2026-06-25T22:17:36+00:00",
+        "text": "если что само приложение не глм делал, за основу взят https://github.com/truelockmc/streambert . В нём русской озвучки фильмов не было, я сказал ему спиздить озвучки и сами фильмы с http://lampa.mx/"
+      }
+    ],
+    "reason_selected": "top non-fixture by score/signals"
+  },
+  {
+    "segment_id": "S0112",
+    "fixture_or_new": "NEW",
+    "proposed_type": "ANSWER",
+    "raw_ids": [
+      6072,
+      6077,
+      6107,
+      6109,
+      6110,
+      6115
+    ],
+    "source_count": 6,
+    "combined_score": 0.78,
+    "signals": [
+      "Q_AND_A_PAIR",
+      "RESOURCE_LINK_WITH_EXPLANATION",
+      "REPEATED_ENTITY",
+      "MULTI_MESSAGE_CONTEXT"
+    ],
+    "chat": "Vibe GIG Мастерская",
+    "topic": "Флудилка",
+    "account_id": 1,
+    "telegram_chat_id": -1003922856266,
+    "forum_topic_id": 142,
+    "message_thread_id": 142,
+    "sources": [
+      {
+        "order": 0,
+        "raw_id": 6072,
+        "dataset_message_id": 5122,
+        "message_date": "2026-06-25T22:15:24+00:00",
+        "text": "Не, серьзено"
+      },
+      {
+        "order": 1,
+        "raw_id": 6077,
+        "dataset_message_id": 5121,
+        "message_date": "2026-06-25T22:15:30+00:00",
+        "text": "Это типо хдрезка?"
+      },
+      {
+        "order": 2,
+        "raw_id": 6107,
+        "dataset_message_id": 5156,
+        "message_date": "2026-06-25T22:17:36+00:00",
+        "text": "если что само приложение не глм делал, за основу взят https://github.com/truelockmc/streambert . В нём русской озвучки фильмов не было, я сказал ему спиздить озвучки и сами фильмы с http://lampa.mx/"
+      },
+      {
+        "order": 3,
+        "raw_id": 6109,
+        "dataset_message_id": 5157,
+        "message_date": "2026-06-25T22:17:55+00:00",
+        "text": "и он сделал плеер отдельный"
+      },
+      {
+        "order": 4,
+        "raw_id": 6110,
+        "dataset_message_id": 5158,
+        "message_date": "2026-06-25T22:18:03+00:00",
+        "text": "не прям вау, просто прикольненько"
+      },
+      {
+        "order": 5,
+        "raw_id": 6115,
+        "dataset_message_id": 5164,
+        "message_date": "2026-06-25T22:20:33+00:00",
+        "text": "Ага"
+      }
+    ],
+    "reason_selected": "top non-fixture by score/signals"
+  }
+]

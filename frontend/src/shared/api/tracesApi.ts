@@ -1,6 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { getJsonAuth } from "./http";
-import type { FlowMetrics, PaginatedResponse, PipelineTrace } from "../types";
+import type {
+  FlowMetrics,
+  PaginatedResponse,
+  PipelineTrace,
+  PipelineTuningCase,
+} from "../types";
 
 interface TraceDto {
   id: number;
@@ -26,6 +31,11 @@ interface TraceDto {
   score: number | null;
   confidence: number | null;
   reason: string | null;
+  entityType: string | null;
+  entityName: string | null;
+  entityVersion: string | null;
+  configSnapshotJson: string | null;
+  tuningHint: string | null;
 }
 
 function normalizeTrace(dto: TraceDto): PipelineTrace {
@@ -53,6 +63,11 @@ function normalizeTrace(dto: TraceDto): PipelineTrace {
     score: dto.score,
     confidence: dto.confidence,
     reason: dto.reason,
+    entityType: dto.entityType,
+    entityName: dto.entityName,
+    entityVersion: dto.entityVersion,
+    configSnapshotJson: dto.configSnapshotJson,
+    tuningHint: dto.tuningHint,
   };
 }
 
@@ -115,5 +130,45 @@ export function useFlowMetricsQuery() {
     queryKey: ["flow-metrics"],
     queryFn: () => getJsonAuth<FlowMetrics>("/traces/metrics"),
     refetchInterval: 30_000,
+  });
+}
+
+interface TuningCasesOptions {
+  from?: string;
+  to?: string;
+  stage?: string;
+  status?: string;
+  classifierId?: string;
+  promptId?: string;
+  ruleId?: string;
+  groupId?: string;
+  problemOnly?: boolean;
+  page?: number;
+  size?: number;
+}
+
+export function useTuningCasesQuery(options?: TuningCasesOptions) {
+  const page = options?.page ?? 0;
+  const size = options?.size ?? 50;
+  return useQuery({
+    queryKey: ["tuning-cases", options],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      params.set("page", String(page));
+      params.set("size", String(size));
+      params.set("problemOnly", String(options?.problemOnly ?? true));
+      if (options?.from) params.set("from", options.from);
+      if (options?.to) params.set("to", options.to);
+      if (options?.stage) params.set("stage", options.stage);
+      if (options?.status) params.set("status", options.status);
+      if (options?.classifierId) params.set("classifierId", options.classifierId);
+      if (options?.promptId) params.set("promptId", options.promptId);
+      if (options?.ruleId) params.set("ruleId", options.ruleId);
+      if (options?.groupId) params.set("groupId", options.groupId);
+      return getJsonAuth<PaginatedResponse<PipelineTuningCase>>(
+        `/traces/tuning-cases?${params.toString()}`
+      );
+    },
+    refetchInterval: 10_000,
   });
 }

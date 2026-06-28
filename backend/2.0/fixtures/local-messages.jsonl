@@ -1,0 +1,6 @@
+{"accountId":1,"telegramChatId":100,"telegramMessageId":200,"senderName":"local user","text":"Plain URL https://example.com/page?utm_source=chat","messageDate":"2026-06-22T12:00:00Z","entities":[{"offset":10,"length":40,"type":"URL"}]}
+{"accountId":1,"telegramChatId":100,"telegramMessageId":201,"senderName":"local user","text":"Нажми тут","messageDate":"2026-06-22T12:01:00Z","entities":[{"offset":6,"length":3,"type":"TEXT_URL","url":"https://example.com/hidden"}]}
+{"accountId":1,"telegramChatId":100,"telegramMessageId":202,"senderName":"local user","caption":"caption тут","messageDate":"2026-06-22T12:02:00Z","contentType":"messagePhoto","captionEntities":[{"offset":8,"length":3,"type":"TEXT_URL","url":"https://media.example.com"}],"media":{"@type":"messagePhoto","file_name":"local-photo.jpg","mime_type":"image/jpeg","file_size":12345}}
+{"accountId":1,"telegramChatId":100,"telegramMessageId":203,"senderName":"local user","text":"Сообщение без ссылок","messageDate":"2026-06-22T12:03:00Z"}
+{"accountId":1,"telegramChatId":100,"telegramMessageId":203,"senderName":"local user","text":"Сообщение без ссылок","messageDate":"2026-06-22T12:03:00Z"}
+{"accountId":1,"telegramChatId":100,"telegramMessageId":204,"senderName":"local user","text":"Sensitive https://example.com/callback?access_token=dummy-value&ok=1","messageDate":"2026-06-22T12:04:00Z"}

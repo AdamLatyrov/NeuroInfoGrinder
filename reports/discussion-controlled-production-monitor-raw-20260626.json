@@ -1,0 +1,72 @@
+{
+    "counts": {
+        "discussionMaterialsToday": 3,
+        "llmJudgeCallsAfterEnable": 0,
+        "draftMaterialsAfterEnable": 0,
+        "knowledgeItemsTotalActive": 24,
+        "llmJudgeErrorsAfterEnable": 0,
+        "scorerAcceptedAfterEnable": 0,
+        "generationCallsAfterEnable": 0,
+        "llmJudgeSuccessAfterEnable": 0,
+        "generationErrorsAfterEnable": 0,
+        "segmentsDetectedAfterEnable": 0,
+        "generationSuccessAfterEnable": 0,
+        "publishedMaterialsAfterEnable": 0,
+        "discussionMaterialsTotalActive": 3,
+        "segmentsMissingSourcesAfterEnable": 0,
+        "materialsMissingSourcesAfterEnable": 0
+    },
+    "settings": {
+        "discussionSegmentDraftOnly": "1",
+        "discussionSegmentFreshOnly": "1",
+        "discussionSegmentGenerationMode": "CONTROLLED",
+        "discussionSegmentGenerationEnabled": "1",
+        "discussionSegmentSkipRiskSensitive": "1",
+        "discussionSegmentMaxMaterialsPerDay": "3",
+        "discussionSegmentRequireLlmAccepted": "1",
+        "discussionSegmentStopOnProviderError": "1",
+        "discussionSegmentControlledEnableTime": "2026-06-26T16:23:22Z",
+        "discussionSegmentStopOnGenerationError": "1",
+        "discussionSegmentMaxMaterialsPerChatTopicPerDay": "1"
+    },
+    "capturedAt": "2026-06-26T16:38:00.0514+00:00",
+    "enableTime": "2026-06-26T16:23:22+00:00",
+    "materialsAfterEnable": [
+    ],
+    "skipReasonsAfterEnable": {
+    },
+    "lastDiscussionMaterials": [
+        {
+            "id": 25,
+            "runId": 2916,
+            "title": "Сбор обратной связи о главных болях вайбкодеров",
+            "status": "DRAFT",
+            "createdAt": "2026-06-26T15:24:01.502605+00:00",
+            "segmentId": 120,
+            "sourceCount": 6,
+            "artifactType": "SUMMARY"
+        },
+        {
+            "id": 24,
+            "runId": 2915,
+            "title": "Как кеширование может влиять на расход лимитов в Claude Code",
+            "status": "DRAFT",
+            "createdAt": "2026-06-26T15:20:06.899126+00:00",
+            "segmentId": 119,
+            "sourceCount": 6,
+            "artifactType": "GUIDE"
+        },
+        {
+            "id": 23,
+            "runId": 2914,
+            "title": "Fallback на другие модели и статус доступности при задержках API-провайдера",
+            "status": "DRAFT",
+            "createdAt": "2026-06-26T15:19:04.363769+00:00",
+            "segmentId": 118,
+            "sourceCount": 6,
+            "artifactType": "GUIDE"
+        }
+    ],
+    "providerStatusesAfterEnable": {
+    }
+}

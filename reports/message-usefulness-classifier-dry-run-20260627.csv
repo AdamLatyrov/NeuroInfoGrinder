@@ -1,0 +1,24 @@
+sample_type,raw_id,content_class,candidate_route,proposed_material_type,reject_reason,llm_judge_eligible,assessment
+TARGET,11142,NEWS_UPDATE,SINGLE_MESSAGE,REFERENCE,,true,Expected positive candidate; no LOW_SINGLE_MESSAGE_SCORE.
+TARGET,11193,LINK_ONLY,REJECT,,NEEDS_LINK_ENRICHMENT,false,Expected reject; no generic TOO_SHORT.
+TARGET,11484,RESOURCE_REFERENCE,SINGLE_MESSAGE,REFERENCE,,true,Expected GitHub/resource candidate including hidden-link-style context.
+RANDOM_RECENT,84,LOW_VALUE,REJECT,,LOW_VALUE,false,Noise/off-topic trading profanity.
+RANDOM_RECENT,2294,LOW_VALUE,REJECT,,LOW_VALUE,false,Low-context chat fragment.
+RANDOM_RECENT,3767,LOW_VALUE,REJECT,,LOW_VALUE,false,Low-context conceptual fragment.
+RANDOM_RECENT,6050,LOW_VALUE,REJECT,,LOW_VALUE,false,Off-topic household item.
+RANDOM_RECENT,6057,LOW_VALUE,REJECT,,LOW_VALUE,false,Short chat fragment.
+RANDOM_RECENT,6086,LOW_VALUE,REJECT,,LOW_VALUE,false,Short local-context fragment.
+RANDOM_RECENT,6741,LOW_VALUE,REJECT,,LOW_VALUE,false,Short low-context fragment.
+RANDOM_RECENT,7057,LOW_VALUE,REJECT,,LOW_VALUE,false,Trading/off-topic fragment.
+RANDOM_RECENT,7111,LOW_VALUE,REJECT,,LOW_VALUE,false,Low-context account fragment; no useful routing.
+RANDOM_RECENT,7689,LOW_VALUE,REJECT,,LOW_VALUE,false,Meta-chat instruction; no material value.
+RANDOM_RECENT,7841,LOW_VALUE,REJECT,,LOW_VALUE,false,Short contextless fragment.
+RANDOM_RECENT,8343,LOW_VALUE,REJECT,,LOW_VALUE,false,Short contextless fragment.
+RANDOM_RECENT,9081,LOW_VALUE,REJECT,,LOW_VALUE,false,Laughter/noise.
+RANDOM_RECENT,9230,LOW_VALUE,REJECT,,LOW_VALUE,false,Profanity/noise.
+RANDOM_RECENT,9304,LOW_VALUE,REJECT,,LOW_VALUE,false,Too short/contextless.
+RANDOM_RECENT,11497,LOW_VALUE,REJECT,,LOW_VALUE,false,Profanity/noise.
+RANDOM_RECENT,11951,LOW_VALUE,REJECT,,LOW_VALUE,false,Low-context model comment; not sourced/actionable enough.
+RANDOM_RECENT,11963,LOW_VALUE,REJECT,,LOW_VALUE,false,Short question without answer/context.
+RANDOM_RECENT,12145,LOW_VALUE,REJECT,,LOW_VALUE,false,Profanity/noise.
+RANDOM_RECENT,13422,LOW_VALUE,REJECT,,LOW_VALUE,false,Short contextless fragment.

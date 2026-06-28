@@ -32,8 +32,12 @@ function handleUnauthorized(response: Response): void {
     }
 }
 
+function apiUrl(path: string): string {
+    return path.startsWith("/api/") || path.startsWith("/actuator") ? path : `${apiBaseUrl}${path}`;
+}
+
 export async function getJson<T>(path: string): Promise<T> {
-    const response = await fetch(`${apiBaseUrl}${path}`, {
+    const response = await fetch(apiUrl(path), {
         headers: {
             Accept: "application/json"
         }
@@ -47,7 +51,7 @@ export async function getJson<T>(path: string): Promise<T> {
 }
 
 export async function postJson<T>(path: string, body: unknown): Promise<T> {
-    const response = await fetch(`${apiBaseUrl}${path}`, {
+    const response = await fetch(apiUrl(path), {
         method: "POST",
         headers: {
             Accept: "application/json",
@@ -64,7 +68,7 @@ export async function postJson<T>(path: string, body: unknown): Promise<T> {
 }
 
 export async function getJsonAuth<T>(path: string): Promise<T> {
-    const response = await fetch(`${apiBaseUrl}${path}`, {
+    const response = await fetch(apiUrl(path), {
         headers: {
             Accept: "application/json",
             ...getAuthHeaders()
@@ -81,7 +85,7 @@ export async function getJsonAuth<T>(path: string): Promise<T> {
 }
 
 export async function postJsonAuth<T>(path: string, body: unknown): Promise<T> {
-    const response = await fetch(`${apiBaseUrl}${path}`, {
+    const response = await fetch(apiUrl(path), {
         method: "POST",
         headers: {
             Accept: "application/json",
@@ -100,8 +104,28 @@ export async function postJsonAuth<T>(path: string, body: unknown): Promise<T> {
     return parseResponseBody<T>(response);
 }
 
+export async function postFormAuth<T>(path: string, body: FormData): Promise<T> {
+    const response = await fetch(apiUrl(path), {
+        method: "POST",
+        headers: {
+            Accept: "application/json",
+            ...getAuthHeaders()
+        },
+        body
+    });
+
+    handleUnauthorized(response);
+
+    if (!response.ok) {
+        const text = await response.text();
+        throw new Error(text || `HTTP ${response.status}`);
+    }
+
+    return parseResponseBody<T>(response);
+}
+
 export async function patchJsonAuth<T>(path: string, body: unknown): Promise<T> {
-    const response = await fetch(`${apiBaseUrl}${path}`, {
+    const response = await fetch(apiUrl(path), {
         method: "PATCH",
         headers: {
             Accept: "application/json",
@@ -121,7 +145,7 @@ export async function patchJsonAuth<T>(path: string, body: unknown): Promise<T> 
 }
 
 export async function putJsonAuth<T>(path: string, body: unknown): Promise<T> {
-    const response = await fetch(`${apiBaseUrl}${path}`, {
+    const response = await fetch(apiUrl(path), {
         method: "PUT",
         headers: {
             Accept: "application/json",
@@ -141,7 +165,7 @@ export async function putJsonAuth<T>(path: string, body: unknown): Promise<T> {
 }
 
 export async function deleteJsonAuth(path: string): Promise<void> {
-    const response = await fetch(`${apiBaseUrl}${path}`, {
+    const response = await fetch(apiUrl(path), {
         method: "DELETE",
         headers: {
             ...getAuthHeaders()

@@ -1,0 +1,728 @@
+{
+    "runs": [
+        {
+            "error": null,
+            "runId": 2918,
+            "status": "COMPLETED",
+            "runName": "live auto raw messages batch 2938",
+            "datasetId": 2914,
+            "startedAt": "2026-06-26T19:18:46.201385+00:00",
+            "finishedAt": "2026-06-26T19:19:17.366381+00:00",
+            "totalMessages": 10,
+            "processedMessages": 10,
+            "providerCallsTotal": 2
+        },
+        {
+            "error": "LLM_REJECTED_ALL",
+            "runId": 1176,
+            "status": "COMPLETED",
+            "runName": "live auto raw messages batch 1203",
+            "datasetId": 1175,
+            "startedAt": "2026-06-25T21:42:54.693012+00:00",
+            "finishedAt": "2026-06-25T21:43:00.192772+00:00",
+            "totalMessages": 10,
+            "processedMessages": 10,
+            "providerCallsTotal": 1
+        },
+        {
+            "error": "LLM_REJECTED_ALL",
+            "runId": 894,
+            "status": "COMPLETED",
+            "runName": "live auto raw messages batch 894",
+            "datasetId": 893,
+            "startedAt": "2026-06-25T19:01:45.895754+00:00",
+            "finishedAt": "2026-06-25T19:03:55.332018+00:00",
+            "totalMessages": 11,
+            "processedMessages": 11,
+            "providerCallsTotal": 3
+        }
+    ],
+    "queue": [
+        {
+            "rawId": 8447,
+            "reason": "SUCCESS_WITH_MATERIALS",
+            "status": "PROCESSED",
+            "batchId": 2938,
+            "createdAt": "2026-06-26T19:18:46.201385+00:00",
+            "updatedAt": "2026-06-26T19:19:17.366381+00:00"
+        },
+        {
+            "rawId": 5801,
+            "reason": "LLM_REJECTED_ALL",
+            "status": "PROCESSED",
+            "batchId": 1203,
+            "createdAt": "2026-06-25T21:42:37.754102+00:00",
+            "updatedAt": "2026-06-25T21:43:00.192772+00:00"
+        },
+        {
+            "rawId": 5153,
+            "reason": "LLM_REJECTED_ALL",
+            "status": "PROCESSED",
+            "batchId": 894,
+            "createdAt": "2026-06-25T19:00:49.730052+00:00",
+            "updatedAt": "2026-06-25T19:03:55.332018+00:00"
+        }
+    ],
+    "intake": [
+        {
+            "rawId": 8447,
+            "reason": "SUCCESS_WITH_MATERIALS",
+            "status": "PROCESSED",
+            "createdAt": "2026-06-26T19:18:46.201385+00:00",
+            "updatedAt": "2026-06-26T19:22:19.804336+00:00",
+            "replayRunId": 2918
+        },
+        {
+            "rawId": 5801,
+            "reason": "LLM_REJECTED_ALL",
+            "status": "PROCESSED",
+            "createdAt": "2026-06-25T21:42:37.754102+00:00",
+            "updatedAt": "2026-06-25T21:43:00.192772+00:00",
+            "replayRunId": 1176
+        },
+        {
+            "rawId": 5153,
+            "reason": "LLM_REJECTED_ALL",
+            "status": "PROCESSED",
+            "createdAt": "2026-06-25T19:00:49.730052+00:00",
+            "updatedAt": "2026-06-25T21:42:54.991544+00:00",
+            "replayRunId": 894
+        }
+    ],
+    "batches": [
+        {
+            "runId": 894,
+            "status": "PROCESSED",
+            "batchId": 894,
+            "createdAt": "2026-06-25T19:00:49.500985+00:00",
+            "updatedAt": "2026-06-25T19:03:55.332018+00:00"
+        },
+        {
+            "runId": 1176,
+            "status": "PROCESSED",
+            "batchId": 1203,
+            "createdAt": "2026-06-25T21:42:37.754102+00:00",
+            "updatedAt": "2026-06-25T21:43:00.192772+00:00"
+        },
+        {
+            "runId": 2918,
+            "status": "PROCESSED",
+            "batchId": 2938,
+            "createdAt": "2026-06-26T19:18:29.305206+00:00",
+            "updatedAt": "2026-06-26T19:19:17.366381+00:00"
+        }
+    ],
+    "materials": [
+        {
+            "id": 26,
+            "title": "Краткая инструкция по старту с Prismatic API",
+            "status": "DRAFT",
+            "createdAt": "2026-06-26T19:19:17.366381+00:00",
+            "artifactType": "GUIDE",
+            "sourceClusterId": 7420,
+            "sourceClusterType": "SINGLE_MESSAGE"
+        }
+    ],
+    "capturedAt": "2026-06-26T19:23:08.72244+00:00",
+    "chatStates": [
+        {
+            "title": "Паша",
+            "chatList": "ChatListFolder",
+            "isEnabled": true,
+            "activeDialog": true,
+            "positionOrder": 7655409971077044071,
+            "telegramChatId": 866341216
+        }
+    ],
+    "rawMessages": [
+        {
+            "rawId": 8447,
+            "accountId": 1,
+            "chatTitle": null,
+            "identityId": null,
+            "ingestedAt": "2026-06-26T19:18:46.201385+00:00",
+            "senderName": "Адам",
+            "topicTitle": null,
+            "contentType": "MessageText",
+            "messageDate": "2026-06-26T19:16:17+00:00",
+            "textPreview": "#Prismaticapi\n1) https://prismaticapi.com/register?ref=PA-385FEA8E и prismaticapi.com - апи.\n2) Карты и тд не нужны\n3) Рега через Google oauth. Если регать просто через майл, то письмо с подтверждение не приходит.\nПОСЛЕ РЕГИ переходим сюда https://prismaticapi.com/dashboard/billing/wallet, тыкаем на ползунок \"PAYG access\" и \"Billing order\"\n4) На фри плане дают 40 запросов в 5ч, 400 в неделю\nМодели: gpt-5.4, gpt-5.5, claude-opus-4.6, claude-opus-4.7, claude-opus-4.8, claude-sonnet-4.6, gemini-3.1-pro-preview, gemini-3.5-flash, gemini-3.1-flash-image-preview, deepseek-v4-pro, deepseek-v4-flash, qwen3.5-plus, qwen3.6-plus, qwen3.7-max, qwen3.7-plus, kimi-k2.5, kimi-k2.6, kimi-k2.7-code, glm-5.1, glm-5.2, minimax-m2.7, minimax-m3, mimo-v2.5, mimo-v2.5-pro.\n5) Курлом проверено, но нужно чекать модели",
+            "senderUsername": "latadamok",
+            "telegramChatId": 866341216,
+            "messageThreadId": null,
+            "telegramTopicId": null,
+            "telegramMessageId": 540309192704
+        },
+        {
+            "rawId": 5801,
+            "accountId": 1,
+            "chatTitle": null,
+            "identityId": null,
+            "ingestedAt": "2026-06-25T21:42:37.754102+00:00",
+            "senderName": "Адам",
+            "topicTitle": null,
+            "contentType": "MessageText",
+            "messageDate": "2026-06-25T21:42:37+00:00",
+            "textPreview": "#Prismaticapi\n1) https://prismaticapi.com/register?ref=PA-385FEA8E и prismaticapi.com - апи.\n2) Карты и тд не нужны\n3) Рега через Google oauth. Если регать просто через майл, то письмо с подтверждение не приходит.\nПОСЛЕ РЕГИ переходим сюда https://prismaticapi.com/dashboard/billing/wallet, тыкаем на ползунок \"PAYG access\" и \"Billing order\"\n4) На фри плане дают 40 запросов в 5ч, 400 в неделю\nМодели: gpt-5.4, gpt-5.5, claude-opus-4.6, claude-opus-4.7, claude-opus-4.8, claude-sonnet-4.6, gemini-3.1-pro-preview, gemini-3.5-flash, gemini-3.1-flash-image-preview, deepseek-v4-pro, deepseek-v4-flash, qwen3.5-plus, qwen3.6-plus, qwen3.7-max, qwen3.7-plus, kimi-k2.5, kimi-k2.6, kimi-k2.7-code, glm-5.1, glm-5.2, minimax-m2.7, minimax-m3, mimo-v2.5, mimo-v2.5-pro.\n5) Курлом проверено, но нужно чекать модели",
+            "senderUsername": "latadamok",
+            "telegramChatId": 866341216,
+            "messageThreadId": null,
+            "telegramTopicId": null,
+            "telegramMessageId": 539330871296
+        },
+        {
+            "rawId": 5153,
+            "accountId": 1,
+            "chatTitle": null,
+            "identityId": null,
+            "ingestedAt": "2026-06-25T19:00:49.730052+00:00",
+            "senderName": "Адам",
+            "topicTitle": null,
+            "contentType": "MessageText",
+            "messageDate": "2026-06-25T17:39:20+00:00",
+            "textPreview": "#Prismaticapi\n1) https://prismaticapi.com/register?ref=PA-385FEA8E и prismaticapi.com - апи.\n2) Карты и тд не нужны\n3) Рега через Google oauth. Если регать просто через майл, то письмо с подтверждение не приходит.\nПОСЛЕ РЕГИ переходим сюда https://prismaticapi.com/dashboard/billing/wallet, тыкаем на ползунок \"PAYG access\" и \"Billing order\"\n4) На фри плане дают 40 запросов в 5ч, 400 в неделю\nМодели: gpt-5.4, gpt-5.5, claude-opus-4.6, claude-opus-4.7, claude-opus-4.8, claude-sonnet-4.6, gemini-3.1-pro-preview, gemini-3.5-flash, gemini-3.1-flash-image-preview, deepseek-v4-pro, deepseek-v4-flash, qwen3.5-plus, qwen3.6-plus, qwen3.7-max, qwen3.7-plus, kimi-k2.5, kimi-k2.6, kimi-k2.7-code, glm-5.1, glm-5.2, minimax-m2.7, minimax-m3, mimo-v2.5, mimo-v2.5-pro.\n5) Курлом проверено, но нужно чекать модели",
+            "senderUsername": "latadamok",
+            "telegramChatId": 866341216,
+            "messageThreadId": null,
+            "telegramTopicId": null,
+            "telegramMessageId": 538679705600
+        }
+    ],
+    "runMessages": [
+        {
+            "rawId": 8447,
+            "runId": 2918,
+            "status": "CANDIDATE",
+            "llmUsed": true,
+            "updatedAt": "2026-06-26T19:19:17.366381+00:00",
+            "ruleDecision": "CANDIDATE",
+            "finalDecision": "SINGLE_MESSAGE_MATERIAL_CANDIDATE",
+            "llmSkipReason": null,
+            "macroclusterId": null,
+            "microclusterId": null,
+            "datasetMessageId": 7420,
+            "singleMessageScore": 0.61,
+            "singleMessageRejectionReason": null
+        },
+        {
+            "rawId": 5801,
+            "runId": 1176,
+            "status": "CANDIDATE",
+            "llmUsed": false,
+            "updatedAt": "2026-06-25T21:43:00.192772+00:00",
+            "ruleDecision": "CANDIDATE",
+            "finalDecision": "SINGLE_MESSAGE_MATERIAL_CANDIDATE",
+            "llmSkipReason": null,
+            "macroclusterId": null,
+            "microclusterId": null,
+            "datasetMessageId": 4903,
+            "singleMessageScore": 0.61,
+            "singleMessageRejectionReason": null
+        },
+        {
+            "rawId": 5153,
+            "runId": 894,
+            "status": "CANDIDATE",
+            "llmUsed": false,
+            "updatedAt": "2026-06-25T19:03:55.332018+00:00",
+            "ruleDecision": "CANDIDATE",
+            "finalDecision": "SINGLE_MESSAGE_MATERIAL_CANDIDATE",
+            "llmSkipReason": null,
+            "macroclusterId": null,
+            "microclusterId": null,
+            "datasetMessageId": 4400,
+            "singleMessageScore": 0.61,
+            "singleMessageRejectionReason": null
+        }
+    ],
+    "traceStages": [
+        {
+            "rawId": 8447,
+            "runId": 2918,
+            "status": "PROCESSED",
+            "stageId": "telegram_ingest",
+            "errorCode": null,
+            "stageName": "Сбор из Telegram / Форумов",
+            "updatedAt": "2026-06-26T19:22:19.804336+00:00",
+            "errorMessage": null
+        },
+        {
+            "rawId": 8447,
+            "runId": 2918,
+            "status": "PROCESSED",
+            "stageId": "db_cache",
+            "errorCode": null,
+            "stageName": "DB-cache",
+            "updatedAt": "2026-06-26T19:22:19.804336+00:00",
+            "errorMessage": null
+        },
+        {
+            "rawId": 8447,
+            "runId": 2918,
+            "status": "PROCESSED",
+            "stageId": "normalization",
+            "errorCode": null,
+            "stageName": "Нормализация",
+            "updatedAt": "2026-06-26T19:22:19.804336+00:00",
+            "errorMessage": null
+        },
+        {
+            "rawId": 8447,
+            "runId": 2918,
+            "status": "PROCESSED",
+            "stageId": "cleanup",
+            "errorCode": null,
+            "stageName": "Очистка",
+            "updatedAt": "2026-06-26T19:22:19.804336+00:00",
+            "errorMessage": null
+        },
+        {
+            "rawId": 8447,
+            "runId": 2918,
+            "status": "PROCESSED",
+            "stageId": "dedupe",
+            "errorCode": null,
+            "stageName": "Дедупликация",
+            "updatedAt": "2026-06-26T19:22:19.804336+00:00",
+            "errorMessage": null
+        },
+        {
+            "rawId": 8447,
+            "runId": 2918,
+            "status": "PROCESSED",
+            "stageId": "rule_signals",
+            "errorCode": null,
+            "stageName": "Rule-сигналы",
+            "updatedAt": "2026-06-26T19:22:19.804336+00:00",
+            "errorMessage": null
+        },
+        {
+            "rawId": 8447,
+            "runId": 2918,
+            "status": "PROCESSED",
+            "stageId": "bootstrap_classification",
+            "errorCode": null,
+            "stageName": "Bootstrap-классификация",
+            "updatedAt": "2026-06-26T19:22:19.804336+00:00",
+            "errorMessage": null
+        },
+        {
+            "rawId": 8447,
+            "runId": 2918,
+            "status": "PROCESSED",
+            "stageId": "embeddings",
+            "errorCode": null,
+            "stageName": "Embeddings",
+            "updatedAt": "2026-06-26T19:22:19.804336+00:00",
+            "errorMessage": null
+        },
+        {
+            "rawId": 8447,
+            "runId": 2918,
+            "status": "WAITING_FOR_WORKER",
+            "stageId": "clustering",
+            "errorCode": "REPLAY_ARTIFACTS_NOT_CREATED",
+            "stageName": "Кластеризация",
+            "updatedAt": "2026-06-26T19:22:19.804336+00:00",
+            "errorMessage": "Воркер доступен, но replay artifacts для сообщения ещё не созданы"
+        },
+        {
+            "rawId": 8447,
+            "runId": 2918,
+            "status": "PROCESSED",
+            "stageId": "single_message_detection",
+            "errorCode": null,
+            "stageName": "Single-message детекция",
+            "updatedAt": "2026-06-26T19:22:19.804336+00:00",
+            "errorMessage": null
+        },
+        {
+            "rawId": 8447,
+            "runId": 2918,
+            "status": "PROCESSED",
+            "stageId": "llm_judge",
+            "errorCode": null,
+            "stageName": "LLM Judge",
+            "updatedAt": "2026-06-26T19:22:19.804336+00:00",
+            "errorMessage": null
+        },
+        {
+            "rawId": 8447,
+            "runId": 2918,
+            "status": "PROCESSED",
+            "stageId": "material_generation",
+            "errorCode": null,
+            "stageName": "Генерация материалов",
+            "updatedAt": "2026-06-26T19:22:19.804336+00:00",
+            "errorMessage": null
+        },
+        {
+            "rawId": 8447,
+            "runId": 2918,
+            "status": "PROCESSED",
+            "stageId": "materials_publish",
+            "errorCode": null,
+            "stageName": "Публикация в Материалы",
+            "updatedAt": "2026-06-26T19:22:19.804336+00:00",
+            "errorMessage": null
+        },
+        {
+            "rawId": 5801,
+            "runId": 1176,
+            "status": "PROCESSED",
+            "stageId": "telegram_ingest",
+            "errorCode": null,
+            "stageName": "Сбор из Telegram / Форумов",
+            "updatedAt": "2026-06-25T21:42:54.693012+00:00",
+            "errorMessage": null
+        },
+        {
+            "rawId": 5801,
+            "runId": 1176,
+            "status": "PROCESSED",
+            "stageId": "db_cache",
+            "errorCode": null,
+            "stageName": "DB-cache",
+            "updatedAt": "2026-06-25T21:42:54.693012+00:00",
+            "errorMessage": null
+        },
+        {
+            "rawId": 5801,
+            "runId": 1176,
+            "status": "PROCESSED",
+            "stageId": "normalization",
+            "errorCode": null,
+            "stageName": "Нормализация",
+            "updatedAt": "2026-06-25T21:43:00.192772+00:00",
+            "errorMessage": null
+        },
+        {
+            "rawId": 5801,
+            "runId": 1176,
+            "status": "PROCESSED",
+            "stageId": "cleanup",
+            "errorCode": null,
+            "stageName": "Очистка",
+            "updatedAt": "2026-06-25T21:43:00.192772+00:00",
+            "errorMessage": null
+        },
+        {
+            "rawId": 5801,
+            "runId": 1176,
+            "status": "PROCESSED",
+            "stageId": "dedupe",
+            "errorCode": null,
+            "stageName": "Дедупликация",
+            "updatedAt": "2026-06-25T21:43:00.192772+00:00",
+            "errorMessage": null
+        },
+        {
+            "rawId": 5801,
+            "runId": 1176,
+            "status": "PROCESSED",
+            "stageId": "rule_signals",
+            "errorCode": null,
+            "stageName": "Rule-сигналы",
+            "updatedAt": "2026-06-25T21:43:00.192772+00:00",
+            "errorMessage": null
+        },
+        {
+            "rawId": 5801,
+            "runId": 1176,
+            "status": "PROCESSED",
+            "stageId": "bootstrap_classification",
+            "errorCode": null,
+            "stageName": "Bootstrap-классификация",
+            "updatedAt": "2026-06-25T21:43:00.192772+00:00",
+            "errorMessage": null
+        },
+        {
+            "rawId": 5801,
+            "runId": 1176,
+            "status": "PROCESSED",
+            "stageId": "embeddings",
+            "errorCode": null,
+            "stageName": "Embeddings",
+            "updatedAt": "2026-06-25T21:43:00.192772+00:00",
+            "errorMessage": null
+        },
+        {
+            "rawId": 5801,
+            "runId": 1176,
+            "status": "SKIPPED",
+            "stageId": "clustering",
+            "errorCode": "NO_MATERIAL_CANDIDATES",
+            "stageName": "Кластеризация",
+            "updatedAt": "2026-06-25T21:43:00.192772+00:00",
+            "errorMessage": "No cluster or single-message material candidate was produced"
+        },
+        {
+            "rawId": 5801,
+            "runId": 1176,
+            "status": "PROCESSED",
+            "stageId": "single_message_detection",
+            "errorCode": null,
+            "stageName": "Single-message детекция",
+            "updatedAt": "2026-06-25T21:43:00.192772+00:00",
+            "errorMessage": null
+        },
+        {
+            "rawId": 5801,
+            "runId": 1176,
+            "status": "PROCESSED",
+            "stageId": "llm_judge",
+            "errorCode": null,
+            "stageName": "LLM Judge",
+            "updatedAt": "2026-06-25T21:43:00.192772+00:00",
+            "errorMessage": null
+        },
+        {
+            "rawId": 5801,
+            "runId": 1176,
+            "status": "SKIPPED",
+            "stageId": "material_generation",
+            "errorCode": "LLM_REJECTED_ALL",
+            "stageName": "Генерация материалов",
+            "updatedAt": "2026-06-25T21:43:00.192772+00:00",
+            "errorMessage": "LLM did not approve material generation for this candidate"
+        },
+        {
+            "rawId": 5801,
+            "runId": 1176,
+            "status": "SKIPPED",
+            "stageId": "materials_publish",
+            "errorCode": "LLM_REJECTED_ALL",
+            "stageName": "Публикация в Материалы",
+            "updatedAt": "2026-06-25T21:43:00.192772+00:00",
+            "errorMessage": "LLM did not approve material generation for this candidate"
+        },
+        {
+            "rawId": 5153,
+            "runId": 894,
+            "status": "PROCESSED",
+            "stageId": "telegram_ingest",
+            "errorCode": null,
+            "stageName": "Сбор из Telegram / Форумов",
+            "updatedAt": "2026-06-25T21:42:54.991544+00:00",
+            "errorMessage": null
+        },
+        {
+            "rawId": 5153,
+            "runId": 894,
+            "status": "PROCESSED",
+            "stageId": "db_cache",
+            "errorCode": null,
+            "stageName": "DB-cache",
+            "updatedAt": "2026-06-25T21:42:54.991544+00:00",
+            "errorMessage": null
+        },
+        {
+            "rawId": 5153,
+            "runId": 894,
+            "status": "PROCESSED",
+            "stageId": "normalization",
+            "errorCode": null,
+            "stageName": "Нормализация",
+            "updatedAt": "2026-06-25T21:42:54.991544+00:00",
+            "errorMessage": null
+        },
+        {
+            "rawId": 5153,
+            "runId": 894,
+            "status": "PROCESSED",
+            "stageId": "cleanup",
+            "errorCode": null,
+            "stageName": "Очистка",
+            "updatedAt": "2026-06-25T21:42:54.991544+00:00",
+            "errorMessage": null
+        },
+        {
+            "rawId": 5153,
+            "runId": 894,
+            "status": "PROCESSED",
+            "stageId": "dedupe",
+            "errorCode": null,
+            "stageName": "Дедупликация",
+            "updatedAt": "2026-06-25T21:42:54.991544+00:00",
+            "errorMessage": null
+        },
+        {
+            "rawId": 5153,
+            "runId": 894,
+            "status": "PROCESSED",
+            "stageId": "rule_signals",
+            "errorCode": null,
+            "stageName": "Rule-сигналы",
+            "updatedAt": "2026-06-25T21:42:54.991544+00:00",
+            "errorMessage": null
+        },
+        {
+            "rawId": 5153,
+            "runId": 894,
+            "status": "PROCESSED",
+            "stageId": "bootstrap_classification",
+            "errorCode": null,
+            "stageName": "Bootstrap-классификация",
+            "updatedAt": "2026-06-25T21:42:54.991544+00:00",
+            "errorMessage": null
+        },
+        {
+            "rawId": 5153,
+            "runId": 894,
+            "status": "PROCESSED",
+            "stageId": "embeddings",
+            "errorCode": null,
+            "stageName": "Embeddings",
+            "updatedAt": "2026-06-25T21:42:54.991544+00:00",
+            "errorMessage": null
+        },
+        {
+            "rawId": 5153,
+            "runId": 894,
+            "status": "WAITING_FOR_WORKER",
+            "stageId": "clustering",
+            "errorCode": "REPLAY_ARTIFACTS_NOT_CREATED",
+            "stageName": "Кластеризация",
+            "updatedAt": "2026-06-25T21:42:54.991544+00:00",
+            "errorMessage": "Воркер доступен, но replay artifacts для сообщения ещё не созданы"
+        },
+        {
+            "rawId": 5153,
+            "runId": 894,
+            "status": "PROCESSED",
+            "stageId": "single_message_detection",
+            "errorCode": null,
+            "stageName": "Single-message детекция",
+            "updatedAt": "2026-06-25T21:42:54.991544+00:00",
+            "errorMessage": null
+        },
+        {
+            "rawId": 5153,
+            "runId": 894,
+            "status": "PROCESSED",
+            "stageId": "llm_judge",
+            "errorCode": null,
+            "stageName": "LLM Judge",
+            "updatedAt": "2026-06-25T21:42:54.991544+00:00",
+            "errorMessage": null
+        },
+        {
+            "rawId": 5153,
+            "runId": 894,
+            "status": "WAITING_FOR_WORKER",
+            "stageId": "material_generation",
+            "errorCode": "REPLAY_ARTIFACTS_NOT_CREATED",
+            "stageName": "Генерация материалов",
+            "updatedAt": "2026-06-25T21:42:54.991544+00:00",
+            "errorMessage": "Воркер доступен, но replay artifacts для сообщения ещё не созданы"
+        },
+        {
+            "rawId": 5153,
+            "runId": 894,
+            "status": "WAITING_FOR_WORKER",
+            "stageId": "materials_publish",
+            "errorCode": "REPLAY_ARTIFACTS_NOT_CREATED",
+            "stageName": "Публикация в Материалы",
+            "updatedAt": "2026-06-25T21:42:54.991544+00:00",
+            "errorMessage": "Воркер доступен, но replay artifacts для сообщения ещё не созданы"
+        }
+    ],
+    "providerCalls": [
+        {
+            "id": 63,
+            "runId": 894,
+            "stage": "LLM_CLUSTER_JUDGE_AND_ROUTING",
+            "status": "SUCCESS",
+            "createdAt": "2026-06-25T19:03:55.332018+00:00",
+            "errorCode": null,
+            "modelName": "gpt-5.5",
+            "httpStatus": 200,
+            "errorMessage": null
+        },
+        {
+            "id": 64,
+            "runId": 894,
+            "stage": "LLM_CLUSTER_JUDGE_AND_ROUTING",
+            "status": "SUCCESS",
+            "createdAt": "2026-06-25T19:03:55.332018+00:00",
+            "errorCode": null,
+            "modelName": "gpt-5.5",
+            "httpStatus": 200,
+            "errorMessage": null
+        },
+        {
+            "id": 65,
+            "runId": 894,
+            "stage": "LLM_CLUSTER_JUDGE_AND_ROUTING",
+            "status": "SUCCESS",
+            "createdAt": "2026-06-25T19:03:55.332018+00:00",
+            "errorCode": null,
+            "modelName": "gpt-5.5",
+            "httpStatus": 200,
+            "errorMessage": null
+        },
+        {
+            "id": 68,
+            "runId": 1176,
+            "stage": "LLM_CLUSTER_JUDGE_AND_ROUTING",
+            "status": "SUCCESS",
+            "createdAt": "2026-06-25T21:43:00.192772+00:00",
+            "errorCode": null,
+            "modelName": "gpt-5.5",
+            "httpStatus": 200,
+            "errorMessage": null
+        },
+        {
+            "id": 112,
+            "runId": 2918,
+            "stage": "LLM_CLUSTER_JUDGE_AND_ROUTING",
+            "status": "SUCCESS",
+            "createdAt": "2026-06-26T19:19:17.366381+00:00",
+            "errorCode": null,
+            "modelName": "gpt-5.5",
+            "httpStatus": 200,
+            "errorMessage": null
+        },
+        {
+            "id": 113,
+            "runId": 2918,
+            "stage": "KNOWLEDGE_GENERATION",
+            "status": "SUCCESS",
+            "createdAt": "2026-06-26T19:19:17.366381+00:00",
+            "errorCode": null,
+            "modelName": "gpt-5.5",
+            "httpStatus": 200,
+            "errorMessage": null
+        }
+    ],
+    "datasetMessages": [
+        {
+            "rawId": 8447,
+            "datasetId": 2914,
+            "messageDate": "2026-06-26T19:16:17+00:00",
+            "textPreview": "#Prismaticapi\n1) https://prismaticapi.com/register?ref=PA-385FEA8E и prismaticapi.com - апи.\n2) Карты и тд не нужны\n3) Рега через Google oauth. Если регать просто через майл, то письмо с подтверждение не приходит.\nПОСЛЕ РЕГИ переходим сюда https://prismaticapi.com/dashboard/billing/wallet, тыкаем на ползунок \"PAYG access\" и \"Billing order\"\n4) На фри плане дают 40 запросов в 5ч, 400 в неделю\nМодели: gpt-5.4, gpt-5.5, claude-opus-4.6, claude-opus-4.7, claude-opus-4.8, claude-sonnet-4.6, gemini-3.1-pro-preview, gemini-3.5-flash, gemini-3.1-flash-image-preview, deepseek-v4-pro, deepseek-v4-flash, qwen3.5-plus, qwen3.6-plus, qwen3.7-max, qwen3.7-plus, kimi-k2.5, kimi-k2.6, kimi-k2.7-code, glm-5.1, glm-5.2, minimax-m2.7, minimax-m3, mimo-v2.5, mimo-v2.5-pro.\n5) Курлом проверено, но нужно чекать модели",
+            "telegramChatId": 866341216,
+            "datasetMessageId": 7420,
+            "telegramMessageId": 540309192704
+        },
+        {
+            "rawId": 5801,
+            "datasetId": 1175,
+            "messageDate": "2026-06-25T21:42:37+00:00",
+            "textPreview": "#Prismaticapi\n1) https://prismaticapi.com/register?ref=PA-385FEA8E и prismaticapi.com - апи.\n2) Карты и тд не нужны\n3) Рега через Google oauth. Если регать просто через майл, то письмо с подтверждение не приходит.\nПОСЛЕ РЕГИ переходим сюда https://prismaticapi.com/dashboard/billing/wallet, тыкаем на ползунок \"PAYG access\" и \"Billing order\"\n4) На фри плане дают 40 запросов в 5ч, 400 в неделю\nМодели: gpt-5.4, gpt-5.5, claude-opus-4.6, claude-opus-4.7, claude-opus-4.8, claude-sonnet-4.6, gemini-3.1-pro-preview, gemini-3.5-flash, gemini-3.1-flash-image-preview, deepseek-v4-pro, deepseek-v4-flash, qwen3.5-plus, qwen3.6-plus, qwen3.7-max, qwen3.7-plus, kimi-k2.5, kimi-k2.6, kimi-k2.7-code, glm-5.1, glm-5.2, minimax-m2.7, minimax-m3, mimo-v2.5, mimo-v2.5-pro.\n5) Курлом проверено, но нужно чекать модели",
+            "telegramChatId": 866341216,
+            "datasetMessageId": 4903,
+            "telegramMessageId": 539330871296
+        },
+        {
+            "rawId": 5153,
+            "datasetId": 893,
+            "messageDate": "2026-06-25T17:39:20+00:00",
+            "textPreview": "#Prismaticapi\n1) https://prismaticapi.com/register?ref=PA-385FEA8E и prismaticapi.com - апи.\n2) Карты и тд не нужны\n3) Рега через Google oauth. Если регать просто через майл, то письмо с подтверждение не приходит.\nПОСЛЕ РЕГИ переходим сюда https://prismaticapi.com/dashboard/billing/wallet, тыкаем на ползунок \"PAYG access\" и \"Billing order\"\n4) На фри плане дают 40 запросов в 5ч, 400 в неделю\nМодели: gpt-5.4, gpt-5.5, claude-opus-4.6, claude-opus-4.7, claude-opus-4.8, claude-sonnet-4.6, gemini-3.1-pro-preview, gemini-3.5-flash, gemini-3.1-flash-image-preview, deepseek-v4-pro, deepseek-v4-flash, qwen3.5-plus, qwen3.6-plus, qwen3.7-max, qwen3.7-plus, kimi-k2.5, kimi-k2.6, kimi-k2.7-code, glm-5.1, glm-5.2, minimax-m2.7, minimax-m3, mimo-v2.5, mimo-v2.5-pro.\n5) Курлом проверено, но нужно чекать модели",
+            "telegramChatId": 866341216,
+            "datasetMessageId": 4400,
+            "telegramMessageId": 538679705600
+        }
+    ],
+    "discussionSegments": [
+    ]
+}

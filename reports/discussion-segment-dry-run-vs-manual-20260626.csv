@@ -1,0 +1,8 @@
+fixture,expected_raw_ids,detected,local_id,segment_id,source_count,matched_raw_ids,missing_raw_ids,extra_raw_ids,combined_score,decision,proposed_material_type,rejection_reason
+"E01","6034 6042 6052 6062 6069 6070 6078 6079 6105","yes","S0364","86","9","6034 6042 6052 6062 6069 6070 6078 6079 6105","","","0.98","DISCUSSION_SEGMENT_CANDIDATE","GUIDE",""
+"E02","6765 6776 6778 6799 6803 6805 6817 6826 6836 6850 6876","yes","S0365","87","11","6765 6776 6778 6799 6803 6805 6817 6826 6836 6850 6876","","","0.98","DISCUSSION_SEGMENT_CANDIDATE","GUIDE",""
+"E04","6221 6223 6224 6225","yes","S0132","50","6","6221 6223 6224 6225","","6220 6222","0.9","DISCUSSION_SEGMENT_CANDIDATE","GUIDE",""
+"E07","6341 6540 6543 6592 6688 6820","yes","S0366","88","6","6341 6540 6543 6592 6688 6820","","","0.78","DISCUSSION_SEGMENT_CANDIDATE","ANSWER",""
+"E08","6144 6367","yes","S0367","89","2","6144 6367","","","0.58","DISCUSSION_SEGMENT_CANDIDATE","ANSWER",""
+"E09","6419 6544 6545 6831","no","","","0","","6419 6544 6545 6831","","","","","not accepted by scorer"
+"E10","6306 6307","no","","","0","","6306 6307","","","","","not accepted by scorer"

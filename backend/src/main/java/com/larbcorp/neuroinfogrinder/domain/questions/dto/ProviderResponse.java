@@ -10,6 +10,7 @@ public record ProviderResponse(
     boolean hasApiKey,
     String model,
     String status,
+    boolean active,
     Instant lastTestedAt,
     String lastTestResult,
     String lastError

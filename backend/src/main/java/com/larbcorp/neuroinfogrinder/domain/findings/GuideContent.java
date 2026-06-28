@@ -9,5 +9,19 @@ public record GuideContent(
     double confidence,
     List<String> tags,
     String generationError,
-    String rawResponse
-) {}
+    String rawResponse,
+    Long providerId,
+    String model
+) {
+    public GuideContent(
+        String title,
+        String content,
+        String contentMarkdown,
+        double confidence,
+        List<String> tags,
+        String generationError,
+        String rawResponse
+    ) {
+        this(title, content, contentMarkdown, confidence, tags, generationError, rawResponse, null, null);
+    }
+}

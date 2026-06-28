@@ -1,0 +1,73 @@
+{
+  "status": "FINAL",
+  "capturedAt": "2026-06-27T18:19:28.88972+00:00",
+  "enableTime": "2026-06-26T16:23:22+00:00",
+  "finalEligibleAt": "2026-06-27T16:23:22+00:00",
+  "full24hElapsed": true,
+  "readOnlyReport": true,
+  "changesMadeDuringReport": false,
+  "settingsObserved": {
+    "discussionSegmentGenerationMode": "CONTROLLED",
+    "discussionSegmentGenerationEnabled": "1"
+  },
+  "counts": {
+    "segmentsDetectedAfterEnable": 1175,
+    "scorerAcceptedAfterEnable": 0,
+    "discussionJudgeCallsAfterEnable": 8,
+    "llmJudgeSuccessAfterEnable": 25,
+    "llmJudgeErrorsAfterEnable": 66,
+    "generationCallsAfterEnable": 13,
+    "generationSuccessAfterEnable": 9,
+    "generationErrorsAfterEnable": 4,
+    "draftMaterialsAfterEnable": 0,
+    "publishedMaterialsAfterEnable": 0,
+    "discussionMaterialsOn20260626Utc": 3,
+    "discussionMaterialsOn20260627Utc": 0,
+    "activeKnowledgeItemsTotal": 29,
+    "activeDiscussionMaterialsTotal": 3
+  },
+  "providerStatusesAfterEnable": {
+    "KNOWLEDGE_GENERATION:SUCCESS": 9,
+    "KNOWLEDGE_GENERATION:TIMEOUT": 4,
+    "LLM_CLUSTER_JUDGE_AND_ROUTING:FAILED": 4,
+    "LLM_CLUSTER_JUDGE_AND_ROUTING:SUCCESS": 25,
+    "LLM_CLUSTER_JUDGE_AND_ROUTING:TIMEOUT": 54,
+    "DISCUSSION_SEGMENT_JUDGE:PROVIDER_NOT_CONFIGURED": 8
+  },
+  "skipReasonsAfterEnable": {
+    "GENERATION_PROVIDER_ERROR": 8,
+    "LOW_COMBINED_SCORE_OR_SIGNAL_COUNT": 664,
+    "DISCUSSION_SEGMENT_REJECTED_DAILY_LIMIT": 2,
+    "DISCUSSION_SEGMENT_REJECTED_ENTITY_ONLY": 10,
+    "DISCUSSION_SEGMENT_REJECTED_OVERLAP_DUPLICATE": 3,
+    "DISCUSSION_SEGMENT_REJECTED_LOW_VALUE_ADJACENT": 487,
+    "DISCUSSION_SEGMENT_REJECTED_RISK_SENSITIVE_CONTROLLED_MODE": 1
+  },
+  "activeDiscussionMaterials": [
+    {
+      "id": 23,
+      "title": "Fallback на другие модели и статус доступности при задержках API-провайдера",
+      "status": "DRAFT",
+      "createdAt": "2026-06-26T15:19:04.363769+00:00",
+      "artifactType": "GUIDE",
+      "sourceClusterId": 118
+    },
+    {
+      "id": 24,
+      "title": "Как кеширование может влиять на расход лимитов в Claude Code",
+      "status": "DRAFT",
+      "createdAt": "2026-06-26T15:20:06.899126+00:00",
+      "artifactType": "GUIDE",
+      "sourceClusterId": 119
+    },
+    {
+      "id": 25,
+      "title": "Сбор обратной связи о главных болях вайбкодеров",
+      "status": "DRAFT",
+      "createdAt": "2026-06-26T15:24:01.502605+00:00",
+      "artifactType": "SUMMARY",
+      "sourceClusterId": 120
+    }
+  ],
+  "recommendation": "Keep controlled mode gated. Do not broaden DISCUSSION_SEGMENT generation until provider configuration/timeouts and daily-cap semantics are reviewed. Existing materials 23/24/25 should remain read-only unless explicitly approved for regeneration or manual editing."
+}

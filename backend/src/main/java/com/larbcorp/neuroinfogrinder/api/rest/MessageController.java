@@ -1,6 +1,7 @@
 package com.larbcorp.neuroinfogrinder.api.rest;
 
 import com.larbcorp.neuroinfogrinder.domain.messages.MessageService;
+import com.larbcorp.neuroinfogrinder.domain.messages.MessageSyncRequestResponse;
 import com.larbcorp.neuroinfogrinder.domain.messages.TelegramRefreshCoordinator;
 import com.larbcorp.neuroinfogrinder.domain.messages.dto.EnqueueRequest;
 import com.larbcorp.neuroinfogrinder.domain.messages.dto.MessageChainResponse;
@@ -8,6 +9,7 @@ import com.larbcorp.neuroinfogrinder.domain.messages.dto.MessageResponse;
 import com.larbcorp.neuroinfogrinder.shared.dto.PageResponse;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -37,31 +39,35 @@ public class MessageController {
             @PathVariable Long groupId,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) Long topicId,
+            @AuthenticationPrincipal Long ownerUserId,
             Pageable pageable
     ) {
-        return messageService.getMessages(groupId, status, topicId, pageable);
+        return messageService.getMessages(ownerUserId, groupId, status, topicId, pageable);
     }
 
     @PostMapping("/sync")
     @ResponseStatus(HttpStatus.OK)
-    public void syncMessages(@PathVariable Long groupId) {
-        telegramRefreshCoordinator.requestMessageSync(groupId, "manual_or_ui_request");
+    public MessageSyncRequestResponse syncMessages(@AuthenticationPrincipal Long ownerUserId,
+                                                   @PathVariable Long groupId) {
+        return telegramRefreshCoordinator.requestMessageSync(ownerUserId, groupId, "manual_or_ui_request");
     }
 
     @GetMapping("/{messageId}/chain")
     public MessageChainResponse getMessageChain(
             @PathVariable Long groupId,
-            @PathVariable Long messageId
+            @PathVariable Long messageId,
+            @AuthenticationPrincipal Long ownerUserId
     ) {
-        return messageService.getMessageChain(groupId, messageId);
+        return messageService.getMessageChain(ownerUserId, groupId, messageId);
     }
 
     @GetMapping("/{messageId}")
     public MessageResponse getMessage(
             @PathVariable Long groupId,
-            @PathVariable Long messageId
+            @PathVariable Long messageId,
+            @AuthenticationPrincipal Long ownerUserId
     ) {
-        return messageService.getMessage(groupId, messageId);
+        return messageService.getMessage(ownerUserId, groupId, messageId);
     }
 
     @PostMapping("/{messageId}/enqueue")
@@ -69,9 +75,10 @@ public class MessageController {
     public void enqueueForProcessing(
             @PathVariable Long groupId,
             @PathVariable Long messageId,
-            @RequestBody(required = false) EnqueueRequest request
+            @RequestBody(required = false) EnqueueRequest request,
+            @AuthenticationPrincipal Long ownerUserId
     ) {
         EnqueueRequest effectiveRequest = request != null ? request : new EnqueueRequest();
-        messageService.enqueueForProcessing(groupId, messageId, effectiveRequest);
+        messageService.enqueueForProcessing(ownerUserId, groupId, messageId, effectiveRequest);
     }
 }

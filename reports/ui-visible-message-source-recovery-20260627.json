@@ -1,0 +1,299 @@
+{
+  "capturedAt": "2026-06-27T11:02:52.583Z",
+  "targetChat": [
+    {
+      "title": "API SUPPORT | ModelHub",
+      "groupId": 38,
+      "chatList": "ChatListFolder",
+      "accountId": 1,
+      "isEnabled": true,
+      "activeDialog": true,
+      "positionOrder": 7655397030340072000,
+      "telegramChatId": -1003898985313,
+      "processingState": "ENABLED_PROCESSABLE",
+      "rawMessagesInRange": 244
+    }
+  ],
+  "apiInspection": {
+    "endpoint": "/api/v1/groups/38/messages?page=0&size=300&sort=messageDate,desc",
+    "totalElements": 488,
+    "fetchedElements": 200,
+    "finding": "MessageDto.id returned by /groups API is raw_messages.id; recovered raw ids 11142 and 11193 are present in API response."
+  },
+  "recoveredMessages": [
+    {
+      "ui_id": "U01",
+      "expected_label": "GPT-5.6 Sol message",
+      "raw_id": 11142,
+      "dataset_message_id": 10121,
+      "replay_run_message_id": 7397,
+      "telegram_message_id": 5697961984,
+      "message_date_utc": "2026-06-26T23:28:47+00:00",
+      "message_date_msk": "2026-06-27T02:28:47",
+      "author": "╨Р╨╗╨╡╨║╤Б╨░╨╜╨┤╤А",
+      "source_field": "raw_messages.caption",
+      "text_preview": "╨Ш╤В╨░╨║, ╨▓╤Б╤В╤А╨╡╤З╨░╨╣╤В╨╡: GPT-5.6 \n\nhttps://openai.com/index/previewing-gpt-5-6-sol/\n\n╨Р╨╜╨╛╨╜╤Б╨╕╤А╨╛╨▓╨░╨╗╨╕ ╤В╤А╨╕ ╨╝╨╛╨┤╨╡╨╗╨╕, ╨▓ ╤З╨╡╤Б╤В╤М ╤Б╨╛╨╗╨╜╨╡╤З╨╜╨╛╨╣ ╤Б╨╕╤Б╤В╨╡╨╝╤Л (╤Б ╤Б╨░╨╝╨╛╨╛╤Ж╨╡╨╜╨║╨╛╨╣ ╤Г ╤Б╨╛╨╖╨┤╨░╤В╨╡╨╗╨╡╨╣ ╨▓╤Б╨╡ ╨╛╨║): \n\n1. Sol тАУ ╤Б╨░╨╝╨░╤П ╨║╤А╤Г╨┐╨╜╨░╤П ╨╕ ╨║╤А╤Г╤В╨░╤П. ╨Э╨░ ╨╝╨╜╨╛╨│╨╕╤Е ╨▒╨╡╨╜╤З╨╝╨░╤А╨║╨░╤Е ╨╛╨▒╤Е╨╛╨┤╨╕╤В Mythos, ╨╕ ╨┐╤А╨╕ ╤Н╤В╨╛╨╝ ╨┤╨╡╤И╨╡╨▓╨╗╨╡ ╨▓ ╨┤╨▓╨░ ╤А╨░╨╖╨░. ╨Я╤А╨╕ ╤Н╤В╨╛╨╝ ╨░╨▓╤В╨╛╤А╤Л ╨┐╨╕╤И╤Г╤В, ╤З╤В╨╛ ╨╝╨╛╨┤╨╡╨╗╤М ╨╕╤Б╨┐╨╛╨╗╤М╨╖╤Г╨╡╤В ╨▓ ╤В╤А╨╕ ╤А╨░╨╖╨░ ╨╝╨╡╨╜╤М╤И╨╡ ╤В╨╛╨║╨╡╨╜╨╛╨▓. ╨Т ╤Ж╨╡╨╗╨╛╨╝ ╤Н╨║╨╛╨╜╨╛╨╝╨╕╤П ╨▓ 5-6 ╤А╨░╨╖ (╨╜╤Г ╤В╨╕╨┐╨░). \n\n2. Terra тАУ ╨┐╤А╨╛╨╝╨╡╨╢╤Г╤В╨╛╤З╨╜╤Л╨╣ ╨▓╨░╤А╨╕╨░╨╜╤В. ╨г╨╢╨╡ ╨▓ ╤В╤А╨╕ ╤А╨░╨╖╨░ ╨┤╨╡╤И╨╡╨▓╨╗╨╡ Mythos, ╤Г╨▓╨╡╤А╨╡╨╜╨╜╨╛ ╨╛╨▒╤Е╨╛╨┤╨╕╤В Opus 4.8. \n\n3. Luna тАУ ╤Б╨░╨╝╤Л╨╣ ╨┤╨╡╤И╨╡╨▓╨░╤П ╨╕ ╨▒╤Л╤Б╤В╤А╨░╤П, ╨╜╨╛ ╨┐╨╛ ╤А╨╡╨╖╤Г╨╗╤М╤В╨░╤В╨░╨╝ ╨▓╤Б╨╡ ╨╡╤Й╨╡ ╤Е╨╛╤А╨╛╤И╨░. \n\n╨С╨╡╨╜╤З╨╝╨░╤А╨║╨╛╨▓ ╨┐╨╛╨║╨░╨╖╨░╨╗╨╕ ╨╝╨░╨╗╨╛╨▓╨░╤В╨╛, ╤В╨░╨║ ╤З╤В╨╛ ╨╜╨░ ╨┤╤А╤Г╨│╨╕╨╡ ╨╖╨░╨╝╨╡╤А╤Л ╨╡╤Й╨╡ ╨┐╨╛╤Б╨╝╨╛╤В╤А╨╕╨╝. ╨Ю╨▒╤Й╨╕╨╣ ╨┤╨╛╤Б╤В╤Г╨┐ ╨╛╨▒╨╡╤Й╨░╤О╤В ╨▓ ╨▒╨╗╨╕╨╢╨░╨╣╤И╨╕╨╡ ╨╜╨╡╨┤╨╡╨╗╨╕, ╨┐╨╛╨║╨░ ╤З╤В╨╛ ╨╝╨╛╨┤╨╡╨╗╨╕ ╨▓╤Л╤И╨╗╨╕ ╤В╨╛╨╗╤М╨║╨╛ ╨┤╨╗╤П ╨╛╨│╤А╨░╨╜╨╕╤З╨╡╨╜╨╜╨╛╨╣ ╨│╤А╤Г╨┐╨┐╤Л ╤В╨╡╤Б╤В╨╡╤А╨╛╨▓. \n\n╨е╨╛╤В╤М ╨▒╤Л ╨╜╨╡ ╨┐╨╛╨▓╤В╨╛╤А╨╕╨╗╨░╤Б╤М ╨╕╤Б╤В╨╛╤А╨╕╤П ╤Б Fable ЁЯЩП",
+      "processable": true,
+      "processingState": "ENABLED_PROCESSABLE",
+      "pipelineStatus": "REJECTED_SINGLE_MESSAGE",
+      "material_id": "",
+      "rejection_or_skip_reason": "LOW_SINGLE_MESSAGE_SCORE",
+      "notes": "/groups/38/messages returned id=11142; id maps to raw_messages.id",
+      "api_present": true,
+      "links": "https://openai.com/index/previewing-gpt-5-6-sol/",
+      "embedding_count": 1
+    },
+    {
+      "ui_id": "U02",
+      "expected_label": "GPT-5.6 government approval message",
+      "raw_id": 11142,
+      "dataset_message_id": 10121,
+      "replay_run_message_id": 7397,
+      "telegram_message_id": 5697961984,
+      "message_date_utc": "2026-06-26T23:28:47+00:00",
+      "message_date_msk": "2026-06-27T02:28:47",
+      "author": "╨Р╨╗╨╡╨║╤Б╨░╨╜╨┤╤А",
+      "source_field": "raw_messages.caption",
+      "text_preview": "╨Ш╤В╨░╨║, ╨▓╤Б╤В╤А╨╡╤З╨░╨╣╤В╨╡: GPT-5.6 \n\nhttps://openai.com/index/previewing-gpt-5-6-sol/\n\n╨Р╨╜╨╛╨╜╤Б╨╕╤А╨╛╨▓╨░╨╗╨╕ ╤В╤А╨╕ ╨╝╨╛╨┤╨╡╨╗╨╕, ╨▓ ╤З╨╡╤Б╤В╤М ╤Б╨╛╨╗╨╜╨╡╤З╨╜╨╛╨╣ ╤Б╨╕╤Б╤В╨╡╨╝╤Л (╤Б ╤Б╨░╨╝╨╛╨╛╤Ж╨╡╨╜╨║╨╛╨╣ ╤Г ╤Б╨╛╨╖╨┤╨░╤В╨╡╨╗╨╡╨╣ ╨▓╤Б╨╡ ╨╛╨║): \n\n1. Sol тАУ ╤Б╨░╨╝╨░╤П ╨║╤А╤Г╨┐╨╜╨░╤П ╨╕ ╨║╤А╤Г╤В╨░╤П. ╨Э╨░ ╨╝╨╜╨╛╨│╨╕╤Е ╨▒╨╡╨╜╤З╨╝╨░╤А╨║╨░╤Е ╨╛╨▒╤Е╨╛╨┤╨╕╤В Mythos, ╨╕ ╨┐╤А╨╕ ╤Н╤В╨╛╨╝ ╨┤╨╡╤И╨╡╨▓╨╗╨╡ ╨▓ ╨┤╨▓╨░ ╤А╨░╨╖╨░. ╨Я╤А╨╕ ╤Н╤В╨╛╨╝ ╨░╨▓╤В╨╛╤А╤Л ╨┐╨╕╤И╤Г╤В, ╤З╤В╨╛ ╨╝╨╛╨┤╨╡╨╗╤М ╨╕╤Б╨┐╨╛╨╗╤М╨╖╤Г╨╡╤В ╨▓ ╤В╤А╨╕ ╤А╨░╨╖╨░ ╨╝╨╡╨╜╤М╤И╨╡ ╤В╨╛╨║╨╡╨╜╨╛╨▓. ╨Т ╤Ж╨╡╨╗╨╛╨╝ ╤Н╨║╨╛╨╜╨╛╨╝╨╕╤П ╨▓ 5-6 ╤А╨░╨╖ (╨╜╤Г ╤В╨╕╨┐╨░). \n\n2. Terra тАУ ╨┐╤А╨╛╨╝╨╡╨╢╤Г╤В╨╛╤З╨╜╤Л╨╣ ╨▓╨░╤А╨╕╨░╨╜╤В. ╨г╨╢╨╡ ╨▓ ╤В╤А╨╕ ╤А╨░╨╖╨░ ╨┤╨╡╤И╨╡╨▓╨╗╨╡ Mythos, ╤Г╨▓╨╡╤А╨╡╨╜╨╜╨╛ ╨╛╨▒╤Е╨╛╨┤╨╕╤В Opus 4.8. \n\n3. Luna тАУ ╤Б╨░╨╝╤Л╨╣ ╨┤╨╡╤И╨╡╨▓╨░╤П ╨╕ ╨▒╤Л╤Б╤В╤А╨░╤П, ╨╜╨╛ ╨┐╨╛ ╤А╨╡╨╖╤Г╨╗╤М╤В╨░╤В╨░╨╝ ╨▓╤Б╨╡ ╨╡╤Й╨╡ ╤Е╨╛╤А╨╛╤И╨░. \n\n╨С╨╡╨╜╤З╨╝╨░╤А╨║╨╛╨▓ ╨┐╨╛╨║╨░╨╖╨░╨╗╨╕ ╨╝╨░╨╗╨╛╨▓╨░╤В╨╛, ╤В╨░╨║ ╤З╤В╨╛ ╨╜╨░ ╨┤╤А╤Г╨│╨╕╨╡ ╨╖╨░╨╝╨╡╤А╤Л ╨╡╤Й╨╡ ╨┐╨╛╤Б╨╝╨╛╤В╤А╨╕╨╝. ╨Ю╨▒╤Й╨╕╨╣ ╨┤╨╛╤Б╤В╤Г╨┐ ╨╛╨▒╨╡╤Й╨░╤О╤В ╨▓ ╨▒╨╗╨╕╨╢╨░╨╣╤И╨╕╨╡ ╨╜╨╡╨┤╨╡╨╗╨╕, ╨┐╨╛╨║╨░ ╤З╤В╨╛ ╨╝╨╛╨┤╨╡╨╗╨╕ ╨▓╤Л╤И╨╗╨╕ ╤В╨╛╨╗╤М╨║╨╛ ╨┤╨╗╤П ╨╛╨│╤А╨░╨╜╨╕╤З╨╡╨╜╨╜╨╛╨╣ ╨│╤А╤Г╨┐╨┐╤Л ╤В╨╡╤Б╤В╨╡╤А╨╛╨▓. \n\n╨е╨╛╤В╤М ╨▒╤Л ╨╜╨╡ ╨┐╨╛╨▓╤В╨╛╤А╨╕╨╗╨░╤Б╤М ╨╕╤Б╤В╨╛╤А╨╕╤П ╤Б Fable ЁЯЩП",
+      "processable": true,
+      "processingState": "ENABLED_PROCESSABLE",
+      "pipelineStatus": "REJECTED_SINGLE_MESSAGE",
+      "material_id": "",
+      "rejection_or_skip_reason": "LOW_SINGLE_MESSAGE_SCORE",
+      "notes": "/groups/38/messages returned id=11142; id maps to raw_messages.id",
+      "api_present": true,
+      "links": "https://openai.com/index/previewing-gpt-5-6-sol/",
+      "embedding_count": 1
+    },
+    {
+      "ui_id": "U03",
+      "expected_label": "Link-only lolz.live message",
+      "raw_id": 11193,
+      "dataset_message_id": 10168,
+      "replay_run_message_id": 7444,
+      "telegram_message_id": 5705302016,
+      "message_date_utc": "2026-06-27T00:14:07+00:00",
+      "message_date_msk": "2026-06-27T03:14:07",
+      "author": "Store",
+      "source_field": "raw_messages.text",
+      "text_preview": "https://lolz.live/threads/10020722/\n\n╨Я╨╛╤З╨╕╤В╨░╨╣╤В╨╡ ╨╜╨░ ╨┤╨╛╤Б╤Г╨│╨╡, ╨┐╨╛╨╗╨╡╨╖╨╜╨╛",
+      "processable": true,
+      "processingState": "ENABLED_PROCESSABLE",
+      "pipelineStatus": "REJECTED_SINGLE_MESSAGE",
+      "material_id": "",
+      "rejection_or_skip_reason": "TOO_SHORT",
+      "notes": "/groups/38/messages returned id=11193; id maps to raw_messages.id",
+      "api_present": true,
+      "links": "https://lolz.live/threads/10020722/",
+      "embedding_count": 1
+    },
+    {
+      "ui_id": "U04",
+      "expected_label": "Long GPT-5.6 announcement from Aleksandr",
+      "raw_id": 11142,
+      "dataset_message_id": 10121,
+      "replay_run_message_id": 7397,
+      "telegram_message_id": 5697961984,
+      "message_date_utc": "2026-06-26T23:28:47+00:00",
+      "message_date_msk": "2026-06-27T02:28:47",
+      "author": "╨Р╨╗╨╡╨║╤Б╨░╨╜╨┤╤А",
+      "source_field": "raw_messages.caption",
+      "text_preview": "╨Ш╤В╨░╨║, ╨▓╤Б╤В╤А╨╡╤З╨░╨╣╤В╨╡: GPT-5.6 \n\nhttps://openai.com/index/previewing-gpt-5-6-sol/\n\n╨Р╨╜╨╛╨╜╤Б╨╕╤А╨╛╨▓╨░╨╗╨╕ ╤В╤А╨╕ ╨╝╨╛╨┤╨╡╨╗╨╕, ╨▓ ╤З╨╡╤Б╤В╤М ╤Б╨╛╨╗╨╜╨╡╤З╨╜╨╛╨╣ ╤Б╨╕╤Б╤В╨╡╨╝╤Л (╤Б ╤Б╨░╨╝╨╛╨╛╤Ж╨╡╨╜╨║╨╛╨╣ ╤Г ╤Б╨╛╨╖╨┤╨░╤В╨╡╨╗╨╡╨╣ ╨▓╤Б╨╡ ╨╛╨║): \n\n1. Sol тАУ ╤Б╨░╨╝╨░╤П ╨║╤А╤Г╨┐╨╜╨░╤П ╨╕ ╨║╤А╤Г╤В╨░╤П. ╨Э╨░ ╨╝╨╜╨╛╨│╨╕╤Е ╨▒╨╡╨╜╤З╨╝╨░╤А╨║╨░╤Е ╨╛╨▒╤Е╨╛╨┤╨╕╤В Mythos, ╨╕ ╨┐╤А╨╕ ╤Н╤В╨╛╨╝ ╨┤╨╡╤И╨╡╨▓╨╗╨╡ ╨▓ ╨┤╨▓╨░ ╤А╨░╨╖╨░. ╨Я╤А╨╕ ╤Н╤В╨╛╨╝ ╨░╨▓╤В╨╛╤А╤Л ╨┐╨╕╤И╤Г╤В, ╤З╤В╨╛ ╨╝╨╛╨┤╨╡╨╗╤М ╨╕╤Б╨┐╨╛╨╗╤М╨╖╤Г╨╡╤В ╨▓ ╤В╤А╨╕ ╤А╨░╨╖╨░ ╨╝╨╡╨╜╤М╤И╨╡ ╤В╨╛╨║╨╡╨╜╨╛╨▓. ╨Т ╤Ж╨╡╨╗╨╛╨╝ ╤Н╨║╨╛╨╜╨╛╨╝╨╕╤П ╨▓ 5-6 ╤А╨░╨╖ (╨╜╤Г ╤В╨╕╨┐╨░). \n\n2. Terra тАУ ╨┐╤А╨╛╨╝╨╡╨╢╤Г╤В╨╛╤З╨╜╤Л╨╣ ╨▓╨░╤А╨╕╨░╨╜╤В. ╨г╨╢╨╡ ╨▓ ╤В╤А╨╕ ╤А╨░╨╖╨░ ╨┤╨╡╤И╨╡╨▓╨╗╨╡ Mythos, ╤Г╨▓╨╡╤А╨╡╨╜╨╜╨╛ ╨╛╨▒╤Е╨╛╨┤╨╕╤В Opus 4.8. \n\n3. Luna тАУ ╤Б╨░╨╝╤Л╨╣ ╨┤╨╡╤И╨╡╨▓╨░╤П ╨╕ ╨▒╤Л╤Б╤В╤А╨░╤П, ╨╜╨╛ ╨┐╨╛ ╤А╨╡╨╖╤Г╨╗╤М╤В╨░╤В╨░╨╝ ╨▓╤Б╨╡ ╨╡╤Й╨╡ ╤Е╨╛╤А╨╛╤И╨░. \n\n╨С╨╡╨╜╤З╨╝╨░╤А╨║╨╛╨▓ ╨┐╨╛╨║╨░╨╖╨░╨╗╨╕ ╨╝╨░╨╗╨╛╨▓╨░╤В╨╛, ╤В╨░╨║ ╤З╤В╨╛ ╨╜╨░ ╨┤╤А╤Г╨│╨╕╨╡ ╨╖╨░╨╝╨╡╤А╤Л ╨╡╤Й╨╡ ╨┐╨╛╤Б╨╝╨╛╤В╤А╨╕╨╝. ╨Ю╨▒╤Й╨╕╨╣ ╨┤╨╛╤Б╤В╤Г╨┐ ╨╛╨▒╨╡╤Й╨░╤О╤В ╨▓ ╨▒╨╗╨╕╨╢╨░╨╣╤И╨╕╨╡ ╨╜╨╡╨┤╨╡╨╗╨╕, ╨┐╨╛╨║╨░ ╤З╤В╨╛ ╨╝╨╛╨┤╨╡╨╗╨╕ ╨▓╤Л╤И╨╗╨╕ ╤В╨╛╨╗╤М╨║╨╛ ╨┤╨╗╤П ╨╛╨│╤А╨░╨╜╨╕╤З╨╡╨╜╨╜╨╛╨╣ ╨│╤А╤Г╨┐╨┐╤Л ╤В╨╡╤Б╤В╨╡╤А╨╛╨▓. \n\n╨е╨╛╤В╤М ╨▒╤Л ╨╜╨╡ ╨┐╨╛╨▓╤В╨╛╤А╨╕╨╗╨░╤Б╤М ╨╕╤Б╤В╨╛╤А╨╕╤П ╤Б Fable ЁЯЩП",
+      "processable": true,
+      "processingState": "ENABLED_PROCESSABLE",
+      "pipelineStatus": "REJECTED_SINGLE_MESSAGE",
+      "material_id": "",
+      "rejection_or_skip_reason": "LOW_SINGLE_MESSAGE_SCORE",
+      "notes": "/groups/38/messages returned id=11142; id maps to raw_messages.id",
+      "api_present": true,
+      "links": "https://openai.com/index/previewing-gpt-5-6-sol/",
+      "embedding_count": 1
+    }
+  ],
+  "pipeline": [
+    {
+      "raw_id": 11142,
+      "dataset_message_id": 10121,
+      "replay_run_message_id": 7397,
+      "run_id": 5055,
+      "embedded": true,
+      "embedding_count": 1,
+      "replay_status": "CANDIDATE",
+      "rule_decision": "CANDIDATE",
+      "final_decision": "REJECTED_SINGLE_MESSAGE",
+      "single_message_score": 0.51,
+      "single_message_rejection_reason": "LOW_SINGLE_MESSAGE_SCORE",
+      "llm_used": false,
+      "llm_skip_reason": "",
+      "microcluster_id": "",
+      "macrocluster_id": "",
+      "discussion_segment_ids": "",
+      "discussion_rejection_reasons": "",
+      "provider_calls": "",
+      "material_ids": "",
+      "trace_stage_count": 13,
+      "daily_cap_impact": "NOT_APPLICABLE_NO_DISCUSSION_SEGMENT"
+    },
+    {
+      "raw_id": 11142,
+      "dataset_message_id": 10121,
+      "replay_run_message_id": 7397,
+      "run_id": 5055,
+      "embedded": true,
+      "embedding_count": 1,
+      "replay_status": "CANDIDATE",
+      "rule_decision": "CANDIDATE",
+      "final_decision": "REJECTED_SINGLE_MESSAGE",
+      "single_message_score": 0.51,
+      "single_message_rejection_reason": "LOW_SINGLE_MESSAGE_SCORE",
+      "llm_used": false,
+      "llm_skip_reason": "",
+      "microcluster_id": "",
+      "macrocluster_id": "",
+      "discussion_segment_ids": "",
+      "discussion_rejection_reasons": "",
+      "provider_calls": "",
+      "material_ids": "",
+      "trace_stage_count": 13,
+      "daily_cap_impact": "NOT_APPLICABLE_NO_DISCUSSION_SEGMENT"
+    },
+    {
+      "raw_id": 11193,
+      "dataset_message_id": 10168,
+      "replay_run_message_id": 7444,
+      "run_id": 5092,
+      "embedded": true,
+      "embedding_count": 1,
+      "replay_status": "CANDIDATE",
+      "rule_decision": "CANDIDATE",
+      "final_decision": "REJECTED_SINGLE_MESSAGE",
+      "single_message_score": 0,
+      "single_message_rejection_reason": "TOO_SHORT",
+      "llm_used": false,
+      "llm_skip_reason": "",
+      "microcluster_id": "",
+      "macrocluster_id": "",
+      "discussion_segment_ids": "",
+      "discussion_rejection_reasons": "",
+      "provider_calls": "",
+      "material_ids": "",
+      "trace_stage_count": 13,
+      "daily_cap_impact": "NOT_APPLICABLE_NO_DISCUSSION_SEGMENT"
+    },
+    {
+      "raw_id": 11142,
+      "dataset_message_id": 10121,
+      "replay_run_message_id": 7397,
+      "run_id": 5055,
+      "embedded": true,
+      "embedding_count": 1,
+      "replay_status": "CANDIDATE",
+      "rule_decision": "CANDIDATE",
+      "final_decision": "REJECTED_SINGLE_MESSAGE",
+      "single_message_score": 0.51,
+      "single_message_rejection_reason": "LOW_SINGLE_MESSAGE_SCORE",
+      "llm_used": false,
+      "llm_skip_reason": "",
+      "microcluster_id": "",
+      "macrocluster_id": "",
+      "discussion_segment_ids": "",
+      "discussion_rejection_reasons": "",
+      "provider_calls": "",
+      "material_ids": "",
+      "trace_stage_count": 13,
+      "daily_cap_impact": "NOT_APPLICABLE_NO_DISCUSSION_SEGMENT"
+    }
+  ],
+  "expectedMessageRecovery": [
+    {
+      "id": "M01",
+      "status": "FOUND_UI_EQUIVALENT",
+      "rawIds": "11142",
+      "note": "Maps to U01/U04 long GPT-5.6 Sol caption in API SUPPORT | ModelHub; outside previous exact window."
+    },
+    {
+      "id": "M02",
+      "status": "NOT_FOUND",
+      "rawIds": "",
+      "note": "PlusVibeAPI-specific content not recovered in target chat search."
+    },
+    {
+      "id": "M03",
+      "status": "NOT_FOUND",
+      "rawIds": "",
+      "note": "Specific proxy-risk/model-substitution/log-resale content not recovered in target chat search."
+    },
+    {
+      "id": "M04",
+      "status": "NOT_FOUND",
+      "rawIds": "",
+      "note": "Figma Config content not recovered in target chat search."
+    },
+    {
+      "id": "M05",
+      "status": "FOUND_SIMILAR",
+      "rawIds": "",
+      "note": "Codex mentions exist in broader-day search, but this UI reconciliation did not recover the requested outage/quota message."
+    },
+    {
+      "id": "M06",
+      "status": "FOUND_UI_EQUIVALENT",
+      "rawIds": "11142",
+      "note": "Government/access-policy wording may be part of the same long GPT-5.6 caption or related UI item; recovered hit did not match every named source snippet."
+    },
+    {
+      "id": "M07",
+      "status": "FOUND_SIMILAR",
+      "rawIds": "11142",
+      "note": "Fable/Mythos/GPT-5.6 context appears in raw 11142; exact Claude iOS loophole text not recovered here."
+    },
+    {
+      "id": "M08",
+      "status": "NOT_FOUND",
+      "rawIds": "",
+      "note": "Referral/bot abuse content not recovered in this target-chat UI source search."
+    },
+    {
+      "id": "M09",
+      "status": "FOUND_SIMILAR",
+      "rawIds": "",
+      "note": "OpenMontage-like candidate was previously found as broader-day raw 11484, outside U01-U04 target set."
+    },
+    {
+      "id": "M10",
+      "status": "NOT_FOUND",
+      "rawIds": "",
+      "note": "sensors_discord_bot not recovered in target chat search."
+    },
+    {
+      "id": "M11",
+      "status": "FOUND_EXACT",
+      "rawIds": "11193",
+      "note": "lolz.live link-only message recovered from /groups API and raw_messages.text."
+    },
+    {
+      "id": "M12",
+      "status": "NOT_FOUND",
+      "rawIds": "",
+      "note": "feedback-only useful-guide text not recovered in target chat search."
+    }
+  ],
+  "conclusions": {
+    "previousAuditMismatch": [
+      "Wrong/narrow time window: old audit used 03:40-04:15 MSK (00:40-01:15Z). Recovered GPT-5.6 raw 11142 is 2026-06-26T23:28:47Z / 02:28:47 MSK. Recovered lolz raw 11193 is 2026-06-27T00:14:07Z / 03:14:07 MSK.",
+      "Text source mismatch: GPT-5.6 message is stored in raw_messages.caption but UI normalizes caption into text via preferredText(). Old audit did search caption, but only inside the wrong window.",
+      "Exact-match strategy was too strict for UI-visible material because UI pagination/chat selection showed messages outside the manually typed window.",
+      "UI uses raw_messages directly, so UI visibility is not proof of dataset/replay failure; these two recovered messages are resolvable to dataset and replay rows."
+    ],
+    "recovered": "U01/U04 and U02-equivalent map to raw 11142; U03 maps to raw 11193.",
+    "pipelineOutcome": "Both raw ids were processed, embedded, rejected at single-message stage, had no discussion segment, no LLM/provider calls, and no materials.",
+    "genuineMissesOrExpectedRejects": "raw 11142 is a likely pipeline/product-mode miss for news/reference summary because score 0.51 ended as LOW_SINGLE_MESSAGE_SCORE. raw 11193 is an expected reject for link-only/insufficient context, but current reason is TOO_SHORT rather than explicit LINK_ONLY/NEEDS_LINK_ENRICHMENT.",
+    "recommendations": [
+      "Add news/reference mode for high-value release/resource announcements.",
+      "Add link enrichment or explicit LINK_ONLY/NEEDS_LINK_ENRICHMENT rejection reason.",
+      "Add UI-to-pipeline resolver/report utility based on /groups MessageDto.id = raw_messages.id.",
+      "Improve audit search to start from chat id and UI API before time-window keyword search.",
+      "Consider manual materialization for raw 11142 only if a news/reference summary is desired; do not create guide by default."
+    ]
+  }
+}

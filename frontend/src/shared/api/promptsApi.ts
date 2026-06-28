@@ -3,48 +3,96 @@ import { deleteJsonAuth, getJsonAuth, postJsonAuth, putJsonAuth } from "./http";
 import { queryClient } from "./queryClient";
 import type { Prompt } from "../types";
 
-interface PromptDto {
+interface PromptTemplateDto {
   id: number;
+  code: string;
   name: string;
-  type: string;
-  version: string;
-  content: string;
-  variables: string[];
+  description: string;
+  stage: string;
+  supportedModesJson: string[];
+  systemPrompt: string;
+  userPromptTemplate: string;
+  outputSchemaJson: Record<string, unknown> | null;
+  providerRoute: string;
+  modelName: string;
+  fallbackModel: string | null;
+  version: number;
+  isActive: boolean;
   status: string;
+  variablesJson: string[];
+  metadataJson: Record<string, unknown> | null;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface CreatePromptRequest {
+  code: string;
   name: string;
-  type: string;
-  content: string;
-  variables?: string;
-  version?: string;
+  description?: string;
+  stage: string;
+  promptMode?: string;
+  systemPrompt?: string;
+  userPromptTemplate: string;
+  outputSchema?: string;
+  providerRoute?: string;
+  modelName?: string;
+  fallbackModel?: string;
 }
 
-function normalizePromptType(type: string): Prompt["type"] {
-  if (type === "CLASSIFICATION" || type === "CLASSIFIER") return "CLASSIFIER";
-  if (type === "GENERATION" || type === "GUIDE_GENERATOR") return "GUIDE_GENERATOR";
-  return type as Prompt["type"];
+export interface UpdatePromptRequest {
+  name?: string;
+  description?: string;
+  userPromptTemplate?: string;
+  systemPrompt?: string;
+  outputSchema?: string;
+  providerRoute?: string;
+  modelName?: string;
+  fallbackModel?: string;
+  changeReason?: string;
 }
 
-function toApiPromptType(type?: string): string | undefined {
-  if (type === "CLASSIFIER") return "CLASSIFICATION";
-  if (type === "GUIDE_GENERATOR") return "GENERATION";
-  return type;
+export interface TestPromptResult {
+  success: boolean;
+  status: string;
+  output: string;
+  decision: string;
+  confidence: number;
+  inputTokens: number;
+  outputTokens: number;
+  estimatedCostUsd: number;
 }
 
-function normalizePrompt(dto: PromptDto): Prompt {
+const API = "/api/v2/prompts";
+
+function normalizeMode(modes: string[]): string {
+  if (!modes || modes.length === 0) return "BOTH";
+  if (modes.length === 1) return modes[0];
+  return "BOTH";
+}
+
+function normalizePrompt(dto: PromptTemplateDto): Prompt {
   return {
     id: String(dto.id),
     name: dto.name,
-    type: normalizePromptType(dto.type),
-    content: dto.content,
-    variablesJson: JSON.stringify(dto.variables ?? []),
-    version: dto.version,
-    status: dto.status as Prompt["status"],
+    code: dto.code,
+    description: dto.description,
+    stage: dto.stage,
+    promptMode: normalizeMode(dto.supportedModesJson),
+    type: dto.stage === "KNOWLEDGE_GENERATION" ? "GUIDE_GENERATOR" : "CLASSIFIER",
+    content: dto.userPromptTemplate,
+    systemPrompt: dto.systemPrompt,
+    outputSchema: dto.outputSchemaJson ? JSON.stringify(dto.outputSchemaJson, null, 2) : "",
+    providerRoute: dto.providerRoute,
+    modelName: dto.modelName,
+    fallbackModel: dto.fallbackModel,
+    version: String(dto.version),
+    versionNum: dto.version,
+    status: (dto.isActive ? "ACTIVE" : dto.status === "ARCHIVED" ? "ARCHIVED" : "DRAFT") as Prompt["status"],
+    variablesJson: JSON.stringify(dto.variablesJson ?? []),
     avgTokens: 0,
     approveRate: 0,
-    lastEditedAt: null,
+    lastEditedAt: dto.updatedAt,
   };
 }
 
@@ -52,7 +100,7 @@ export function usePromptsQuery() {
   return useQuery({
     queryKey: ["prompts"],
     queryFn: async () => {
-      const response = await getJsonAuth<PromptDto[]>("/prompts");
+      const response = await getJsonAuth<PromptTemplateDto[]>(API);
       return response.map(normalizePrompt);
     },
   });
@@ -61,10 +109,7 @@ export function usePromptsQuery() {
 export function useCreatePromptMutation() {
   return useMutation({
     mutationFn: async (body: CreatePromptRequest) => {
-      const response = await postJsonAuth<PromptDto>("/prompts", {
-        ...body,
-        type: toApiPromptType(body.type),
-      });
+      const response = await postJsonAuth<PromptTemplateDto>(API, body);
       return normalizePrompt(response);
     },
     onSuccess: () => {
@@ -73,32 +118,10 @@ export function useCreatePromptMutation() {
   });
 }
 
-// ── Prompt edit/delete/test mutations ──
-
-export interface UpdatePromptRequest {
-  name?: string;
-  type?: string;
-  content?: string;
-  variables?: string;
-  version?: string;
-  status?: string;
-}
-
-export interface TestPromptResult {
-  output: string;
-  inputTokens: number;
-  outputTokens: number;
-  totalTokens: number;
-  estimatedCostUsd: number;
-}
-
 export function useUpdatePromptMutation() {
   return useMutation({
     mutationFn: async ({ id, ...body }: { id: string } & UpdatePromptRequest) => {
-      const response = await putJsonAuth<PromptDto>(`/prompts/${id}`, {
-        ...body,
-        type: toApiPromptType(body.type),
-      });
+      const response = await putJsonAuth<PromptTemplateDto>(`${API}/${id}`, body);
       return normalizePrompt(response);
     },
     onSuccess: () => {
@@ -109,7 +132,7 @@ export function useUpdatePromptMutation() {
 
 export function useDeletePromptMutation() {
   return useMutation({
-    mutationFn: (id: string) => deleteJsonAuth(`/prompts/${id}`),
+    mutationFn: (id: string) => deleteJsonAuth(`${API}/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["prompts"] });
     },
@@ -118,10 +141,46 @@ export function useDeletePromptMutation() {
 
 export function useTestPromptMutation() {
   return useMutation({
-    mutationFn: ({ id, variables, providerId }: { id: string; variables: Record<string, string>; providerId?: string }) =>
-      postJsonAuth<TestPromptResult>(`/prompts/${id}/test`, {
-        variables,
-        providerId: providerId ? Number(providerId) : undefined,
-      }),
+    mutationFn: ({ id, variables, mode }: { id: string; variables?: Record<string, string>; mode?: string }) => {
+      const body: Record<string, unknown> = {};
+      if (variables) body.variables = variables;
+      if (mode) body.mode = mode;
+      return postJsonAuth<TestPromptResult>(`${API}/${id}/test`, body);
+    },
+  });
+}
+
+export function useActivatePromptMutation() {
+  return useMutation({
+    mutationFn: (id: string) => postJsonAuth(`${API}/${id}/activate`, {}),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["prompts"] });
+    },
+  });
+}
+
+export interface PromptVersionDto {
+  id: number;
+  promptTemplateId: number;
+  version: number;
+  snapshotJson: string;
+  changeReason: string | null;
+  createdAt: string;
+}
+
+export function usePromptVersionsQuery(id: string) {
+  return useQuery({
+    queryKey: ["prompt-versions", id],
+    queryFn: () => getJsonAuth<PromptVersionDto[]>(`${API}/${id}/versions`),
+  });
+}
+
+export function useRollbackPromptMutation() {
+  return useMutation({
+    mutationFn: ({ id, version }: { id: string; version: number }) =>
+      postJsonAuth(`${API}/${id}/rollback/${version}`, {}),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["prompts"] });
+    },
   });
 }

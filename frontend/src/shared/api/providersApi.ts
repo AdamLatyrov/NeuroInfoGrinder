@@ -44,6 +44,17 @@ export function useTestProviderMutation() {
   });
 }
 
+export function useActivateProviderMutation() {
+  return useMutation({
+    mutationFn: (id: string) =>
+      postJsonAuth<AIProvider>(`/providers/${id}/activate`, {}),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["providers"] });
+      queryClient.invalidateQueries({ queryKey: ["settings"] });
+    },
+  });
+}
+
 // ── Provider edit/delete mutations ──
 
 export interface UpdateProviderRequest {
@@ -60,6 +71,7 @@ export function useUpdateProviderMutation() {
       putJsonAuth<AIProvider>(`/providers/${id}`, body),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["providers"] });
+      queryClient.invalidateQueries({ queryKey: ["settings"] });
     },
   });
 }

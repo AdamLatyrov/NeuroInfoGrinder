@@ -9,6 +9,7 @@ import com.larbcorp.neuroinfogrinder.shared.dto.PageResponse;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -37,31 +38,36 @@ public class GroupController {
             @RequestParam(required = false) String status,
             @RequestParam(required = false) Boolean enabled,
             @RequestParam(required = false) Long accountId,
+            @AuthenticationPrincipal Long ownerUserId,
             Pageable pageable
     ) {
-        return groupService.getGroups(search, status, enabled, accountId, pageable);
+        return groupService.getGroups(ownerUserId, search, status, enabled, accountId, pageable);
     }
 
     @PostMapping("/sync")
     @ResponseStatus(HttpStatus.OK)
-    public void syncGroups() {
-        groupService.syncGroups();
+    public void syncGroups(@AuthenticationPrincipal Long ownerUserId) {
+        groupService.syncGroups(ownerUserId);
     }
 
     @PatchMapping("/{id}")
-    public GroupResponse updateGroup(@PathVariable Long id, @Valid @RequestBody UpdateGroupRequest request) {
-        return groupService.updateGroup(id, request);
+    public GroupResponse updateGroup(@AuthenticationPrincipal Long ownerUserId,
+                                     @PathVariable Long id,
+                                     @Valid @RequestBody UpdateGroupRequest request) {
+        return groupService.updateGroup(ownerUserId, id, request);
     }
 
     @PostMapping("/bulk-toggle")
     @ResponseStatus(HttpStatus.OK)
-    public void bulkToggle(@Valid @RequestBody BulkToggleRequest request) {
-        groupService.bulkToggle(request);
+    public void bulkToggle(@AuthenticationPrincipal Long ownerUserId,
+                           @Valid @RequestBody BulkToggleRequest request) {
+        groupService.bulkToggle(ownerUserId, request);
     }
 
     @PostMapping("/bulk-assign")
     @ResponseStatus(HttpStatus.OK)
-    public void bulkAssign(@Valid @RequestBody BulkAssignRequest request) {
-        groupService.bulkAssign(request);
+    public void bulkAssign(@AuthenticationPrincipal Long ownerUserId,
+                           @Valid @RequestBody BulkAssignRequest request) {
+        groupService.bulkAssign(ownerUserId, request);
     }
 }

@@ -5,6 +5,7 @@ import com.larbcorp.neuroinfogrinder.infrastructure.persistence.repository.Group
 import com.larbcorp.neuroinfogrinder.infrastructure.persistence.repository.MessageRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -26,6 +27,9 @@ public class QueueProcessor {
     private final GroupRepository groupRepository;
     private final PipelineService pipelineService;
 
+    @Value("${pipeline.processing.enabled:true}")
+    private boolean pipelineProcessingEnabled = true;
+
     private boolean enabled = true;
 
     /**
@@ -37,7 +41,7 @@ public class QueueProcessor {
         initialDelayString = "${neuroinfogrinder.pipeline.queue-initial-delay-ms:1000}"
     )
     public void processQueue() {
-        if (!enabled) {
+        if (!pipelineProcessingEnabled || !enabled) {
             return;
         }
 

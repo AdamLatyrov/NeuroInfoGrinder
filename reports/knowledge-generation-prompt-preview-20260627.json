@@ -1,0 +1,20 @@
+{
+  "date": "2026-06-27",
+  "task": "TASK 11",
+  "artifact": "KNOWLEDGE_GENERATION prompt preview",
+  "productionPromptChanged": false,
+  "providerSettingsChanged": false,
+  "materialsGenerated": false,
+  "schemaPreserved": true,
+  "proposedSystemPromptSummary": [
+    "standalone knowledge-base artifact",
+    "no meta-chat framing",
+    "provider/API caveat required when relevant",
+    "repo/resource caveat required when relevant",
+    "risk-sensitive content must not become bypass instructions",
+    "link-only content must disclose insufficient context",
+    "return JSON only"
+  ],
+  "activationStatus": "preview_only_requires_explicit_approval",
+  "knownVerificationConstraint": "PromptTemplateService.testPrompt currently fails for run_id=NULL because ModelhubProviderGateway.recordCall expects primitive long runId."
+}

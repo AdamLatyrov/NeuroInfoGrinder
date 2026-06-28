@@ -38,6 +38,7 @@ function refreshPipelineQueries(payload: PipelineEventPayload) {
     queryClient.invalidateQueries({ queryKey: ["traces"] });
     if (payload.stage === "GUIDE_GENERATION" || payload.status === "GUIDE_FOUND") {
       queryClient.invalidateQueries({ queryKey: ["guides"] });
+      queryClient.invalidateQueries({ queryKey: ["materials"] });
     }
   }
 

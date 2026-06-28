@@ -62,6 +62,11 @@ public class ProviderController {
         return providerService.testConnection(id);
     }
 
+    @PostMapping("/{id}/activate")
+    public ProviderResponse activate(@PathVariable Long id) {
+        return toResponse(providerService.activate(id));
+    }
+
     private ProviderResponse toResponse(AiProviderEntity entity) {
         return new ProviderResponse(
             entity.getId(),
@@ -71,6 +76,7 @@ public class ProviderController {
             entity.getApiKeyEncrypted() != null && !entity.getApiKeyEncrypted().isBlank(),
             entity.getModel(),
             entity.getStatus(),
+            providerService.isActive(entity.getId()),
             entity.getLastTestedAt(),
             entity.getLastTestResult(),
             entity.getLastError()

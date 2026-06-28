@@ -1,11 +1,13 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { SpinnerGap, ChatCircle } from "@phosphor-icons/react";
+import { ArrowClockwise, ChatCircle, DotsThreeVertical, SpinnerGap } from "@phosphor-icons/react";
 import { EmptyState } from "@/components/domain/empty-state";
 import { GroupListPanel } from "@/components/domain/group-list-panel";
 import { MessageDetailPanel } from "@/components/domain/message-detail-panel";
 import { MessagesPanel, type MessageTab } from "@/components/domain/messages-panel";
 import { RichMessageText } from "@/components/domain/rich-message-text";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Sheet,
   SheetContent,
@@ -19,10 +21,11 @@ import {
   useMessageByIdQuery,
   useMessageChainQuery,
   useSyncMessagesMutation,
+  type MessageSyncResponse,
 } from "@/shared/api/messagesApi";
 import { useGroupsQuery } from "@/shared/api/groupsApi";
 import { usePipelineEvents } from "@/shared/api/pipelineEvents";
-import { useTopicsQuery } from "@/shared/api/topicsApi";
+import { useReconcileTopicsMutation, useSyncTopicsMutation, useTopicsQuery } from "@/shared/api/topicsApi";
 import type { Group, Message, Topic } from "@/shared/types";
 
 function formatChainTime(value: string): string {
@@ -37,11 +40,20 @@ function isGeneralTopic(topicName: string): boolean {
   return normalized === "general" || normalized === "основной";
 }
 
-function mergeTopics(primary: Topic[], secondary: Topic[]): Topic[] {
+function topicDedupKey(topic: Topic, accountId: string | null | undefined) {
+  const chatId = topic.chatId || "unknown-chat";
+  const forumTopicId = topic.forumTopicId || "";
+  const messageThreadId = topic.messageThreadId || "";
+  return forumTopicId
+    ? `${accountId ?? "unknown-account"}:${chatId}:forum:${forumTopicId}`
+    : `${accountId ?? "unknown-account"}:${chatId}:thread:${messageThreadId || "unknown-thread"}`;
+}
+
+function mergeTopics(primary: Topic[], secondary: Topic[], accountId: string | null | undefined): Topic[] {
   const merged = new Map<string, Topic>();
 
   for (const topic of [...primary, ...secondary]) {
-    const key = topic.messageThreadId || topic.forumTopicId;
+    const key = topicDedupKey(topic, accountId);
     if (!merged.has(key)) {
       merged.set(key, topic);
     }
@@ -55,11 +67,59 @@ function mergeTopics(primary: Topic[], secondary: Topic[]): Topic[] {
   });
 }
 
+function isPlaceholderTopic(topic: Topic) {
+  return !topic.name || topic.name === "Тема без названия" || topic.name.startsWith("Topic ") || topic.titleSource === "PLACEHOLDER_UNKNOWN";
+}
+
+function topicLabel(topic: Topic) {
+  if (topic.general) return "Основной";
+  if (!isPlaceholderTopic(topic)) return topic.name;
+  const id = topic.forumTopicId || topic.messageThreadId;
+  return id ? `Тема #${id}` : "Тема";
+}
+
+function syncStatusText(response: MessageSyncResponse | undefined, error: unknown): string | null {
+  if (error) {
+    return "Ошибка синхронизации";
+  }
+  if (!response) {
+    return null;
+  }
+  const labels: Record<string, string> = {
+    scheduled: "Очередь синхронизации",
+    already_running: "Синхронизация...",
+    cooldown: "Синхронизировано недавно",
+    executor_saturated: "Очередь синхронизации",
+    telegram_not_ready: "Telegram сейчас недоступен",
+    group_not_found: "Чат не найден",
+    disabled_group: "Чат отключён",
+    error: "Ошибка синхронизации",
+  };
+  return labels[response.reason] ?? `Синхронизация: ${response.reason}`;
+}
+
+function groupTypeLabel(group: Group) {
+  if (group.forum) return "форум";
+  if (group.sourceType === "CHANNEL") return "канал";
+  if (group.sourceType === "DIRECT_CHAT") return "личный";
+  return "группа";
+}
+
+function filterMessages(messages: Message[], filter: string) {
+  if (filter === "media") return messages.filter((message) => message.hasMedia);
+  if (filter === "links") return messages.filter((message) => message.hasLinks);
+  if (filter === "voice") return messages.filter((message) => message.hasVoice);
+  if (filter === "documents") return messages.filter((message) => message.hasDocument);
+  if (filter === "text") return messages.filter((message) => !message.hasMedia && !message.hasLinks);
+  return messages;
+}
+
 export function GroupsChatView() {
   const connectionState = usePipelineEvents();
 
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const preselectedGroupId = searchParams.get("group");
+  const preselectedChatId = searchParams.get("chatId");
   const preselectedMessageId = searchParams.get("message");
 
   const [showDisabled, setShowDisabled] = useState(false);
@@ -67,8 +127,12 @@ export function GroupsChatView() {
   const [activeTopicId, setActiveTopicId] = useState<string | null>(null);
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
   const [chainSheetOpen, setChainSheetOpen] = useState(false);
+  const [contentFilter, setContentFilter] = useState("all");
+  const [lastAutoSyncKey, setLastAutoSyncKey] = useState<string | null>(null);
+  const [lastAutoTopicSyncKey, setLastAutoTopicSyncKey] = useState<string | null>(null);
+  const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(null);
 
-  const groupsQuery = useGroupsQuery({ size: 200 });
+  const groupsQuery = useGroupsQuery({ accountId: "1", size: 200 });
   const allGroups = groupsQuery.data?.content ?? [];
   const groups = useMemo(
     () => (showDisabled ? allGroups : allGroups.filter((group) => group.enabled)),
@@ -79,6 +143,8 @@ export function GroupsChatView() {
     selectedGroup?.forum ? selectedGroup.telegramChatId : undefined
   );
   const topics = topicsQuery.data ?? [];
+  const syncTopicsMutation = useSyncTopicsMutation(selectedGroup?.telegramChatId);
+  const reconcileTopicsMutation = useReconcileTopicsMutation(selectedGroup?.telegramChatId);
 
   const messagesQuery = useGroupMessagesQuery(selectedGroup?.id, activeTopicId, {
     disablePolling: connectionState === "connected",
@@ -95,6 +161,10 @@ export function GroupsChatView() {
       ? pinnedMessageQuery.data
       : null;
   const groupMessages = pinnedMessage ? [pinnedMessage, ...fetchedMessages] : fetchedMessages;
+  const visibleMessages = useMemo(
+    () => filterMessages(groupMessages, contentFilter),
+    [contentFilter, groupMessages]
+  );
   const totalMessages = messagesQuery.data?.totalElements ?? 0;
 
   const fallbackTopics = useMemo<Topic[]>(() => {
@@ -123,8 +193,8 @@ export function GroupsChatView() {
   }, [groupMessages, selectedGroup?.forum, selectedGroup?.telegramChatId]);
 
   const availableTopics = useMemo(
-    () => mergeTopics(topics, fallbackTopics),
-    [fallbackTopics, topics]
+    () => mergeTopics(topics, fallbackTopics, selectedGroup?.accountId),
+    [fallbackTopics, selectedGroup?.accountId, topics]
   );
 
   const tabs = useMemo<MessageTab[]>(() => {
@@ -136,7 +206,7 @@ export function GroupsChatView() {
       { id: null, label: "Все" },
       ...availableTopics.map((topic) => ({
         id: topic.messageThreadId || topic.forumTopicId,
-        label: topic.general ? "Основной" : topic.name,
+        label: topicLabel(topic),
       })),
     ];
   }, [availableTopics, selectedGroup?.forum]);
@@ -144,19 +214,80 @@ export function GroupsChatView() {
   const messageChainQuery = useMessageChainQuery(selectedGroup?.id, selectedMessage?.id);
   const enqueueMutation = useEnqueueMessageMutation(selectedGroup?.id);
   const syncMessagesMutation = useSyncMessagesMutation(selectedGroup?.id);
+  const topicActionStatus = syncTopicsMutation.isPending
+    ? "Синхронизация тем..."
+    : reconcileTopicsMutation.isPending
+      ? "Сверяю названия тем..."
+      : null;
+  const syncStatus = topicActionStatus
+    ?? (syncMessagesMutation.isPending ? "Синхронизация..." : null)
+    ?? syncStatusText(syncMessagesMutation.data, syncMessagesMutation.error)
+    ?? (lastSyncedAt ? `Синхронизировано ${lastSyncedAt.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}` : null);
+  const handleManualSync = () => {
+    if (!selectedGroup || syncMessagesMutation.isPending || syncTopicsMutation.isPending) {
+      return;
+    }
+    syncMessagesMutation.mutate(undefined, { onSuccess: () => setLastSyncedAt(new Date()) });
+    if (selectedGroup.forum) {
+      syncTopicsMutation.mutate();
+    }
+  };
 
   useEffect(() => {
-    if (!selectedGroup && groups.length > 0) {
-      const match = preselectedGroupId
-        ? groups.find((group) => group.id === preselectedGroupId)
-        : null;
-      setSelectedGroup(match ?? groups[0]);
+    if (groups.length === 0) {
+      return;
     }
-  }, [groups, preselectedGroupId, selectedGroup]);
+
+    // URL is the source of truth on (deep-)link open. Resolve it to a group,
+    // but stay idempotent: if the current selection already matches the URL,
+    // do nothing so a manual click is never reverted.
+    if (preselectedGroupId) {
+      if (selectedGroup?.id === preselectedGroupId) {
+        return;
+      }
+      const match = groups.find((group) => group.id === preselectedGroupId);
+      if (match) {
+        setSelectedGroup(match);
+      }
+      return;
+    }
+
+    if (preselectedChatId) {
+      if (selectedGroup?.telegramChatId === preselectedChatId) {
+        return;
+      }
+      const match = groups.find((group) => group.telegramChatId === preselectedChatId);
+      if (match) {
+        setSelectedGroup(match);
+      }
+      return;
+    }
+
+    if (!selectedGroup) {
+      setSelectedGroup(groups[0]);
+    }
+  }, [groups, preselectedChatId, preselectedGroupId, selectedGroup]);
+
+  const handleSelectGroup = useCallback((group: Group) => {
+    // Manual click becomes the new source of truth: rewrite the URL to the
+    // canonical ?group={internalId}, dropping a stale chatId/message deep link
+    // so the URL effect selects this group once and never bounces via stale state.
+    setSearchParams(
+      (params) => {
+        const next = new URLSearchParams(params);
+        next.set("group", group.id);
+        next.delete("chatId");
+        next.delete("message");
+        return next;
+      },
+      { replace: true }
+    );
+  }, [setSearchParams]);
 
   useEffect(() => {
     setSelectedMessage(null);
     setActiveTopicId(null);
+    setContentFilter("all");
   }, [selectedGroup?.id]);
 
   useEffect(() => {
@@ -181,6 +312,41 @@ export function GroupsChatView() {
     setSelectedMessage(null);
   }, [activeTopicId]);
 
+  useEffect(() => {
+    if (!selectedGroup || syncMessagesMutation.isPending) {
+      return;
+    }
+
+    const key = `${selectedGroup.id}:${activeTopicId ?? "all"}`;
+    if (lastAutoSyncKey === key) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      syncMessagesMutation.mutate(undefined, { onSuccess: () => setLastSyncedAt(new Date()) });
+      setLastAutoSyncKey(key);
+    }, 700);
+
+    return () => window.clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTopicId, lastAutoSyncKey, selectedGroup?.id]);
+
+  useEffect(() => {
+    if (!selectedGroup?.forum || syncTopicsMutation.isPending) {
+      return;
+    }
+
+    const key = `${selectedGroup.telegramChatId}:${activeTopicId ?? "all"}`;
+    if (lastAutoTopicSyncKey === key) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      syncTopicsMutation.mutate();
+      setLastAutoTopicSyncKey(key);
+    }, 900);
+    return () => window.clearTimeout(timer);
+  }, [activeTopicId, lastAutoTopicSyncKey, selectedGroup?.forum, selectedGroup?.telegramChatId, syncTopicsMutation]);
 
   const selectedChain = messageChainQuery.data;
   const centerTitle = selectedGroup?.title ?? "Сообщения";
@@ -203,15 +369,39 @@ export function GroupsChatView() {
           groups={groups}
           isLoading={groupsQuery.isLoading}
           selectedGroupId={selectedGroup?.id ?? null}
-          onSelectGroup={setSelectedGroup}
+          onSelectGroup={handleSelectGroup}
           showDisabled={showDisabled}
           onToggleShowDisabled={setShowDisabled}
         />
       </div>
 
       <div className="flex-1 min-h-[360px] min-w-0">
+        {selectedGroup && (
+          <div className="mb-3 rounded-2xl border border-border-subtle bg-bg-card p-3">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="truncate text-lg font-semibold text-text-strong">{selectedGroup.title}</h2>
+                  <Badge variant="outline">{groupTypeLabel(selectedGroup)}</Badge>
+                  <Badge variant={selectedGroup.enabled ? "success" : "warning"}>{selectedGroup.enabled ? "ingest включён" : "ingest отключён"}</Badge>
+                </div>
+                <div className="mt-2 flex flex-wrap gap-3 text-xs text-text-muted">
+                  <span>Сообщений: {totalMessages}</span>
+                  <span>Тем: {selectedGroup.forum ? availableTopics.length : 0}</span>
+                  <span>{syncStatus ?? `Синхронизировано: ${selectedGroup.lastReadAt ? new Date(selectedGroup.lastReadAt).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }) : "нет данных"}`}</span>
+                  <span>ID: {selectedGroup.telegramChatId}</span>
+                </div>
+              </div>
+              <div className="flex flex-wrap items-center justify-end gap-2">
+                <Button variant="outline" size="icon" onClick={handleManualSync} disabled={syncMessagesMutation.isPending || syncTopicsMutation.isPending} title="Синхронизировать сейчас" aria-label="Синхронизировать сейчас">
+                  {syncMessagesMutation.isPending || syncTopicsMutation.isPending ? <SpinnerGap size={17} className="animate-spin" /> : <ArrowClockwise size={17} />}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
         <MessagesPanel
-          messages={groupMessages}
+          messages={visibleMessages}
           totalMessages={totalMessages}
           isLoading={messagesQuery.isLoading}
           selectedMessageId={selectedMessage?.id ?? null}
@@ -221,9 +411,17 @@ export function GroupsChatView() {
           tabs={tabs.length > 0 ? tabs : undefined}
           activeTabId={activeTopicId}
           onTabChange={setActiveTopicId}
-          onSync={() => syncMessagesMutation.mutate()}
+          onSync={undefined}
           isSyncing={syncMessagesMutation.isPending}
+          syncStatus={syncStatus}
+          contentFilter={contentFilter}
+          onContentFilterChange={setContentFilter}
         />
+        {selectedGroup?.forum && (
+          <div className="mt-2 flex flex-wrap gap-2 rounded-2xl border border-border-subtle bg-bg-card p-2">
+            <button className="rounded-xl bg-bg-elevated px-2 py-1.5 text-text-muted" onClick={() => reconcileTopicsMutation.mutate()} disabled={reconcileTopicsMutation.isPending} title="Дополнительные действия по темам" aria-label="Дополнительные действия по темам"><DotsThreeVertical size={18} /></button>
+          </div>
+        )}
       </div>
 
       <div className="xl:w-80 xl:shrink-0 min-h-[260px]">

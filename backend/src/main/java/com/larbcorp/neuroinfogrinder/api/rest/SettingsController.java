@@ -43,6 +43,7 @@ public class SettingsController {
                 entity.getPublicationTargetGroupId(),
                 entity.getPublicationMode()
             ),
+            entity.getActiveProviderId(),
             new SettingsResponse.Processing(
                 entity.getProcessingMode(),
                 entity.getPollIntervalSeconds(),

@@ -1,9 +1,10 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { getJsonAuth, putJsonAuth } from "./http";
+import { getJsonAuth, postJsonAuth, putJsonAuth } from "./http";
 import { queryClient } from "./queryClient";
 import type { AppSettings, ProcessingMode, PublicationMode } from "../types";
 
 interface SettingsResponseDto {
+  activeProviderId: number | null;
   publication: {
     targetGroupId: number | null;
     mode: string;
@@ -53,6 +54,24 @@ interface UpdateSettingsDto {
   notificationWebhookUrl: string | null;
 }
 
+export type StorageCleanupScope = "GUIDES" | "MATERIALS" | "MESSAGES";
+
+export interface StorageCleanupResult {
+  scope: StorageCleanupScope;
+  guidesDeleted: number;
+  materialsDeleted: number;
+  messagesDeleted: number;
+  sourceLinksDeleted: number;
+  tracesDeleted: number;
+  topicClustersDeleted: number;
+  topicClusterMessagesDeleted: number;
+  topicClusterCandidatesDeleted: number;
+  embeddingsDeleted: number;
+  signalClusterLinksDeleted: number;
+  signalMicroclustersDeleted: number;
+  signalMacroclustersDeleted: number;
+}
+
 const publicationModeFromApi: Record<string, PublicationMode> = {
   AUTOMATIC: "Automatic",
   WITH_MODERATION: "With moderation",
@@ -85,6 +104,8 @@ function normalizeBlacklistWords(value: string | null): string[] {
 
 function normalizeSettings(dto: SettingsResponseDto): AppSettings {
   return {
+    activeProviderId:
+      dto.activeProviderId != null ? String(dto.activeProviderId) : null,
     publication: {
       targetGroupId:
         dto.publication.targetGroupId != null
@@ -176,6 +197,34 @@ export function useUpdateSettingsMutation() {
     onSuccess: (settings) => {
       queryClient.setQueryData(["settings"], settings);
       queryClient.invalidateQueries({ queryKey: ["settings"] });
+    },
+  });
+}
+
+export function useStorageCleanupMutation() {
+  return useMutation({
+    mutationFn: async (scope: StorageCleanupScope) => {
+      return postJsonAuth<StorageCleanupResult>("/storage/cleanup", {
+        scope,
+        confirmation: "DELETE",
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["guides"] });
+      queryClient.invalidateQueries({ queryKey: ["materials"] });
+      queryClient.invalidateQueries({ queryKey: ["group-messages"] });
+      queryClient.invalidateQueries({ queryKey: ["message-chain"] });
+      queryClient.invalidateQueries({ queryKey: ["group-message"] });
+      queryClient.invalidateQueries({ queryKey: ["groups"] });
+      queryClient.invalidateQueries({ queryKey: ["pipeline-status"] });
+      queryClient.invalidateQueries({ queryKey: ["pipeline-queue"] });
+      queryClient.invalidateQueries({ queryKey: ["pipeline-results"] });
+      queryClient.invalidateQueries({ queryKey: ["topic-candidates"] });
+      queryClient.invalidateQueries({ queryKey: ["traces"] });
+      queryClient.invalidateQueries({ queryKey: ["trace"] });
+      queryClient.invalidateQueries({ queryKey: ["message-trace"] });
+      queryClient.invalidateQueries({ queryKey: ["flow-metrics"] });
+      queryClient.invalidateQueries({ queryKey: ["monitor"] });
     },
   });
 }

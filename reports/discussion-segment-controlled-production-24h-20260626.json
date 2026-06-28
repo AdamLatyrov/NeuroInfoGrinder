@@ -1,0 +1,56 @@
+{
+  "report": "discussion-segment-controlled-production-24h-20260626",
+  "status": "INITIAL_SNAPSHOT_NOT_FINAL_24H",
+  "effectiveEnableTime": "2026-06-26T16:23:22Z",
+  "capturedAt": "2026-06-26T16:38:00Z",
+  "counts": {
+    "segmentsDetectedAfterEnable": 0,
+    "scorerAcceptedAfterEnable": 0,
+    "llmJudgeCallsAfterEnable": 0,
+    "llmJudgeSuccessAfterEnable": 0,
+    "llmJudgeErrorsAfterEnable": 0,
+    "generationCallsAfterEnable": 0,
+    "generationSuccessAfterEnable": 0,
+    "generationErrorsAfterEnable": 0,
+    "draftMaterialsAfterEnable": 0,
+    "publishedMaterialsAfterEnable": 0,
+    "discussionMaterialsToday": 3,
+    "discussionMaterialsTotalActive": 3,
+    "knowledgeItemsTotalActive": 24,
+    "materialsMissingSourcesAfterEnable": 0,
+    "segmentsMissingSourcesAfterEnable": 0
+  },
+  "guards": {
+    "freshOnly": "PASS",
+    "draftOnly": "PASS",
+    "dailyCap": "PASS_WITH_NOTE_DAILY_COUNT_ALREADY_3_FROM_PRE_ENABLE_CONTROLLED_MATERIALS",
+    "perChatTopicCap": "NOT_OBSERVED",
+    "requireLlmAccepted": "NOT_OBSERVED",
+    "riskSensitiveSkip": "NOT_OBSERVED",
+    "stopOnProviderOrGenerationError": "NOT_OBSERVED",
+    "noBacklogReprocess": "PASS",
+    "sourceTraceVisibility": "PASS_FOR_EXISTING_CONTROLLED_MATERIALS"
+  },
+  "existingControlledMaterials": [
+    { "id": 25, "segmentId": 120, "artifactType": "SUMMARY", "status": "DRAFT", "sourceCount": 6, "createdAt": "2026-06-26T15:24:01Z" },
+    { "id": 24, "segmentId": 119, "artifactType": "GUIDE", "status": "DRAFT", "sourceCount": 6, "createdAt": "2026-06-26T15:20:06Z" },
+    { "id": 23, "segmentId": 118, "artifactType": "GUIDE", "status": "DRAFT", "sourceCount": 6, "createdAt": "2026-06-26T15:19:04Z" }
+  ],
+  "serviceHealth": {
+    "backend": "healthy",
+    "frontend": "healthy",
+    "modelWorker": "healthy",
+    "postgres": "healthy",
+    "redis": "healthy",
+    "sshSocks": "healthy",
+    "tor": "healthy",
+    "publicUrlHttpStatus": 200,
+    "backendLogsSample": "no runtime errors observed"
+  },
+  "final24hEligibleAfter": "2026-06-27T16:23:22Z",
+  "artifacts": [
+    "reports/discussion-controlled-production-monitor-raw-20260626.json",
+    "reports/discussion-segment-controlled-mode-enable-20260626.md",
+    "reports/discussion-segment-controlled-mode-enable-20260626.json"
+  ]
+}

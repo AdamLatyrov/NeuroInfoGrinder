@@ -79,6 +79,18 @@ function formatGroupName(group: Group) {
     : `Группа ${group.telegramChatId}`;
 }
 
+function formatLast24h(group: Group) {
+  return group.rawMessagesLast24h == null ? "—" : group.rawMessagesLast24h.toLocaleString();
+}
+
+function formatTotalMessages(group: Group) {
+  return group.rawMessagesTotal == null ? "—" : group.rawMessagesTotal.toLocaleString();
+}
+
+function formatTopics(group: Group) {
+  return group.topicsCount == null ? "—" : group.topicsCount.toLocaleString();
+}
+
 export function GroupsPage() {
   const [viewMode, setViewMode] = useState<ViewMode>("chat");
   const [infoOpen, setInfoOpen] = useState(false);
@@ -99,7 +111,7 @@ export function GroupsPage() {
         description="Источники данных и метрики обработки"
         actions={{
           primary: {
-            label: syncGroupsMutation.isPending ? "Подтягиваю..." : "Подтянуть группы",
+            label: syncGroupsMutation.isPending ? "Синхронизация..." : "Синхронизировать чаты",
             icon: <ArrowsClockwise size={16} weight="regular" />,
             onClick: syncGroups,
           },
@@ -160,7 +172,7 @@ function GroupsTable({
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
   const [backgroundSyncNotice, setBackgroundSyncNotice] = useState<string | null>(null);
 
-  const groupsQuery = useGroupsQuery({ size: 200 });
+  const groupsQuery = useGroupsQuery({ accountId: "1", size: 200 });
   const updateGroupMutation = useUpdateGroupMutation();
   const bulkToggleMutation = useBulkToggleMutation();
   const pendingGroupId = updateGroupMutation.isPending ? updateGroupMutation.variables?.id ?? null : null;
@@ -187,7 +199,7 @@ function GroupsTable({
             : filter === "disabled"
               ? !group.enabled
               : filter === "high"
-                ? group.messagesPerDay > 5000
+                ? (group.rawMessagesLast24h ?? 0) > 5000
                 : true;
 
         return matchesSearch && matchesFilter;
@@ -206,7 +218,7 @@ function GroupsTable({
       {
         key: "direct",
         title: "Telegram чаты",
-        description: "Личные диалоги и direct chats, подтянутые из Telegram.",
+        description: "Личные диалоги, подтянутые из Telegram.",
         items: filteredGroups.filter((group) => group.sourceType === "DIRECT_CHAT"),
       },
     ],
@@ -259,7 +271,7 @@ function GroupsTable({
 
       {mutationError && (
         <div className="rounded-xl border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger">
-          ?? ??????? ???????? ???. ????????? ?? ??????? ?? ??????????: {mutationError}
+          Не удалось изменить группы. Проверьте подключение и попробуйте снова: {mutationError}
         </div>
       )}
 
@@ -308,7 +320,7 @@ function GroupsTable({
             className="absolute left-3 top-1/2 -translate-y-1/2 text-text-weak"
           />
           <Input
-            placeholder="Поиск по названию / Chat ID / username"
+            placeholder="Поиск по названию, ID чата или юзернейму"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             className="pl-9"
@@ -357,19 +369,21 @@ function GroupsTable({
                   <TableHead className="w-16">Вкл</TableHead>
                   <TableHead>Источник</TableHead>
                   <TableHead>Тип</TableHead>
-                  <TableHead>Chat ID</TableHead>
+                  <TableHead>ID чата</TableHead>
                   <TableHead>Форум</TableHead>
                   <TableHead>Категория</TableHead>
-                  <TableHead>Account</TableHead>
-                  <TableHead className="text-right">Msg/д</TableHead>
-                  <TableHead className="text-right">Гайдов</TableHead>
-                  <TableHead>Последнее чтение</TableHead>
+                  <TableHead>Аккаунт</TableHead>
+                  <TableHead className="text-right">За 24ч</TableHead>
+                  <TableHead className="text-right">Всего</TableHead>
+                  <TableHead className="text-right">Тем</TableHead>
+                  <TableHead className="text-right">Материалов</TableHead>
+                  <TableHead>Последнее сообщение</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {groupedSections.every((section) => section.items.length === 0) ? (
                   <TableRow>
-                    <TableCell colSpan={11} className="py-10 text-center text-sm text-text-muted">
+                      <TableCell colSpan={13} className="py-10 text-center text-sm text-text-muted">
                       По текущему фильтру ничего не найдено.
                     </TableCell>
                   </TableRow>
@@ -378,7 +392,7 @@ function GroupsTable({
                     <Fragment key={section.key}>
                       {section.items.length > 0 && (
                         <TableRow className="bg-bg-app/60 hover:bg-bg-app/60">
-                          <TableCell colSpan={11} className="py-3">
+                          <TableCell colSpan={13} className="py-3">
                             <div className="flex flex-col gap-1">
                               <span className="text-sm font-semibold text-text-strong">{section.title}</span>
                               <span className="text-xs text-text-muted">{section.description}</span>
@@ -455,13 +469,19 @@ function GroupsTable({
                           </TableCell>
                           <TableCell>{group.accountId ?? "—"}</TableCell>
                           <TableCell className="text-right font-mono-value">
-                            {Number(group.messagesPerDay).toLocaleString()}
+                            {formatLast24h(group)}
+                          </TableCell>
+                          <TableCell className="text-right font-mono-value">
+                            {formatTotalMessages(group)}
+                          </TableCell>
+                          <TableCell className="text-right font-mono-value">
+                            {formatTopics(group)}
                           </TableCell>
                           <TableCell className="text-right font-mono-value">
                             {group.guidesFound}
                           </TableCell>
                           <TableCell className="text-sm text-text-muted">
-                            {group.lastReadAt ?? "—"}
+                            {group.latestRawMessageAt ?? group.lastReadAt ?? "—"}
                           </TableCell>
                         </TableRow>
                       ))}

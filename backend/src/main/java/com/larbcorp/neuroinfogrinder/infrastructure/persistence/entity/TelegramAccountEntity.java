@@ -14,6 +14,8 @@ import java.time.Instant;
 @Table(name = "telegram_accounts")
 public class TelegramAccountEntity extends BaseEntity {
 
+    private Long ownerUserId;
+
     private Long telegramUserId;
 
     @Column(length = 64)

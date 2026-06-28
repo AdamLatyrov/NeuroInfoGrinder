@@ -1,0 +1,160 @@
+{
+  "report": "material-style-source-transparency-20260626",
+  "verdict": "PROMPT_API_UI_FIXED_EXISTING_BODIES_REQUIRE_APPROVAL_TO_REWRITE",
+  "filesChanged": [
+    "backend/2.0/src/main/java/com/larbcorp/neuroinfogrinder2/replay/ReplayV2Service.java",
+    "backend/2.0/src/main/java/com/larbcorp/neuroinfogrinder2/materials/KnowledgeMaterialService.java",
+    "backend/2.0/src/test/java/com/larbcorp/neuroinfogrinder2/replay/ReplayV2ServiceDiscussionSegmentTest.java",
+    "backend/2.0/src/test/java/com/larbcorp/neuroinfogrinder2/materials/KnowledgeMaterialServiceTest.java",
+    "frontend/src/pages/guides/GuideDetailPage.tsx",
+    "frontend/src/shared/types.ts",
+    "scripts/material-style-count-check-20260626.sql"
+  ],
+  "promptChanges": {
+    "forbidsMetaChatFraming": true,
+    "requiresStandaloneMaterialStyle": true,
+    "requiresOutputStructures": ["GUIDE", "ANSWER", "SUMMARY", "REFERENCE"],
+    "sourceGroundingRequired": true,
+    "unsupportedExactValuesBlocked": true,
+    "externalProviderCaveatRequired": true,
+    "externalProviderCaveat": "Проверьте актуальную документацию провайдера: лимиты, тарифы, поведение cache и доступность моделей могут меняться."
+  },
+  "testsAdded": [
+    "discussionSegmentGuideGenerationPromptForbidsMetaChatFraming",
+    "discussionSegmentSummaryGenerationPromptForbidsMetaChatFraming",
+    "singleMessageGuideGenerationPromptForbidsMetaChatFraming",
+    "clusterGenerationPromptPreservesFactsAndBlocksUnsupportedExactValues",
+    "discussionSegmentDetailExposesOrderedSourcesAndHowBuiltSteps"
+  ],
+  "testEvidence": {
+    "redPhase": "Targeted tests failed before fix on missing prompt guardrails and API source/how-built contract.",
+    "targeted": "mvn \"-Dtest=ReplayV2ServiceDiscussionSegmentTest,KnowledgeMaterialServiceTest\" test -> 18 passed",
+    "backendFull": "mvn test -> 67 passed",
+    "frontendBuild": "npm run build -> passed"
+  },
+  "backendApiFieldsAddedOrVerified": [
+    "materialId",
+    "type",
+    "candidateType",
+    "sourceCount",
+    "segmentId",
+    "clusterId",
+    "segmentScore",
+    "segmentDecision",
+    "segmentSignals",
+    "segmentSuppressionReasons",
+    "segmentTimeWindow",
+    "generationSkipReason",
+    "quality",
+    "confidence",
+    "sourceMessages[].orderIndex",
+    "sourceMessages[].rawId",
+    "sourceMessages[].datasetMessageId",
+    "sourceMessages[].replayRunMessageId",
+    "sourceMessages[].chatTitle",
+    "sourceMessages[].topicId",
+    "sourceMessages[].threadId",
+    "sourceMessages[].messageDate",
+    "sourceMessages[].role",
+    "sourceMessages[].author",
+    "sourceMessages[].text",
+    "sourceMessages[].textUnavailableReason",
+    "sourceMessages[].appMessageUrl",
+    "sourceMessages[].telegramMessageUrl",
+    "sourceMessages[].telegramLinkReason",
+    "traceStages[]",
+    "providerCalls[]",
+    "providerCalls[].requestPreview",
+    "providerCalls[].responsePreview",
+    "providerCalls[].responseJson",
+    "howBuiltSteps[]"
+  ],
+  "frontendUiChanges": [
+    "Uses Источники материала for multi-source materials",
+    "Shows multi-source subtitle",
+    "Shows candidate/source/raw/chat/judge/generation summary",
+    "Shows ordered source message cards",
+    "First three sources expanded with Показать все источники for the rest",
+    "Shows Как был составлен материал block",
+    "Shows Trace / provider calls block with collapsed details",
+    "Shows нет данных for null or zero duration instead of fake 0 мс"
+  ],
+  "materialVerification": [
+    {
+      "materialId": 23,
+      "candidateType": "DISCUSSION_SEGMENT",
+      "sourceCount": 6,
+      "sourceMessages": 6,
+      "howBuiltSteps": 5,
+      "traceStages": 114,
+      "providerCalls": 1,
+      "forbiddenPhrasesInExistingBody": ["участники обсуждения", "в обсуждении"],
+      "regenerationRecommended": true
+    },
+    {
+      "materialId": 24,
+      "candidateType": "DISCUSSION_SEGMENT",
+      "sourceCount": 6,
+      "sourceMessages": 6,
+      "howBuiltSteps": 5,
+      "traceStages": 114,
+      "providerCalls": 1,
+      "forbiddenPhrasesInExistingBody": ["участники обсуждения", "в обсуждении"],
+      "regenerationRecommended": true
+    },
+    {
+      "materialId": 25,
+      "candidateType": "DISCUSSION_SEGMENT",
+      "sourceCount": 6,
+      "sourceMessages": 6,
+      "howBuiltSteps": 5,
+      "traceStages": 114,
+      "providerCalls": 1,
+      "forbiddenPhrasesInExistingBody": ["в обсуждении"],
+      "regenerationRecommended": true
+    }
+  ],
+  "browserCheckNotes": {
+    "materialsChecked": ["/materials/23", "/materials/24", "/materials/25"],
+    "sourceSummaryVisible": true,
+    "orderedSourcesVisible": true,
+    "traceProviderVisible": true,
+    "oldSingleSourceLabelAbsent": true,
+    "fakeZeroDurationAbsent": true,
+    "note": "Russian accessibility-tree text is mojibake through WebBridge; verification used structural ASCII checks plus API snapshots."
+  },
+  "productionDeployment": {
+    "backendFrontendDeploy": "./scripts/deploy-fast.ps1 -Target all",
+    "frontendFollowUpDeploy": "./scripts/deploy-fast.ps1 -Target frontend",
+    "status": {
+      "backend": "healthy",
+      "frontend": "healthy",
+      "modelWorker": "healthy",
+      "postgres": "healthy",
+      "redis": "healthy",
+      "sshSocks": "healthy",
+      "tor": "healthy",
+      "publicUrl": 200
+    }
+  },
+  "notTouched": {
+    "backlogReprocess": false,
+    "newMaterialsGenerated": false,
+    "existingBodiesRewritten": false,
+    "providerConfigChanged": false,
+    "thresholdsChanged": false,
+    "telegramSessionAuthProxyTouched": false,
+    "publicDiscoveryGuardWeakened": false,
+    "autoPublish": false,
+    "materialsDeletedOrArchived": false
+  },
+  "countCheck": {
+    "discussionSegmentMaterials": 3,
+    "activeKnowledgeItems": 24
+  },
+  "artifacts": [
+    "reports/material-23-style-source-20260626.json",
+    "reports/material-24-style-source-20260626.json",
+    "reports/material-25-style-source-20260626.json"
+  ]
+}

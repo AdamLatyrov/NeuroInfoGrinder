@@ -34,6 +34,8 @@ public class GroupEntity extends BaseEntity {
 
     private Long accountId;
 
+    private Long ownerUserId;
+
     private Long lastReadMessageId = 0L;
 
     private Instant lastReadAt;

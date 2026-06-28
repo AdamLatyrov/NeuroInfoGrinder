@@ -1,0 +1,2085 @@
+﻿{
+    "runSummary": [
+        {
+            "mode": "FULL_INTELLIGENCE_REPLAY",
+            "run_id": 6,
+            "status": "COMPLETED",
+            "run_name": "verification full replay 500",
+            "dataset_id": 3,
+            "started_at": "2026-06-23T00:53:33.445184+03:00",
+            "duration_ms": 0.000000,
+            "finished_at": "2026-06-23T00:53:33.445184+03:00",
+            "total_messages": 500,
+            "pipeline_version": "full-intelligence-replay-v2.0",
+            "estimated_cost_usd": 0.012150,
+            "processed_messages": 500,
+            "provider_calls_total": 2,
+            "knowledge_items_total": 0
+        }
+    ],
+    "stageOrder": [
+        {
+            "error": null,
+            "stage": "DATASET_IMPORT",
+            "status": "COMPLETED",
+            "latency_ms": 0,
+            "started_at": "2026-06-23T00:53:33.445184+03:00",
+            "error_count": 0,
+            "input_count": 500,
+            "metrics_json": {
+                "datasetId": 3.0
+            },
+            "output_count": 500,
+            "skipped_count": 0,
+            "provider_call_count": 0,
+            "local_model_call_count": 0
+        },
+        {
+            "error": null,
+            "stage": "NORMALIZATION",
+            "status": "COMPLETED",
+            "latency_ms": 725,
+            "started_at": "2026-06-23T00:53:33.445184+03:00",
+            "error_count": 0,
+            "input_count": 500,
+            "metrics_json": {
+                "normalized": 500.0
+            },
+            "output_count": 500,
+            "skipped_count": 0,
+            "provider_call_count": 0,
+            "local_model_call_count": 0
+        },
+        {
+            "error": null,
+            "stage": "FEATURE_EXTRACTION",
+            "status": "COMPLETED",
+            "latency_ms": 726,
+            "started_at": "2026-06-23T00:53:33.445184+03:00",
+            "error_count": 0,
+            "input_count": 500,
+            "metrics_json": {
+                "hardSignals": 99.0
+            },
+            "output_count": 500,
+            "skipped_count": 0,
+            "provider_call_count": 0,
+            "local_model_call_count": 0
+        },
+        {
+            "error": null,
+            "stage": "RULE_CLASSIFICATION",
+            "status": "COMPLETED",
+            "latency_ms": 727,
+            "started_at": "2026-06-23T00:53:33.445184+03:00",
+            "error_count": 0,
+            "input_count": 500,
+            "metrics_json": {
+                "candidates": 298.0
+            },
+            "output_count": 298,
+            "skipped_count": 202,
+            "provider_call_count": 0,
+            "local_model_call_count": 0
+        },
+        {
+            "error": null,
+            "stage": "BERT_CLASSIFICATION",
+            "status": "COMPLETED",
+            "latency_ms": 315,
+            "started_at": "2026-06-23T00:53:33.445184+03:00",
+            "error_count": 0,
+            "input_count": 298,
+            "metrics_json": {
+                "classifierRunId": 2.0
+            },
+            "output_count": 298,
+            "skipped_count": 0,
+            "provider_call_count": 0,
+            "local_model_call_count": 1
+        },
+        {
+            "error": null,
+            "stage": "BGE_EMBEDDINGS",
+            "status": "COMPLETED",
+            "latency_ms": 70612,
+            "started_at": "2026-06-23T00:53:33.445184+03:00",
+            "error_count": 0,
+            "input_count": 223,
+            "metrics_json": {
+                "embedding_count": 223.0
+            },
+            "output_count": 223,
+            "skipped_count": 277,
+            "provider_call_count": 0,
+            "local_model_call_count": 1
+        },
+        {
+            "error": null,
+            "stage": "DEDUPLICATION",
+            "status": "COMPLETED",
+            "latency_ms": 38,
+            "started_at": "2026-06-23T00:53:33.445184+03:00",
+            "error_count": 0,
+            "input_count": 500,
+            "metrics_json": {
+                "duplicate_count": 29.0
+            },
+            "output_count": 471,
+            "skipped_count": 29,
+            "provider_call_count": 0,
+            "local_model_call_count": 0
+        },
+        {
+            "error": null,
+            "stage": "SEMANTIC_SEARCH",
+            "status": "COMPLETED",
+            "latency_ms": 116,
+            "started_at": "2026-06-23T00:53:33.445184+03:00",
+            "error_count": 0,
+            "input_count": 223,
+            "metrics_json": {
+                "neighbors": 11.0
+            },
+            "output_count": 11,
+            "skipped_count": 0,
+            "provider_call_count": 0,
+            "local_model_call_count": 0
+        },
+        {
+            "error": null,
+            "stage": "MICROCLUSTERING",
+            "status": "COMPLETED",
+            "latency_ms": 16,
+            "started_at": "2026-06-23T00:53:33.445184+03:00",
+            "error_count": 0,
+            "input_count": 223,
+            "metrics_json": {
+                "microcluster_count": 7.0
+            },
+            "output_count": 7,
+            "skipped_count": 0,
+            "provider_call_count": 0,
+            "local_model_call_count": 0
+        },
+        {
+            "error": null,
+            "stage": "MACROCLUSTERING",
+            "status": "COMPLETED",
+            "latency_ms": 12,
+            "started_at": "2026-06-23T00:53:33.445184+03:00",
+            "error_count": 0,
+            "input_count": 7,
+            "metrics_json": {
+                "macrocluster_count": 7.0
+            },
+            "output_count": 7,
+            "skipped_count": 0,
+            "provider_call_count": 0,
+            "local_model_call_count": 0
+        },
+        {
+            "error": null,
+            "stage": "TOPIC_DISCOVERY",
+            "status": "COMPLETED",
+            "latency_ms": 9,
+            "started_at": "2026-06-23T00:53:33.445184+03:00",
+            "error_count": 0,
+            "input_count": 500,
+            "metrics_json": {
+                "method": "CLUSTER_ENTITY_FREQUENCY"
+            },
+            "output_count": 12,
+            "skipped_count": 0,
+            "provider_call_count": 0,
+            "local_model_call_count": 0
+        },
+        {
+            "error": null,
+            "stage": "CLUSTER_SCORING",
+            "status": "COMPLETED",
+            "latency_ms": 7,
+            "started_at": "2026-06-23T00:53:33.445184+03:00",
+            "error_count": 0,
+            "input_count": 7,
+            "metrics_json": {
+                "clusters_scored": 7.0
+            },
+            "output_count": 7,
+            "skipped_count": 0,
+            "provider_call_count": 0,
+            "local_model_call_count": 0
+        },
+        {
+            "error": null,
+            "stage": "LLM_CLUSTER_JUDGE_AND_ROUTING",
+            "status": "COMPLETED",
+            "latency_ms": 14243,
+            "started_at": "2026-06-23T00:53:33.445184+03:00",
+            "error_count": 0,
+            "input_count": 7,
+            "metrics_json": {
+                "sent": 2.0
+            },
+            "output_count": 2,
+            "skipped_count": 5,
+            "provider_call_count": 0,
+            "local_model_call_count": 2
+        },
+        {
+            "error": null,
+            "stage": "KNOWLEDGE_GENERATION",
+            "status": "COMPLETED",
+            "latency_ms": 14243,
+            "started_at": "2026-06-23T00:53:33.445184+03:00",
+            "error_count": 0,
+            "input_count": 2,
+            "metrics_json": {
+                "generated": 0.0
+            },
+            "output_count": 0,
+            "skipped_count": 2,
+            "provider_call_count": 0,
+            "local_model_call_count": 0
+        },
+        {
+            "error": null,
+            "stage": "LABELING_ACCUMULATION",
+            "status": "COMPLETED",
+            "latency_ms": 0,
+            "started_at": "2026-06-23T00:53:33.445184+03:00",
+            "error_count": 0,
+            "input_count": 7,
+            "metrics_json": {
+                "created": 0.0
+            },
+            "output_count": 0,
+            "skipped_count": 0,
+            "provider_call_count": 0,
+            "local_model_call_count": 0
+        },
+        {
+            "error": null,
+            "stage": "METRICS_AGGREGATION",
+            "status": "COMPLETED",
+            "latency_ms": 9,
+            "started_at": "2026-06-23T00:53:33.445184+03:00",
+            "error_count": 0,
+            "input_count": 39,
+            "metrics_json": {
+                "metrics": 39.0
+            },
+            "output_count": 39,
+            "skipped_count": 0,
+            "provider_call_count": 0,
+            "local_model_call_count": 0
+        },
+        {
+            "error": null,
+            "stage": "JSON_EXPORT",
+            "status": "COMPLETED",
+            "latency_ms": 0,
+            "started_at": "2026-06-23T00:53:33.445184+03:00",
+            "error_count": 0,
+            "input_count": 1,
+            "metrics_json": {
+                "path": "runs\\replay-6\\result.json"
+            },
+            "output_count": 1,
+            "skipped_count": 0,
+            "provider_call_count": 0,
+            "local_model_call_count": 0
+        },
+        {
+            "error": null,
+            "stage": "JSON_EXPORT",
+            "status": "COMPLETED",
+            "latency_ms": 0,
+            "started_at": "2026-06-23T00:57:01.086291+03:00",
+            "error_count": 0,
+            "input_count": 1,
+            "metrics_json": {
+                "path": "runs\\replay-6\\result.json"
+            },
+            "output_count": 1,
+            "skipped_count": 0,
+            "provider_call_count": 0,
+            "local_model_call_count": 0
+        },
+        {
+            "error": null,
+            "stage": "JSON_EXPORT",
+            "status": "COMPLETED",
+            "latency_ms": 0,
+            "started_at": "2026-06-23T01:07:23.801794+03:00",
+            "error_count": 0,
+            "input_count": 1,
+            "metrics_json": {
+                "path": "runs\\replay-6\\result.json"
+            },
+            "output_count": 1,
+            "skipped_count": 0,
+            "provider_call_count": 0,
+            "local_model_call_count": 0
+        }
+    ],
+    "clusterShape": {
+        "embedded": 223,
+        "avgMacroSize": 2.2857142857142857,
+        "avgMicroSize": 2.2857142857142857,
+        "maxMacroSize": 3,
+        "maxMicroSize": 3,
+        "embeddedUnclustered": 207,
+        "bertUsefulUnclustered": 282,
+        "hardSignalUnclustered": 90
+    },
+    "llmAvoidance": [
+        {
+            "run_id": 6,
+            "llm_avoided_by_bert": 0.000000,
+            "llm_avoided_by_cache": 0.000000,
+            "llm_avoided_by_noise": 202.000000,
+            "llm_avoided_by_rules": 202.000000,
+            "llm_avoided_by_duplicate": 29.000000,
+            "llm_avoided_by_low_score": 5.000000
+        }
+    ],
+    "stageSummary": [
+        {
+            "error": null,
+            "stage": "BERT_CLASSIFICATION",
+            "run_id": 6,
+            "status": "COMPLETED",
+            "latency_ms": 315,
+            "error_count": 0,
+            "input_count": 298,
+            "metrics_json": {
+                "classifierRunId": 2.0
+            },
+            "output_count": 298,
+            "skipped_count": 0,
+            "cache_hit_count": 0,
+            "provider_call_count": 0,
+            "local_model_call_count": 1
+        },
+        {
+            "error": null,
+            "stage": "BGE_EMBEDDINGS",
+            "run_id": 6,
+            "status": "COMPLETED",
+            "latency_ms": 70612,
+            "error_count": 0,
+            "input_count": 223,
+            "metrics_json": {
+                "embedding_count": 223.0
+            },
+            "output_count": 223,
+            "skipped_count": 277,
+            "cache_hit_count": 0,
+            "provider_call_count": 0,
+            "local_model_call_count": 1
+        },
+        {
+            "error": null,
+            "stage": "CLUSTER_SCORING",
+            "run_id": 6,
+            "status": "COMPLETED",
+            "latency_ms": 7,
+            "error_count": 0,
+            "input_count": 7,
+            "metrics_json": {
+                "clusters_scored": 7.0
+            },
+            "output_count": 7,
+            "skipped_count": 0,
+            "cache_hit_count": 0,
+            "provider_call_count": 0,
+            "local_model_call_count": 0
+        },
+        {
+            "error": null,
+            "stage": "DATASET_IMPORT",
+            "run_id": 6,
+            "status": "COMPLETED",
+            "latency_ms": 0,
+            "error_count": 0,
+            "input_count": 500,
+            "metrics_json": {
+                "datasetId": 3.0
+            },
+            "output_count": 500,
+            "skipped_count": 0,
+            "cache_hit_count": 0,
+            "provider_call_count": 0,
+            "local_model_call_count": 0
+        },
+        {
+            "error": null,
+            "stage": "DEDUPLICATION",
+            "run_id": 6,
+            "status": "COMPLETED",
+            "latency_ms": 38,
+            "error_count": 0,
+            "input_count": 500,
+            "metrics_json": {
+                "duplicate_count": 29.0
+            },
+            "output_count": 471,
+            "skipped_count": 29,
+            "cache_hit_count": 0,
+            "provider_call_count": 0,
+            "local_model_call_count": 0
+        },
+        {
+            "error": null,
+            "stage": "FEATURE_EXTRACTION",
+            "run_id": 6,
+            "status": "COMPLETED",
+            "latency_ms": 726,
+            "error_count": 0,
+            "input_count": 500,
+            "metrics_json": {
+                "hardSignals": 99.0
+            },
+            "output_count": 500,
+            "skipped_count": 0,
+            "cache_hit_count": 0,
+            "provider_call_count": 0,
+            "local_model_call_count": 0
+        },
+        {
+            "error": null,
+            "stage": "JSON_EXPORT",
+            "run_id": 6,
+            "status": "COMPLETED",
+            "latency_ms": 0,
+            "error_count": 0,
+            "input_count": 1,
+            "metrics_json": {
+                "path": "runs\\replay-6\\result.json"
+            },
+            "output_count": 1,
+            "skipped_count": 0,
+            "cache_hit_count": 0,
+            "provider_call_count": 0,
+            "local_model_call_count": 0
+        },
+        {
+            "error": null,
+            "stage": "JSON_EXPORT",
+            "run_id": 6,
+            "status": "COMPLETED",
+            "latency_ms": 0,
+            "error_count": 0,
+            "input_count": 1,
+            "metrics_json": {
+                "path": "runs\\replay-6\\result.json"
+            },
+            "output_count": 1,
+            "skipped_count": 0,
+            "cache_hit_count": 0,
+            "provider_call_count": 0,
+            "local_model_call_count": 0
+        },
+        {
+            "error": null,
+            "stage": "JSON_EXPORT",
+            "run_id": 6,
+            "status": "COMPLETED",
+            "latency_ms": 0,
+            "error_count": 0,
+            "input_count": 1,
+            "metrics_json": {
+                "path": "runs\\replay-6\\result.json"
+            },
+            "output_count": 1,
+            "skipped_count": 0,
+            "cache_hit_count": 0,
+            "provider_call_count": 0,
+            "local_model_call_count": 0
+        },
+        {
+            "error": null,
+            "stage": "KNOWLEDGE_GENERATION",
+            "run_id": 6,
+            "status": "COMPLETED",
+            "latency_ms": 14243,
+            "error_count": 0,
+            "input_count": 2,
+            "metrics_json": {
+                "generated": 0.0
+            },
+            "output_count": 0,
+            "skipped_count": 2,
+            "cache_hit_count": 0,
+            "provider_call_count": 0,
+            "local_model_call_count": 0
+        },
+        {
+            "error": null,
+            "stage": "LABELING_ACCUMULATION",
+            "run_id": 6,
+            "status": "COMPLETED",
+            "latency_ms": 0,
+            "error_count": 0,
+            "input_count": 7,
+            "metrics_json": {
+                "created": 0.0
+            },
+            "output_count": 0,
+            "skipped_count": 0,
+            "cache_hit_count": 0,
+            "provider_call_count": 0,
+            "local_model_call_count": 0
+        },
+        {
+            "error": null,
+            "stage": "LLM_CLUSTER_JUDGE_AND_ROUTING",
+            "run_id": 6,
+            "status": "COMPLETED",
+            "latency_ms": 14243,
+            "error_count": 0,
+            "input_count": 7,
+            "metrics_json": {
+                "sent": 2.0
+            },
+            "output_count": 2,
+            "skipped_count": 5,
+            "cache_hit_count": 0,
+            "provider_call_count": 0,
+            "local_model_call_count": 2
+        },
+        {
+            "error": null,
+            "stage": "MACROCLUSTERING",
+            "run_id": 6,
+            "status": "COMPLETED",
+            "latency_ms": 12,
+            "error_count": 0,
+            "input_count": 7,
+            "metrics_json": {
+                "macrocluster_count": 7.0
+            },
+            "output_count": 7,
+            "skipped_count": 0,
+            "cache_hit_count": 0,
+            "provider_call_count": 0,
+            "local_model_call_count": 0
+        },
+        {
+            "error": null,
+            "stage": "METRICS_AGGREGATION",
+            "run_id": 6,
+            "status": "COMPLETED",
+            "latency_ms": 9,
+            "error_count": 0,
+            "input_count": 39,
+            "metrics_json": {
+                "metrics": 39.0
+            },
+            "output_count": 39,
+            "skipped_count": 0,
+            "cache_hit_count": 0,
+            "provider_call_count": 0,
+            "local_model_call_count": 0
+        },
+        {
+            "error": null,
+            "stage": "MICROCLUSTERING",
+            "run_id": 6,
+            "status": "COMPLETED",
+            "latency_ms": 16,
+            "error_count": 0,
+            "input_count": 223,
+            "metrics_json": {
+                "microcluster_count": 7.0
+            },
+            "output_count": 7,
+            "skipped_count": 0,
+            "cache_hit_count": 0,
+            "provider_call_count": 0,
+            "local_model_call_count": 0
+        },
+        {
+            "error": null,
+            "stage": "NORMALIZATION",
+            "run_id": 6,
+            "status": "COMPLETED",
+            "latency_ms": 725,
+            "error_count": 0,
+            "input_count": 500,
+            "metrics_json": {
+                "normalized": 500.0
+            },
+            "output_count": 500,
+            "skipped_count": 0,
+            "cache_hit_count": 0,
+            "provider_call_count": 0,
+            "local_model_call_count": 0
+        },
+        {
+            "error": null,
+            "stage": "RULE_CLASSIFICATION",
+            "run_id": 6,
+            "status": "COMPLETED",
+            "latency_ms": 727,
+            "error_count": 0,
+            "input_count": 500,
+            "metrics_json": {
+                "candidates": 298.0
+            },
+            "output_count": 298,
+            "skipped_count": 202,
+            "cache_hit_count": 0,
+            "provider_call_count": 0,
+            "local_model_call_count": 0
+        },
+        {
+            "error": null,
+            "stage": "SEMANTIC_SEARCH",
+            "run_id": 6,
+            "status": "COMPLETED",
+            "latency_ms": 116,
+            "error_count": 0,
+            "input_count": 223,
+            "metrics_json": {
+                "neighbors": 11.0
+            },
+            "output_count": 11,
+            "skipped_count": 0,
+            "cache_hit_count": 0,
+            "provider_call_count": 0,
+            "local_model_call_count": 0
+        },
+        {
+            "error": null,
+            "stage": "TOPIC_DISCOVERY",
+            "run_id": 6,
+            "status": "COMPLETED",
+            "latency_ms": 9,
+            "error_count": 0,
+            "input_count": 500,
+            "metrics_json": {
+                "method": "CLUSTER_ENTITY_FREQUENCY"
+            },
+            "output_count": 12,
+            "skipped_count": 0,
+            "cache_hit_count": 0,
+            "provider_call_count": 0,
+            "local_model_call_count": 0
+        }
+    ],
+    "topicSummary": [
+        {
+            "run_id": 6,
+            "avg_score": 1.00000000000000000000,
+            "topic_count": 12
+        }
+    ],
+    "clusterScores": [
+        {
+            "id": 4,
+            "run_id": 6,
+            "wtp_score": 0.3400,
+            "cluster_id": 4,
+            "created_at": "2026-06-23T00:53:33.445184+03:00",
+            "pain_score": 0.4700,
+            "final_score": 0.7500,
+            "trend_score": 0.3600,
+            "cluster_type": "MACRO",
+            "spam_penalty": 0.0000,
+            "novelty_score": 0.5500,
+            "unsafe_penalty": 0.0000,
+            "usefulness_score": 0.7500,
+            "duplicate_penalty": 0.0000,
+            "score_reasons_json": [
+                "semantic cohesion",
+                "message count",
+                "hard signal density"
+            ],
+            "publishability_score": 0.4900
+        },
+        {
+            "id": 3,
+            "run_id": 6,
+            "wtp_score": 0.3400,
+            "cluster_id": 3,
+            "created_at": "2026-06-23T00:53:33.445184+03:00",
+            "pain_score": 0.4700,
+            "final_score": 0.7500,
+            "trend_score": 0.3600,
+            "cluster_type": "MACRO",
+            "spam_penalty": 0.0000,
+            "novelty_score": 0.5500,
+            "unsafe_penalty": 0.0000,
+            "usefulness_score": 0.7500,
+            "duplicate_penalty": 0.0000,
+            "score_reasons_json": [
+                "semantic cohesion",
+                "message count",
+                "hard signal density"
+            ],
+            "publishability_score": 0.4900
+        },
+        {
+            "id": 7,
+            "run_id": 6,
+            "wtp_score": 0.3100,
+            "cluster_id": 7,
+            "created_at": "2026-06-23T00:53:33.445184+03:00",
+            "pain_score": 0.4300,
+            "final_score": 0.6500,
+            "trend_score": 0.3400,
+            "cluster_type": "MACRO",
+            "spam_penalty": 0.0000,
+            "novelty_score": 0.5500,
+            "unsafe_penalty": 0.0000,
+            "usefulness_score": 0.6500,
+            "duplicate_penalty": 0.0000,
+            "score_reasons_json": [
+                "semantic cohesion",
+                "message count",
+                "hard signal density"
+            ],
+            "publishability_score": 0.4600
+        },
+        {
+            "id": 1,
+            "run_id": 6,
+            "wtp_score": 0.3100,
+            "cluster_id": 1,
+            "created_at": "2026-06-23T00:53:33.445184+03:00",
+            "pain_score": 0.4300,
+            "final_score": 0.6500,
+            "trend_score": 0.3400,
+            "cluster_type": "MACRO",
+            "spam_penalty": 0.0000,
+            "novelty_score": 0.5500,
+            "unsafe_penalty": 0.0000,
+            "usefulness_score": 0.6500,
+            "duplicate_penalty": 0.0000,
+            "score_reasons_json": [
+                "semantic cohesion",
+                "message count",
+                "hard signal density"
+            ],
+            "publishability_score": 0.4600
+        },
+        {
+            "id": 5,
+            "run_id": 6,
+            "wtp_score": 0.3100,
+            "cluster_id": 5,
+            "created_at": "2026-06-23T00:53:33.445184+03:00",
+            "pain_score": 0.4300,
+            "final_score": 0.6500,
+            "trend_score": 0.3400,
+            "cluster_type": "MACRO",
+            "spam_penalty": 0.0000,
+            "novelty_score": 0.5500,
+            "unsafe_penalty": 0.0000,
+            "usefulness_score": 0.6500,
+            "duplicate_penalty": 0.0000,
+            "score_reasons_json": [
+                "semantic cohesion",
+                "message count",
+                "hard signal density"
+            ],
+            "publishability_score": 0.4600
+        },
+        {
+            "id": 6,
+            "run_id": 6,
+            "wtp_score": 0.3100,
+            "cluster_id": 6,
+            "created_at": "2026-06-23T00:53:33.445184+03:00",
+            "pain_score": 0.4300,
+            "final_score": 0.6500,
+            "trend_score": 0.3400,
+            "cluster_type": "MACRO",
+            "spam_penalty": 0.0000,
+            "novelty_score": 0.5500,
+            "unsafe_penalty": 0.0000,
+            "usefulness_score": 0.6500,
+            "duplicate_penalty": 0.0000,
+            "score_reasons_json": [
+                "semantic cohesion",
+                "message count",
+                "hard signal density"
+            ],
+            "publishability_score": 0.4600
+        },
+        {
+            "id": 2,
+            "run_id": 6,
+            "wtp_score": 0.3100,
+            "cluster_id": 2,
+            "created_at": "2026-06-23T00:53:33.445184+03:00",
+            "pain_score": 0.4300,
+            "final_score": 0.6500,
+            "trend_score": 0.3400,
+            "cluster_type": "MACRO",
+            "spam_penalty": 0.0000,
+            "novelty_score": 0.5500,
+            "unsafe_penalty": 0.0000,
+            "usefulness_score": 0.6500,
+            "duplicate_penalty": 0.0000,
+            "score_reasons_json": [
+                "semantic cohesion",
+                "message count",
+                "hard signal density"
+            ],
+            "publishability_score": 0.4600
+        }
+    ],
+    "providerCalls": [
+        {
+            "id": 1,
+            "stage": "LLM_CLUSTER_JUDGE_AND_ROUTING",
+            "status": "SUCCESS",
+            "error_code": null,
+            "model_name": "gpt-5.5",
+            "input_tokens": 322,
+            "error_message": null,
+            "output_tokens": 343,
+            "response_json": {
+                "title": "Runic добавил пополнение в рублях и генерацию изображений",
+                "summary": "Кластер согласован: все сообщения описывают один и тот же апдейт Runic — пополнение баланса в рублях через Platega/SBP/карты и запуск эндпоинта /v1/images/generations с моделями gpt-image-2, nano-banana-pro и nano-banana-2, включая стартовые цены.",
+                "decision": "accept",
+                "confidence": 0.98,
+                "evidenceIds": [
+                    133,
+                    182,
+                    214
+                ],
+                "safetyNotes": "Секреты или чувствительные данные не обнаружены. Контент носит информационно-рекламный характер.",
+                "artifactType": "judge"
+            },
+            "estimated_cost_usd": 0.006755
+        },
+        {
+            "id": 2,
+            "stage": "LLM_CLUSTER_JUDGE_AND_ROUTING",
+            "status": "SUCCESS",
+            "error_code": null,
+            "model_name": "gpt-5.5",
+            "input_tokens": 146,
+            "error_message": null,
+            "output_tokens": 311,
+            "response_json": {
+                "title": "Macro cluster: MessageDirectMessagePriceChanged",
+                "summary": "The evidence consistently describes MessageDirectMessagePriceChanged events where direct message pricing is toggled on or off, with paidMessageStarCount set to 1000 when enabled and 0 when disabled. This supports the cluster label.",
+                "decision": "valid",
+                "confidence": 0.96,
+                "evidenceIds": [
+                    175,
+                    195,
+                    201
+                ],
+                "safetyNotes": "No sensitive information or secrets are present in the provided evidence.",
+                "artifactType": "judge"
+            },
+            "estimated_cost_usd": 0.005395
+        }
+    ],
+    "providerCosts": [
+        {
+            "run_id": 6,
+            "cache_hits": 0,
+            "model_name": "gpt-5.5",
+            "real_calls": 2,
+            "provider_id": 11,
+            "failed_calls": 0,
+            "input_tokens": 468,
+            "output_tokens": 654,
+            "estimated_cost_usd": 0.012150
+        }
+    ],
+    "clusterSummary": [
+        {
+            "run_id": 6,
+            "avg_score": 0.61000000000000000000,
+            "cluster_count": 7,
+            "cluster_level": "MICRO",
+            "message_count": 16
+        },
+        {
+            "run_id": 6,
+            "avg_score": 0.61000000000000000000,
+            "cluster_count": 7,
+            "cluster_level": "MACRO",
+            "message_count": 16
+        }
+    ],
+    "labelingSummary": [
+        {
+            "run_id": 6,
+            "status": "PENDING",
+            "item_count": 209
+        }
+    ],
+    "embeddingSummary": [
+        {
+            "run_id": 6,
+            "embedding_kind": "MESSAGE_TEXT",
+            "embedding_count": 223
+        }
+    ],
+    "topDisagreements": [
+        {
+            "score": 1.5200,
+            "bert_label": "HOW_TO_GUIDE",
+            "confidence": 0.5200,
+            "hard_signal": true,
+            "text_preview": "⚡ Runic: новые способы оплаты и генерация изображений Добавили: • Platega — пополнение в рублях (SBP, карты) • /v1/images/generations — генерация фото • Модели: gpt-image-2, nano-banana-pro, nano-banana-2 Цены на фото: •",
+            "rule_decision": "CANDIDATE",
+            "dataset_message_id": 214
+        },
+        {
+            "score": 1.5200,
+            "bert_label": "HOW_TO_GUIDE",
+            "confidence": 0.5200,
+            "hard_signal": true,
+            "text_preview": "⚡ Runic: рубли + генерация фото 🎉 Два апдейта: 💰 Platega Пополнение в рублях — SBP, карты, мгновенно. 📷 Генерация изображений /v1/images/generations Модели: gpt-image-2, nano-banana-pro, nano-banana-2 Цены на фото: gpt-i",
+            "rule_decision": "CANDIDATE",
+            "dataset_message_id": 182
+        },
+        {
+            "score": 1.5200,
+            "bert_label": "HOW_TO_GUIDE",
+            "confidence": 0.5200,
+            "hard_signal": true,
+            "text_preview": "⚡ Runic: рубли + генерация фото 🎉 Два апдейта: 💰 Platega Пополнение в рублях — SBP, карты, мгновенно. 📷 Генерация изображений /v1/images/generations Модели: gpt-image-2, nano-banana-pro, nano-banana-2 Цены на фото: gpt-i",
+            "rule_decision": "CANDIDATE",
+            "dataset_message_id": 133
+        },
+        {
+            "score": 1.5200,
+            "bert_label": "HOW_TO_GUIDE",
+            "confidence": 0.5200,
+            "hard_signal": true,
+            "text_preview": "Так нужно было на рф делать аккаунт разраба, перевод доков на Английский делаешь через нотариуса и все, я так делал. Яблоки не запрещают создавать аккаунт из России",
+            "rule_decision": "CANDIDATE",
+            "dataset_message_id": 460
+        },
+        {
+            "score": 1.5200,
+            "bert_label": "HOW_TO_GUIDE",
+            "confidence": 0.5200,
+            "hard_signal": true,
+            "text_preview": "Личные рекомендации 1) GTP-5.5 - мейн модель, топ 2) Minimax M3 - лютая имба вместо клода 3) GLM - отличное ревью/второе мнение после GPT 4) Kimi/Qwen - фронт",
+            "rule_decision": "CANDIDATE",
+            "dataset_message_id": 279
+        },
+        {
+            "score": 1.5200,
+            "bert_label": "HOW_TO_GUIDE",
+            "confidence": 0.5200,
+            "hard_signal": true,
+            "text_preview": "💝 Розыгрыш абонемента Claude на 12 часов завершен Победитель: @I87737583 Ключ уже отправлен победителю в личные сообщения бота.",
+            "rule_decision": "CANDIDATE",
+            "dataset_message_id": 450
+        },
+        {
+            "score": 1.5200,
+            "bert_label": "HOW_TO_GUIDE",
+            "confidence": 0.5200,
+            "hard_signal": true,
+            "text_preview": "Ну само собой ты же гражданин России. Можно делать но нужно фирму открывать в ЕС или сша и стоит это где-то все 150 000 тысяч",
+            "rule_decision": "CANDIDATE",
+            "dataset_message_id": 455
+        },
+        {
+            "score": 1.5200,
+            "bert_label": "HOW_TO_GUIDE",
+            "confidence": 0.5200,
+            "hard_signal": true,
+            "text_preview": "в целом да, но у нас нет gpt 5.2 и codex 5.3, их задачи покрывают gpt 5.4 + gpt 5.5, видимо у тебя конфиг старый",
+            "rule_decision": "CANDIDATE",
+            "dataset_message_id": 308
+        },
+        {
+            "score": 1.5200,
+            "bert_label": "HOW_TO_GUIDE",
+            "confidence": 0.5200,
+            "hard_signal": true,
+            "text_preview": "Да, GPT сейчас со сниженными коэффициентами идет, по-сути, пока у нас поставщик хороший",
+            "rule_decision": "CANDIDATE",
+            "dataset_message_id": 398
+        },
+        {
+            "score": 1.4200,
+            "bert_label": "HOW_TO_GUIDE",
+            "confidence": 0.4200,
+            "hard_signal": true,
+            "text_preview": "Сегодня тебе слить смолу потраить театр и мб в бездну попробуй 9 звезду забрать",
+            "rule_decision": "CANDIDATE",
+            "dataset_message_id": 265
+        },
+        {
+            "score": 1.4200,
+            "bert_label": "HOW_TO_GUIDE",
+            "confidence": 0.4200,
+            "hard_signal": true,
+            "text_preview": "У gpt вроде раз в несколько минут новое виртуальное пространство",
+            "rule_decision": "CANDIDATE",
+            "dataset_message_id": 434
+        },
+        {
+            "score": 1.4200,
+            "bert_label": "HOW_TO_GUIDE",
+            "confidence": 0.4200,
+            "hard_signal": true,
+            "text_preview": "Нужно будет предоставить чек об оплате или ордер заказа",
+            "rule_decision": "CANDIDATE",
+            "dataset_message_id": 362
+        },
+        {
+            "score": 1.4200,
+            "bert_label": "HOW_TO_GUIDE",
+            "confidence": 0.4200,
+            "hard_signal": true,
+            "text_preview": "Claude будет в течении пары дней, я надеюсь",
+            "rule_decision": "CANDIDATE",
+            "dataset_message_id": 280
+        },
+        {
+            "score": 1.4200,
+            "bert_label": "HOW_TO_GUIDE",
+            "confidence": 0.4200,
+            "hard_signal": true,
+            "text_preview": "если чё ебите модель claude-opus-4-8-1m",
+            "rule_decision": "CANDIDATE",
+            "dataset_message_id": 67
+        },
+        {
+            "score": 1.4200,
+            "bert_label": "HOW_TO_GUIDE",
+            "confidence": 0.4200,
+            "hard_signal": true,
+            "text_preview": "Новый бейз юрл - api.cheat-ai.shop",
+            "rule_decision": "CANDIDATE",
+            "dataset_message_id": 310
+        },
+        {
+            "score": 1.4200,
+            "bert_label": "HOW_TO_GUIDE",
+            "confidence": 0.4200,
+            "hard_signal": true,
+            "text_preview": "у меня апишка не работает",
+            "rule_decision": "ACCUMULATE",
+            "dataset_message_id": 161
+        },
+        {
+            "score": 0.5200,
+            "bert_label": "HOW_TO_GUIDE",
+            "confidence": 0.5200,
+            "hard_signal": false,
+            "text_preview": "MessageAnimatedEmoji { animatedEmoji = AnimatedEmoji { sticker = Sticker { id = 5130064437633352245 setId = 1258816259751983 width = 512 height = 512 emoji = \"🤨\" format = StickerFormatTgs { } fullType = StickerFullTypeRe",
+            "rule_decision": "ACCUMULATE",
+            "dataset_message_id": 168
+        },
+        {
+            "score": 0.5200,
+            "bert_label": "HOW_TO_GUIDE",
+            "confidence": 0.5200,
+            "hard_signal": false,
+            "text_preview": "Парни, да не надо ниче доказывать никому) Тут в целом - чудеса, что есть что то стабильное за вменяемые деньги ещё и без впн (почти😁) Тут не тот продукт, когда на рынке есть 10 игроков и все за кусочек бьются, я попробов",
+            "rule_decision": "ACCUMULATE",
+            "dataset_message_id": 442
+        },
+        {
+            "score": 0.5200,
+            "bert_label": "HOW_TO_GUIDE",
+            "confidence": 0.5200,
+            "hard_signal": false,
+            "text_preview": "Всем привет! Я Настя вообще я HRG в ИТ, но также занимаюсь автоматизацией HR-процессов с помощью ИИ у себя в компании. Тк были сокращения, запустила ИИ-агента для аутплейсмента, чтобы не делать всю рутинную работу по сос",
+            "rule_decision": "ACCUMULATE",
+            "dataset_message_id": 454
+        },
+        {
+            "score": 0.5200,
+            "bert_label": "HOW_TO_GUIDE",
+            "confidence": 0.5200,
+            "hard_signal": false,
+            "text_preview": "Там когда проживаешь в другой стране, один из подтверждающих доков - это счет на кв плату. Поэтому в целом, это не так сложно сделать, но чисто снова ехать в КЗ ради этого напряг. И раз тут зашел разговор про KYC и обход",
+            "rule_decision": "ACCUMULATE",
+            "dataset_message_id": 415
+        }
+    ],
+    "topLabelingItems": [
+        {
+            "id": 20,
+            "status": "PENDING",
+            "priority": 70,
+            "item_type": "MESSAGE",
+            "confidence": 0.4200,
+            "text_preview": "Sladcih GOYGOYGOYGOYGOYGOYGOYGOY snov",
+            "macrocluster_id": null,
+            "suggested_label": "HOW_TO_GUIDE",
+            "knowledge_item_id": null,
+            "dataset_message_id": 5,
+            "suggested_decision": "PENDING",
+            "suggested_artifact_type": null
+        },
+        {
+            "id": 21,
+            "status": "PENDING",
+            "priority": 70,
+            "item_type": "MESSAGE",
+            "confidence": 0.4200,
+            "text_preview": "Ya nakonchala zubi namila i lezu",
+            "macrocluster_id": null,
+            "suggested_label": "HOW_TO_GUIDE",
+            "knowledge_item_id": null,
+            "dataset_message_id": 6,
+            "suggested_decision": "PENDING",
+            "suggested_artifact_type": null
+        },
+        {
+            "id": 22,
+            "status": "PENDING",
+            "priority": 70,
+            "item_type": "MESSAGE",
+            "confidence": 0.4200,
+            "text_preview": "Хз, пользовался клодом только через апи. Он мне не сильно нравится",
+            "macrocluster_id": null,
+            "suggested_label": "HOW_TO_GUIDE",
+            "knowledge_item_id": null,
+            "dataset_message_id": 9,
+            "suggested_decision": "PENDING",
+            "suggested_artifact_type": null
+        },
+        {
+            "id": 23,
+            "status": "PENDING",
+            "priority": 70,
+            "item_type": "MESSAGE",
+            "confidence": 0.4200,
+            "text_preview": "ВИДИМО ПОЭТОМУ И ПОДОБРАЛИ ЕГО В ВАГНЕРА ХАХАХАХАХА",
+            "macrocluster_id": null,
+            "suggested_label": "HOW_TO_GUIDE",
+            "knowledge_item_id": null,
+            "dataset_message_id": 12,
+            "suggested_decision": "PENDING",
+            "suggested_artifact_type": null
+        },
+        {
+            "id": 24,
+            "status": "PENDING",
+            "priority": 70,
+            "item_type": "MESSAGE",
+            "confidence": 0.4200,
+            "text_preview": "ТЕ ЕГО ЗАБРАЛИ В ВСУ А ОН СТРЕЛЯЛ ВСНУШНИКОВ НА ФРОНТЕ АХАХХАХАХАХАХ",
+            "macrocluster_id": null,
+            "suggested_label": "HOW_TO_GUIDE",
+            "knowledge_item_id": null,
+            "dataset_message_id": 13,
+            "suggested_decision": "PENDING",
+            "suggested_artifact_type": null
+        },
+        {
+            "id": 25,
+            "status": "PENDING",
+            "priority": 70,
+            "item_type": "MESSAGE",
+            "confidence": 0.4200,
+            "text_preview": "А он отвечает нееееет в украинцев вы что",
+            "macrocluster_id": null,
+            "suggested_label": "HOW_TO_GUIDE",
+            "knowledge_item_id": null,
+            "dataset_message_id": 14,
+            "suggested_decision": "PENDING",
+            "suggested_artifact_type": null
+        },
+        {
+            "id": 26,
+            "status": "PENDING",
+            "priority": 70,
+            "item_type": "MESSAGE",
+            "confidence": 0.4200,
+            "text_preview": "Боже я только включила проржалась выключила",
+            "macrocluster_id": null,
+            "suggested_label": "HOW_TO_GUIDE",
+            "knowledge_item_id": null,
+            "dataset_message_id": 17,
+            "suggested_decision": "PENDING",
+            "suggested_artifact_type": null
+        },
+        {
+            "id": 27,
+            "status": "PENDING",
+            "priority": 70,
+            "item_type": "MESSAGE",
+            "confidence": 0.4200,
+            "text_preview": "АХААХАХ спасибо за настроение",
+            "macrocluster_id": null,
+            "suggested_label": "HOW_TO_GUIDE",
+            "knowledge_item_id": null,
+            "dataset_message_id": 18,
+            "suggested_decision": "PENDING",
+            "suggested_artifact_type": null
+        },
+        {
+            "id": 28,
+            "status": "PENDING",
+            "priority": 70,
+            "item_type": "MESSAGE",
+            "confidence": 0.4200,
+            "text_preview": "Не фек 100% правда",
+            "macrocluster_id": null,
+            "suggested_label": "HOW_TO_GUIDE",
+            "knowledge_item_id": null,
+            "dataset_message_id": 20,
+            "suggested_decision": "PENDING",
+            "suggested_artifact_type": null
+        },
+        {
+            "id": 29,
+            "status": "PENDING",
+            "priority": 70,
+            "item_type": "MESSAGE",
+            "confidence": 0.4200,
+            "text_preview": "В мультиагегтности запрещено ставить на всех и вся одну модель = анархия",
+            "macrocluster_id": null,
+            "suggested_label": "HOW_TO_GUIDE",
+            "knowledge_item_id": null,
+            "dataset_message_id": 23,
+            "suggested_decision": "PENDING",
+            "suggested_artifact_type": null
+        },
+        {
+            "id": 30,
+            "status": "PENDING",
+            "priority": 70,
+            "item_type": "MESSAGE",
+            "confidence": 0.4200,
+            "text_preview": "ключик здесь будет",
+            "macrocluster_id": null,
+            "suggested_label": "HOW_TO_GUIDE",
+            "knowledge_item_id": null,
+            "dataset_message_id": 26,
+            "suggested_decision": "PENDING",
+            "suggested_artifact_type": null
+        },
+        {
+            "id": 32,
+            "status": "PENDING",
+            "priority": 70,
+            "item_type": "MESSAGE",
+            "confidence": 0.4200,
+            "text_preview": "за 3 бакса, тебя либо заскамят, либо заскамят",
+            "macrocluster_id": null,
+            "suggested_label": "HOW_TO_GUIDE",
+            "knowledge_item_id": null,
+            "dataset_message_id": 34,
+            "suggested_decision": "PENDING",
+            "suggested_artifact_type": null
+        },
+        {
+            "id": 33,
+            "status": "PENDING",
+            "priority": 70,
+            "item_type": "MESSAGE",
+            "confidence": 0.4200,
+            "text_preview": "мне стало смешно в это играть",
+            "macrocluster_id": null,
+            "suggested_label": "HOW_TO_GUIDE",
+            "knowledge_item_id": null,
+            "dataset_message_id": 35,
+            "suggested_decision": "PENDING",
+            "suggested_artifact_type": null
+        },
+        {
+            "id": 35,
+            "status": "PENDING",
+            "priority": 70,
+            "item_type": "MESSAGE",
+            "confidence": 0.4200,
+            "text_preview": "С заглавных писать",
+            "macrocluster_id": null,
+            "suggested_label": "HOW_TO_GUIDE",
+            "knowledge_item_id": null,
+            "dataset_message_id": 38,
+            "suggested_decision": "PENDING",
+            "suggested_artifact_type": null
+        },
+        {
+            "id": 36,
+            "status": "PENDING",
+            "priority": 70,
+            "item_type": "MESSAGE",
+            "confidence": 0.4200,
+            "text_preview": "я с ноута смотрю сериал",
+            "macrocluster_id": null,
+            "suggested_label": "HOW_TO_GUIDE",
+            "knowledge_item_id": null,
+            "dataset_message_id": 41,
+            "suggested_decision": "PENDING",
+            "suggested_artifact_type": null
+        },
+        {
+            "id": 37,
+            "status": "PENDING",
+            "priority": 70,
+            "item_type": "MESSAGE",
+            "confidence": 0.4200,
+            "text_preview": "и писал чтобы ты подумала что я с тлф",
+            "macrocluster_id": null,
+            "suggested_label": "HOW_TO_GUIDE",
+            "knowledge_item_id": null,
+            "dataset_message_id": 47,
+            "suggested_decision": "PENDING",
+            "suggested_artifact_type": null
+        },
+        {
+            "id": 38,
+            "status": "PENDING",
+            "priority": 70,
+            "item_type": "MESSAGE",
+            "confidence": 0.4200,
+            "text_preview": "мне тупо неудобно лежать на большой",
+            "macrocluster_id": null,
+            "suggested_label": "HOW_TO_GUIDE",
+            "knowledge_item_id": null,
+            "dataset_message_id": 49,
+            "suggested_decision": "PENDING",
+            "suggested_artifact_type": null
+        },
+        {
+            "id": 39,
+            "status": "PENDING",
+            "priority": 70,
+            "item_type": "MESSAGE",
+            "confidence": 0.4200,
+            "text_preview": "Я спалила тебя на лжи",
+            "macrocluster_id": null,
+            "suggested_label": "HOW_TO_GUIDE",
+            "knowledge_item_id": null,
+            "dataset_message_id": 51,
+            "suggested_decision": "PENDING",
+            "suggested_artifact_type": null
+        },
+        {
+            "id": 40,
+            "status": "PENDING",
+            "priority": 70,
+            "item_type": "MESSAGE",
+            "confidence": 0.4200,
+            "text_preview": "удобно ли имею ввиду",
+            "macrocluster_id": null,
+            "suggested_label": "HOW_TO_GUIDE",
+            "knowledge_item_id": null,
+            "dataset_message_id": 52,
+            "suggested_decision": "PENDING",
+            "suggested_artifact_type": null
+        },
+        {
+            "id": 41,
+            "status": "PENDING",
+            "priority": 70,
+            "item_type": "MESSAGE",
+            "confidence": 0.4200,
+            "text_preview": "твердрые и высокие хрень",
+            "macrocluster_id": null,
+            "suggested_label": "HOW_TO_GUIDE",
+            "knowledge_item_id": null,
+            "dataset_message_id": 57,
+            "suggested_decision": "PENDING",
+            "suggested_artifact_type": null
+        }
+    ],
+    "classifierSummary": [
+        {
+            "run_id": 6,
+            "model_name": "BOOTSTRAP_BERT_CLASSIFIER",
+            "noise_count": 0,
+            "avg_confidence": 0.50295302013422818792,
+            "classified_count": 298
+        }
+    ],
+    "labelingBreakdown": {
+        "byStatus": [
+            {
+                "count": 209,
+                "status": "PENDING"
+            }
+        ],
+        "byItemType": [
+            {
+                "count": 209,
+                "item_type": "MESSAGE"
+            }
+        ],
+        "byPriority": [
+            {
+                "count": 209,
+                "priority": 70
+            }
+        ],
+        "bySuggestedLabel": [
+            {
+                "count": 209,
+                "suggested_label": "HOW_TO_GUIDE"
+            }
+        ],
+        "bySuggestedDecision": [
+            {
+                "count": 209,
+                "suggested_decision": "PENDING"
+            }
+        ]
+    },
+    "topSemanticNeighbors": [
+        {
+            "similarity": 1.00000,
+            "source_preview": "MessageChatJoinByLink { }",
+            "target_preview": "MessageChatJoinByLink { }",
+            "source_dataset_message_id": 406,
+            "target_dataset_message_id": 407
+        },
+        {
+            "similarity": 1.00000,
+            "source_preview": "⚡ Runic: рубли + генерация фото 🎉 Два апдейта: 💰 Platega Пополнение в рублях — SBP, карты, мгновенно. 📷 Генерация изображений /v1/images/generations Модели: gpt-image-2, nano-banan",
+            "target_preview": "⚡ Runic: рубли + генерация фото 🎉 Два апдейта: 💰 Platega Пополнение в рублях — SBP, карты, мгновенно. 📷 Генерация изображений /v1/images/generations Модели: gpt-image-2, nano-banan",
+            "source_dataset_message_id": 133,
+            "target_dataset_message_id": 182
+        },
+        {
+            "similarity": 1.00000,
+            "source_preview": "MessageDirectMessagePriceChanged { isEnabled = false paidMessageStarCount = 0 }",
+            "target_preview": "MessageDirectMessagePriceChanged { isEnabled = false paidMessageStarCount = 0 }",
+            "source_dataset_message_id": 175,
+            "target_dataset_message_id": 201
+        },
+        {
+            "similarity": 0.96180,
+            "source_preview": "MessageDirectMessagePriceChanged { isEnabled = true paidMessageStarCount = 1000 }",
+            "target_preview": "MessageDirectMessagePriceChanged { isEnabled = false paidMessageStarCount = 0 }",
+            "source_dataset_message_id": 195,
+            "target_dataset_message_id": 201
+        },
+        {
+            "similarity": 0.96180,
+            "source_preview": "MessageDirectMessagePriceChanged { isEnabled = false paidMessageStarCount = 0 }",
+            "target_preview": "MessageDirectMessagePriceChanged { isEnabled = true paidMessageStarCount = 1000 }",
+            "source_dataset_message_id": 175,
+            "target_dataset_message_id": 195
+        },
+        {
+            "similarity": 0.94667,
+            "source_preview": "⚡ Runic: рубли + генерация фото 🎉 Два апдейта: 💰 Platega Пополнение в рублях — SBP, карты, мгновенно. 📷 Генерация изображений /v1/images/generations Модели: gpt-image-2, nano-banan",
+            "target_preview": "⚡ Runic: новые способы оплаты и генерация изображений Добавили: • Platega — пополнение в рублях (SBP, карты) • /v1/images/generations — генерация фото • Модели: gpt-image-2, nano-b",
+            "source_dataset_message_id": 133,
+            "target_dataset_message_id": 214
+        },
+        {
+            "similarity": 0.94667,
+            "source_preview": "⚡ Runic: рубли + генерация фото 🎉 Два апдейта: 💰 Platega Пополнение в рублях — SBP, карты, мгновенно. 📷 Генерация изображений /v1/images/generations Модели: gpt-image-2, nano-banan",
+            "target_preview": "⚡ Runic: новые способы оплаты и генерация изображений Добавили: • Platega — пополнение в рублях (SBP, карты) • /v1/images/generations — генерация фото • Модели: gpt-image-2, nano-b",
+            "source_dataset_message_id": 182,
+            "target_dataset_message_id": 214
+        },
+        {
+            "similarity": 0.83728,
+            "source_preview": "MessageAnimatedEmoji { animatedEmoji = AnimatedEmoji { sticker = null stickerWidth = 320 stickerHeight = 320 fitzpatrickType = 0 sound = null } emoji = \"☺️\" }",
+            "target_preview": "MessageAnimatedEmoji { animatedEmoji = AnimatedEmoji { sticker = Sticker { id = 5130064437633352245 setId = 1258816259751983 width = 512 height = 512 emoji = \"🤨\" format = StickerFo",
+            "source_dataset_message_id": 123,
+            "target_dataset_message_id": 168
+        },
+        {
+            "similarity": 0.77540,
+            "source_preview": "Какие плагины? Скиллы можно",
+            "target_preview": "в дроиде плагины можно же юзать?",
+            "source_dataset_message_id": 360,
+            "target_dataset_message_id": 361
+        },
+        {
+            "similarity": 0.77116,
+            "source_preview": "Если вы вдруг не знали то купить можно тут - @claude_tokens_bot",
+            "target_preview": "Выдал ключи который смог в лс бота, если вам не пришел ключ создайте тикет или напишите на этот акк https://t.me/claude_tokens_support",
+            "source_dataset_message_id": 129,
+            "target_dataset_message_id": 363
+        }
+    ],
+    "hardSignalUnclustered": [
+        {
+            "top_label": "QUESTION_WITH_VALUABLE_ANSWER",
+            "confidence": 0.6400,
+            "hard_signal": true,
+            "text_preview": "видать я не понятно прояснил свою позицию. Я топики не штудирую, так как не пользуюсь Droid, не читаю. Codex APP - я не знаю, сколько не смотрел не мое. Я может дилетант, так как не программист. Не хочу отвлекать вас от ",
+            "rule_decision": "CANDIDATE",
+            "dataset_message_id": 447,
+            "structural_features_json": {
+                "code": {
+                    "hasCode": false
+                },
+                "links": [
+                ],
+                "errors": {
+                    "hasError": false
+                },
+                "prices": {
+                    "hasPriceOrAccess": false
+                },
+                "domains": [
+                ],
+                "hasCode": false,
+                "hasTool": true,
+                "hasError": false,
+                "linkCount": 0,
+                "isQuestion": true,
+                "domainCount": 0,
+                "isNoiseLike": false,
+                "isAnswerLike": false,
+                "questionAnswer": {
+                    "answer": false,
+                    "question": true
+                },
+                "hiddenLinkCount": 0,
+                "hasPriceOrAccess": false
+            }
+        },
+        {
+            "top_label": "RESOURCE_LINK_COLLECTION",
+            "confidence": 0.6800,
+            "hard_signal": true,
+            "text_preview": "Здравствуйте! Проводим исследование среди владельцев загородной недвижимости. Хотим лучше понять, как владельцы дач, коттеджей и загородных домов решают бытовые и организационные вопросы, особенно если не живут рядом с д",
+            "rule_decision": "CANDIDATE",
+            "dataset_message_id": 364,
+            "structural_features_json": {
+                "code": {
+                    "hasCode": false
+                },
+                "links": [
+                    "https://forms.yandex.ru/u/6a2a5c73e010db278bbfa0db"
+                ],
+                "errors": {
+                    "hasError": false
+                },
+                "prices": {
+                    "hasPriceOrAccess": false
+                },
+                "domains": [
+                    "forms.yandex.ru"
+                ],
+                "hasCode": false,
+                "hasTool": false,
+                "hasError": false,
+                "linkCount": 1,
+                "isQuestion": true,
+                "domainCount": 1,
+                "isNoiseLike": false,
+                "isAnswerLike": false,
+                "questionAnswer": {
+                    "answer": false,
+                    "question": true
+                },
+                "hiddenLinkCount": 0,
+                "hasPriceOrAccess": false
+            }
+        },
+        {
+            "top_label": "RESOURCE_LINK_COLLECTION",
+            "confidence": 0.6800,
+            "hard_signal": true,
+            "text_preview": "Экспертное интервью. Представители ритейла (FMCG). Приглашаем топ-менеджеров, коммерческих директоров, категорийных менеджеров и аналитиков федеральных торговых сетей («Пятерочка», «Магнит», «Азбука Вкуса», «Чижик» и др.",
+            "rule_decision": "CANDIDATE",
+            "dataset_message_id": 166,
+            "structural_features_json": {
+                "code": {
+                    "hasCode": false
+                },
+                "links": [
+                    "https://forms.gle/uJnpU5yMo47aHbVF7"
+                ],
+                "errors": {
+                    "hasError": false
+                },
+                "prices": {
+                    "hasPriceOrAccess": true
+                },
+                "domains": [
+                    "forms.gle"
+                ],
+                "hasCode": false,
+                "hasTool": false,
+                "hasError": false,
+                "linkCount": 1,
+                "isQuestion": false,
+                "domainCount": 1,
+                "isNoiseLike": false,
+                "isAnswerLike": false,
+                "questionAnswer": {
+                    "answer": false,
+                    "question": false
+                },
+                "hiddenLinkCount": 0,
+                "hasPriceOrAccess": true
+            }
+        },
+        {
+            "top_label": "ERROR_LOG_WITH_FIX",
+            "confidence": 0.8200,
+            "hard_signal": true,
+            "text_preview": "В Droid никто не сталкивался с такой ошибкой? BYOK Error: 400 [400]: {\"detail\":\"Store must be set to false\"} Upstream error: [400]: {\"detail\":\"Store must be set to false\"} Troubleshooting tips for custom models: Verify t",
+            "rule_decision": "CANDIDATE",
+            "dataset_message_id": 440,
+            "structural_features_json": {
+                "code": {
+                    "hasCode": false
+                },
+                "links": [
+                ],
+                "errors": {
+                    "hasError": true
+                },
+                "prices": {
+                    "hasPriceOrAccess": false
+                },
+                "domains": [
+                ],
+                "hasCode": false,
+                "hasTool": true,
+                "hasError": true,
+                "linkCount": 0,
+                "isQuestion": true,
+                "domainCount": 0,
+                "isNoiseLike": false,
+                "isAnswerLike": true,
+                "questionAnswer": {
+                    "answer": true,
+                    "question": true
+                },
+                "hiddenLinkCount": 0,
+                "hasPriceOrAccess": false
+            }
+        },
+        {
+            "top_label": "QUESTION_WITH_VALUABLE_ANSWER",
+            "confidence": 0.6400,
+            "hard_signal": true,
+            "text_preview": "Подскажите пж, как в Droide правильно ставить задачу, чтобы он во первых запускал этап планирования, а во вторых использовал разные модели, которые я указал. Я запустил Mission mode, выбрал модели для плана и для воркера",
+            "rule_decision": "CANDIDATE",
+            "dataset_message_id": 103,
+            "structural_features_json": {
+                "code": {
+                    "hasCode": false
+                },
+                "links": [
+                ],
+                "errors": {
+                    "hasError": false
+                },
+                "prices": {
+                    "hasPriceOrAccess": false
+                },
+                "domains": [
+                ],
+                "hasCode": false,
+                "hasTool": false,
+                "hasError": false,
+                "linkCount": 0,
+                "isQuestion": true,
+                "domainCount": 0,
+                "isNoiseLike": false,
+                "isAnswerLike": true,
+                "questionAnswer": {
+                    "answer": true,
+                    "question": true
+                },
+                "hiddenLinkCount": 0,
+                "hasPriceOrAccess": false
+            }
+        },
+        {
+            "top_label": "QUESTION_WITH_VALUABLE_ANSWER",
+            "confidence": 0.6400,
+            "hard_signal": true,
+            "text_preview": "Всем привет! ищу для недолгого интервью (10-15 мин) людей, которые заказывали авто из Кореи, Японии или Китая, либо находятся сейчас в процессе подбора автомобиля. Самое главное - нужно понять чего опасались, как выбирал",
+            "rule_decision": "CANDIDATE",
+            "dataset_message_id": 448,
+            "structural_features_json": {
+                "code": {
+                    "hasCode": false
+                },
+                "links": [
+                ],
+                "errors": {
+                    "hasError": false
+                },
+                "prices": {
+                    "hasPriceOrAccess": false
+                },
+                "domains": [
+                ],
+                "hasCode": false,
+                "hasTool": false,
+                "hasError": false,
+                "linkCount": 0,
+                "isQuestion": true,
+                "domainCount": 0,
+                "isNoiseLike": false,
+                "isAnswerLike": true,
+                "questionAnswer": {
+                    "answer": true,
+                    "question": true
+                },
+                "hiddenLinkCount": 0,
+                "hasPriceOrAccess": false
+            }
+        },
+        {
+            "top_label": "PRICING_OR_ACCESS_SIGNAL",
+            "confidence": 0.7400,
+            "hard_signal": true,
+            "text_preview": "Обсудили сегодня на эфире, какие технологии автоматизации реально интересны корпорациям. С приглашенными экспертами подняли темы об AI, CV, роботах, а также подняли главный вопрос для стартапов: как превратить разработку",
+            "rule_decision": "CANDIDATE",
+            "dataset_message_id": 106,
+            "structural_features_json": {
+                "code": {
+                    "hasCode": false
+                },
+                "links": [
+                    "https://disk.yandex.ru/i/VDzrxVenlSEZyA)"
+                ],
+                "errors": {
+                    "hasError": false
+                },
+                "prices": {
+                    "hasPriceOrAccess": true
+                },
+                "domains": [
+                    "disk.yandex.ru"
+                ],
+                "hasCode": false,
+                "hasTool": false,
+                "hasError": false,
+                "linkCount": 1,
+                "isQuestion": true,
+                "domainCount": 1,
+                "isNoiseLike": false,
+                "isAnswerLike": false,
+                "questionAnswer": {
+                    "answer": false,
+                    "question": true
+                },
+                "hiddenLinkCount": 0,
+                "hasPriceOrAccess": true
+            }
+        },
+        {
+            "top_label": "RESOURCE_LINK_COLLECTION",
+            "confidence": 0.6800,
+            "hard_signal": true,
+            "text_preview": "Всем привет! Меня зовут Мария. Мы создаем продукты для здоровья волос с использованием передовых научных достижений в области трихологии. Сейчас я исследую, как люди выбирают и оценивают шампунь. Буду очень благодарна, е",
+            "rule_decision": "CANDIDATE",
+            "dataset_message_id": 320,
+            "structural_features_json": {
+                "code": {
+                    "hasCode": false
+                },
+                "links": [
+                    "https://forms.gle/jx49kWwS61VWYKBHA"
+                ],
+                "errors": {
+                    "hasError": false
+                },
+                "prices": {
+                    "hasPriceOrAccess": false
+                },
+                "domains": [
+                    "forms.gle"
+                ],
+                "hasCode": false,
+                "hasTool": false,
+                "hasError": false,
+                "linkCount": 1,
+                "isQuestion": true,
+                "domainCount": 1,
+                "isNoiseLike": false,
+                "isAnswerLike": false,
+                "questionAnswer": {
+                    "answer": false,
+                    "question": true
+                },
+                "hiddenLinkCount": 0,
+                "hasPriceOrAccess": false
+            }
+        },
+        {
+            "top_label": "QUESTION_WITH_VALUABLE_ANSWER",
+            "confidence": 0.6400,
+            "hard_signal": true,
+            "text_preview": "Вижу вы начали активно использовать китайские модели, мой совет, суйте в Droid и Claude Code, CC = очень сильная поддержка для MiniMax M3, так как они на одинаковом эндпоинте работают, я честно включил Minimax и 3 дня ду",
+            "rule_decision": "CANDIDATE",
+            "dataset_message_id": 124,
+            "structural_features_json": {
+                "code": {
+                    "hasCode": false
+                },
+                "links": [
+                ],
+                "errors": {
+                    "hasError": false
+                },
+                "prices": {
+                    "hasPriceOrAccess": false
+                },
+                "domains": [
+                ],
+                "hasCode": false,
+                "hasTool": true,
+                "hasError": false,
+                "linkCount": 0,
+                "isQuestion": true,
+                "domainCount": 0,
+                "isNoiseLike": false,
+                "isAnswerLike": false,
+                "questionAnswer": {
+                    "answer": false,
+                    "question": true
+                },
+                "hiddenLinkCount": 0,
+                "hasPriceOrAccess": false
+            }
+        },
+        {
+            "top_label": "PRICING_OR_ACCESS_SIGNAL",
+            "confidence": 0.7400,
+            "hard_signal": true,
+            "text_preview": "Есть ли возможность допустим купить Nexus тариф за 80 USDT, но если пойму что мне его не хватит, то доплатить 40 USDT до Asсend? (Срок естественно не обнулится, если было 2 недели потрачено на Nexus, То на Asсend 2 недел",
+            "rule_decision": "CANDIDATE",
+            "dataset_message_id": 444,
+            "structural_features_json": {
+                "code": {
+                    "hasCode": false
+                },
+                "links": [
+                ],
+                "errors": {
+                    "hasError": false
+                },
+                "prices": {
+                    "hasPriceOrAccess": true
+                },
+                "domains": [
+                ],
+                "hasCode": false,
+                "hasTool": false,
+                "hasError": false,
+                "linkCount": 0,
+                "isQuestion": true,
+                "domainCount": 0,
+                "isNoiseLike": false,
+                "isAnswerLike": false,
+                "questionAnswer": {
+                    "answer": false,
+                    "question": true
+                },
+                "hiddenLinkCount": 0,
+                "hasPriceOrAccess": true
+            }
+        }
+    ],
+    "topUtilityUnclustered": [
+        {
+            "top_label": "ERROR_LOG_WITH_FIX",
+            "confidence": 0.8200,
+            "hard_signal": true,
+            "text_preview": "В Droid никто не сталкивался с такой ошибкой? BYOK Error: 400 [400]: {\"detail\":\"Store must be set to false\"} Upstream error: [400]: {\"detail\":\"Store must be set to false\"} Troubleshooting tips for custom models: Verify t",
+            "rule_decision": "CANDIDATE",
+            "utility_score": 1.74600000000000000000,
+            "dataset_message_id": 440
+        },
+        {
+            "top_label": "RESOURCE_LINK_COLLECTION",
+            "confidence": 0.6800,
+            "hard_signal": true,
+            "text_preview": "Здравствуйте! Проводим исследование среди владельцев загородной недвижимости. Хотим лучше понять, как владельцы дач, коттеджей и загородных домов решают бытовые и организационные вопросы, особенно если не живут рядом с д",
+            "rule_decision": "CANDIDATE",
+            "utility_score": 1.62600000000000000000,
+            "dataset_message_id": 364
+        },
+        {
+            "top_label": "RESOURCE_LINK_COLLECTION",
+            "confidence": 0.6800,
+            "hard_signal": true,
+            "text_preview": "Экспертное интервью. Представители ритейла (FMCG). Приглашаем топ-менеджеров, коммерческих директоров, категорийных менеджеров и аналитиков федеральных торговых сетей («Пятерочка», «Магнит», «Азбука Вкуса», «Чижик» и др.",
+            "rule_decision": "CANDIDATE",
+            "utility_score": 1.61500000000000000000,
+            "dataset_message_id": 166
+        },
+        {
+            "top_label": "QUESTION_WITH_VALUABLE_ANSWER",
+            "confidence": 0.6400,
+            "hard_signal": true,
+            "text_preview": "видать я не понятно прояснил свою позицию. Я топики не штудирую, так как не пользуюсь Droid, не читаю. Codex APP - я не знаю, сколько не смотрел не мое. Я может дилетант, так как не программист. Не хочу отвлекать вас от ",
+            "rule_decision": "CANDIDATE",
+            "utility_score": 1.60400000000000000000,
+            "dataset_message_id": 447
+        },
+        {
+            "top_label": "QUESTION_WITH_VALUABLE_ANSWER",
+            "confidence": 0.6400,
+            "hard_signal": true,
+            "text_preview": "Подскажите пж, как в Droide правильно ставить задачу, чтобы он во первых запускал этап планирования, а во вторых использовал разные модели, которые я указал. Я запустил Mission mode, выбрал модели для плана и для воркера",
+            "rule_decision": "CANDIDATE",
+            "utility_score": 1.54600000000000000000,
+            "dataset_message_id": 103
+        },
+        {
+            "top_label": "PRICING_OR_ACCESS_SIGNAL",
+            "confidence": 0.7400,
+            "hard_signal": true,
+            "text_preview": "Обсудили сегодня на эфире, какие технологии автоматизации реально интересны корпорациям. С приглашенными экспертами подняли темы об AI, CV, роботах, а также подняли главный вопрос для стартапов: как превратить разработку",
+            "rule_decision": "CANDIDATE",
+            "utility_score": 1.51400000000000000000,
+            "dataset_message_id": 106
+        },
+        {
+            "top_label": "QUESTION_WITH_VALUABLE_ANSWER",
+            "confidence": 0.6400,
+            "hard_signal": true,
+            "text_preview": "Всем привет! ищу для недолгого интервью (10-15 мин) людей, которые заказывали авто из Кореи, Японии или Китая, либо находятся сейчас в процессе подбора автомобиля. Самое главное - нужно понять чего опасались, как выбирал",
+            "rule_decision": "CANDIDATE",
+            "utility_score": 1.44600000000000000000,
+            "dataset_message_id": 448
+        },
+        {
+            "top_label": "ERROR_LOG_WITH_FIX",
+            "confidence": 0.8200,
+            "hard_signal": true,
+            "text_preview": "BYOK Error: 503 No provider account is currently available for the requested model. Upstream error: No provider account is currently available for the requested model. If this persists, verify your custom model configura",
+            "rule_decision": "CANDIDATE",
+            "utility_score": 1.43000000000000000000,
+            "dataset_message_id": 296
+        },
+        {
+            "top_label": "RESOURCE_LINK_COLLECTION",
+            "confidence": 0.6800,
+            "hard_signal": true,
+            "text_preview": "Всем привет! Меня зовут Мария. Мы создаем продукты для здоровья волос с использованием передовых научных достижений в области трихологии. Сейчас я исследую, как люди выбирают и оценивают шампунь. Буду очень благодарна, е",
+            "rule_decision": "CANDIDATE",
+            "utility_score": 1.42800000000000000000,
+            "dataset_message_id": 320
+        },
+        {
+            "top_label": "PRICING_OR_ACCESS_SIGNAL",
+            "confidence": 0.7400,
+            "hard_signal": true,
+            "text_preview": "Есть ли возможность допустим купить Nexus тариф за 80 USDT, но если пойму что мне его не хватит, то доплатить 40 USDT до Asсend? (Срок естественно не обнулится, если было 2 недели потрачено на Nexus, То на Asсend 2 недел",
+            "rule_decision": "CANDIDATE",
+            "utility_score": 1.36000000000000000000,
+            "dataset_message_id": 444
+        }
+    ],
+    "ruleBertDisagreementSummary": {
+        "bertCandidates": 298,
+        "ruleCandidates": 64,
+        "bertNoiseHardSignal": 0,
+        "ruleSuppressedBertUseful": 0
+    },
+    "bertUsefulNotEmbeddedOrClustered": [
+        {
+            "embedded": true,
+            "clustered": false,
+            "top_label": "ERROR_LOG_WITH_FIX",
+            "confidence": 0.8200,
+            "hard_signal": true,
+            "text_preview": "В Droid никто не сталкивался с такой ошибкой? BYOK Error: 400 [400]: {\"detail\":\"Store must be set to false\"} Upstream error: [400]: {\"detail\":\"Store must be set to false\"} Troubleshooting tips for custom models: Verify t",
+            "rule_decision": "CANDIDATE",
+            "dataset_message_id": 440
+        },
+        {
+            "embedded": true,
+            "clustered": false,
+            "top_label": "ERROR_LOG_WITH_FIX",
+            "confidence": 0.8200,
+            "hard_signal": true,
+            "text_preview": "BYOK Error: 503 No provider account is currently available for the requested model. Upstream error: No provider account is currently available for the requested model. If this persists, verify your custom model configura",
+            "rule_decision": "CANDIDATE",
+            "dataset_message_id": 296
+        },
+        {
+            "embedded": true,
+            "clustered": false,
+            "top_label": "ERROR_LOG_WITH_FIX",
+            "confidence": 0.8200,
+            "hard_signal": true,
+            "text_preview": "С нашей стороны ошибок не было, небольшой полминутный провал от OpenAI",
+            "rule_decision": "CANDIDATE",
+            "dataset_message_id": 288
+        },
+        {
+            "embedded": false,
+            "clustered": false,
+            "top_label": "ERROR_LOG_WITH_FIX",
+            "confidence": 0.8200,
+            "hard_signal": true,
+            "text_preview": "Почему такая ошибка?",
+            "rule_decision": "ACCUMULATE",
+            "dataset_message_id": 128
+        },
+        {
+            "embedded": true,
+            "clustered": false,
+            "top_label": "PRICING_OR_ACCESS_SIGNAL",
+            "confidence": 0.7400,
+            "hard_signal": true,
+            "text_preview": "Обсудили сегодня на эфире, какие технологии автоматизации реально интересны корпорациям. С приглашенными экспертами подняли темы об AI, CV, роботах, а также подняли главный вопрос для стартапов: как превратить разработку",
+            "rule_decision": "CANDIDATE",
+            "dataset_message_id": 106
+        },
+        {
+            "embedded": true,
+            "clustered": false,
+            "top_label": "PRICING_OR_ACCESS_SIGNAL",
+            "confidence": 0.7400,
+            "hard_signal": true,
+            "text_preview": "Есть ли возможность допустим купить Nexus тариф за 80 USDT, но если пойму что мне его не хватит, то доплатить 40 USDT до Asсend? (Срок естественно не обнулится, если было 2 недели потрачено на Nexus, То на Asсend 2 недел",
+            "rule_decision": "CANDIDATE",
+            "dataset_message_id": 444
+        },
+        {
+            "embedded": true,
+            "clustered": false,
+            "top_label": "PRICING_OR_ACCESS_SIGNAL",
+            "confidence": 0.7400,
+            "hard_signal": true,
+            "text_preview": "бля как работает этот nvidia? у меня там лимит 40 RPM допустим я делаю проект с помощью GLM 5.1 один запрос в opencode 2 запрос уже пишет too many request меняю модель на Kimi k2.6 снова работает и пишет too many request",
+            "rule_decision": "CANDIDATE",
+            "dataset_message_id": 104
+        },
+        {
+            "embedded": true,
+            "clustered": false,
+            "top_label": "PRICING_OR_ACCESS_SIGNAL",
+            "confidence": 0.7400,
+            "hard_signal": true,
+            "text_preview": "Claude будет требовать паспорт и селфи 😵 Теперь для получения доступа к планам Claude Free, Pro и Max придётся пройти проверку личности и возраста по просьбе сервиса. Новые правила вступят в силу 8 июля. claude все",
+            "rule_decision": "CANDIDATE",
+            "dataset_message_id": 248
+        },
+        {
+            "embedded": true,
+            "clustered": false,
+            "top_label": "PRICING_OR_ACCESS_SIGNAL",
+            "confidence": 0.7400,
+            "hard_signal": true,
+            "text_preview": "Можно сделать, например, через Казахстан, индивидуалку. Ты подтверждаешь, что живешь не в РФ, и регион у тебя КЗ, тогда твои приложения могут быть доступны во всех регионах, в рамках их соглашений.",
+            "rule_decision": "CANDIDATE",
+            "dataset_message_id": 449
+        },
+        {
+            "embedded": true,
+            "clustered": false,
+            "top_label": "PRICING_OR_ACCESS_SIGNAL",
+            "confidence": 0.7400,
+            "hard_signal": true,
+            "text_preview": "chatgpt говорит через минуту сбросится лимит",
+            "rule_decision": "CANDIDATE",
+            "dataset_message_id": 89
+        }
+    ]
+}

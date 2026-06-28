@@ -14,6 +14,7 @@ import com.larbcorp.neuroinfogrinder.infrastructure.persistence.repository.Messa
 import com.larbcorp.neuroinfogrinder.infrastructure.persistence.repository.TelegramAccountRepository;
 import com.larbcorp.neuroinfogrinder.shared.dto.PageResponse;
 import com.larbcorp.neuroinfogrinder.domain.messages.TelegramSyncTaskExecutor;
+import com.larbcorp.neuroinfogrinder.domain.messages.TelegramTopicNames;
 import com.larbcorp.neuroinfogrinder.telegram.TelegramTdlibService;
 import com.larbcorp.neuroinfogrinder.telegram.model.TelegramChatDto;
 import com.larbcorp.neuroinfogrinder.telegram.model.TelegramMessageDto;
@@ -35,6 +36,7 @@ import java.util.LinkedHashMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
@@ -71,9 +73,24 @@ public class GroupService {
 
     @Transactional(readOnly = true)
     public PageResponse<GroupResponse> getGroups(String search, String status, Boolean enabled, Long accountId, Pageable pageable) {
+        return getGroups(null, search, status, enabled, accountId, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<GroupResponse> getGroups(
+            Long ownerUserId,
+            String search,
+            String status,
+            Boolean enabled,
+            Long accountId,
+            Pageable pageable
+    ) {
         Specification<GroupEntity> spec = (root, query, cb) -> {
             List<Predicate> predicates = new java.util.ArrayList<>();
 
+            if (ownerUserId != null) {
+                predicates.add(cb.equal(root.get("ownerUserId"), ownerUserId));
+            }
             if (search != null && !search.isBlank()) {
                 String pattern = "%" + search.toLowerCase() + "%";
                 predicates.add(cb.or(
@@ -105,14 +122,22 @@ public class GroupService {
 
     @Transactional
     public void syncGroups() {
-        List<TelegramChatDto> telegramChats = deduplicateTelegramChats(telegramTdlibService.getChats(100));
+        syncGroups(null);
+    }
+
+    @Transactional
+    public void syncGroups(Long ownerUserId) {
+        TelegramAccountEntity account = resolveSyncAccount(ownerUserId);
+        List<TelegramChatDto> telegramChats = deduplicateTelegramChats(
+            account != null ? telegramTdlibService.getChats(account.getId(), 100) : telegramTdlibService.getChats(100)
+        );
         if (telegramChats.isEmpty()) {
             log.warn("No Telegram chats returned from TDLib");
             return;
         }
 
         Map<Long, GroupEntity> existingByChatId = groupRepository
-                .findByTelegramChatIdIn(telegramChats.stream().map(TelegramChatDto::id).toList())
+                .findByTelegramChatIdInAndOwnerUserId(telegramChats.stream().map(TelegramChatDto::id).toList(), ownerUserId)
                 .stream()
                 .collect(Collectors.toMap(
                         GroupEntity::getTelegramChatId,
@@ -134,6 +159,8 @@ public class GroupService {
                 entity.setUsername(chat.username());
                 entity.setForum(chat.forum());
                 entity.setEnabled(true);
+                entity.setAccountId(account != null ? account.getId() : null);
+                entity.setOwnerUserId(ownerUserId);
                 entity.setLastReadMessageId(0L);
                 groupRepository.save(entity);
                 created++;
@@ -165,8 +192,13 @@ public class GroupService {
 
     @Transactional
     public GroupResponse updateGroup(Long id, UpdateGroupRequest request) {
+        return updateGroup(null, id, request);
+    }
+
+    @Transactional
+    public GroupResponse updateGroup(Long ownerUserId, Long id, UpdateGroupRequest request) {
         long startedAt = System.currentTimeMillis();
-        GroupEntity group = groupRepository.findById(id)
+        GroupEntity group = findGroupForOwner(ownerUserId, id)
                 .orElseThrow(() -> new IllegalArgumentException("Group not found: " + id));
         boolean wasEnabled = Boolean.TRUE.equals(group.getEnabled());
 
@@ -177,9 +209,13 @@ public class GroupService {
             group.setCategory(request.category());
         }
         if (request.accountId() != null) {
-            TelegramAccountEntity account = accountRepository.findById(request.accountId())
+            TelegramAccountEntity account = ownerUserId == null
+                    ? accountRepository.findById(request.accountId())
+                    .orElseThrow(() -> new IllegalArgumentException("Account not found: " + request.accountId()))
+                    : accountRepository.findByIdAndOwnerUserId(request.accountId(), ownerUserId)
                     .orElseThrow(() -> new IllegalArgumentException("Account not found: " + request.accountId()));
             group.setAccountId(account.getId());
+            group.setOwnerUserId(account.getOwnerUserId());
         }
         if (request.forum() != null) {
             group.setForum(request.forum());
@@ -204,8 +240,16 @@ public class GroupService {
 
     @Transactional
     public void bulkToggle(BulkToggleRequest request) {
+        bulkToggle(null, request);
+    }
+
+    @Transactional
+    public void bulkToggle(Long ownerUserId, BulkToggleRequest request) {
         long startedAt = System.currentTimeMillis();
         List<GroupEntity> groups = groupRepository.findAllById(request.groupIds());
+        if (ownerUserId != null && groups.stream().anyMatch(group -> !ownerUserId.equals(group.getOwnerUserId()))) {
+            throw new IllegalArgumentException("One or more groups were not found");
+        }
         List<GroupEntity> groupsToWarmUp = new ArrayList<>();
         for (GroupEntity group : groups) {
             boolean wasEnabled = Boolean.TRUE.equals(group.getEnabled());
@@ -229,9 +273,13 @@ public class GroupService {
         try {
             List<TelegramMessageDto> messages;
             if (group.getLastReadMessageId() == null || group.getLastReadMessageId() == 0L) {
-                messages = telegramTdlibService.getMessages(telegramChatId, 0, INITIAL_SYNC_BATCH_SIZE);
+                messages = group.getAccountId() != null
+                    ? telegramTdlibService.getMessages(group.getAccountId(), telegramChatId, 0, INITIAL_SYNC_BATCH_SIZE)
+                    : telegramTdlibService.getMessages(telegramChatId, 0, INITIAL_SYNC_BATCH_SIZE);
             } else {
-                messages = telegramTdlibService.getMessages(telegramChatId, 0, INCREMENTAL_SYNC_BATCH_SIZE);
+                messages = group.getAccountId() != null
+                    ? telegramTdlibService.getMessages(group.getAccountId(), telegramChatId, 0, INCREMENTAL_SYNC_BATCH_SIZE)
+                    : telegramTdlibService.getMessages(telegramChatId, 0, INCREMENTAL_SYNC_BATCH_SIZE);
             }
             Instant monthAgo = Instant.now().minusSeconds(30L * 24 * 3600);
             Map<Long, MessageEntity> existingByTelegramMessageId = loadExistingMessages(group.getId(), messages);
@@ -254,7 +302,7 @@ public class GroupService {
 
                 MessageEntity existing = existingByTelegramMessageId.get(msg.id());
                 if (existing != null) {
-                    if (repairMessageMetadata(existing, msg, msgDate)) {
+                    if (repairMessageMetadata(group, existing, msg, msgDate)) {
                         repairedEntities.add(existing);
                     }
                     continue;
@@ -263,15 +311,16 @@ public class GroupService {
                 MessageEntity msgEntity = new MessageEntity();
                 msgEntity.setTelegramMessageId(msg.id());
                 msgEntity.setGroupId(group.getId());
+                msgEntity.setOwnerUserId(group.getOwnerUserId());
                 msgEntity.setText(msg.text());
                 msgEntity.setSenderName(msg.senderName());
                 msgEntity.setSenderTelegramUserId(msg.senderTelegramUserId());
                 msgEntity.setIsBot(msg.isBot());
                 msgEntity.setReplyToMessageId(msg.replyToMessageId() > 0 ? msg.replyToMessageId() : null);
-                msgEntity.setTopicName(msg.topicName());
                 msgEntity.setTopicId(msg.messageThreadId() > 0 ? msg.messageThreadId() : null);
+                msgEntity.setTopicName(TelegramTopicNames.storedTopicName(group, msg.messageThreadId(), msg.topicName()));
                 msgEntity.setReplyCount(0);
-                msgEntity.setProcessingStatus("UNPROCESSED");
+                applyInitialProcessingStatus(msgEntity, group);
                 msgEntity.setMessageDate(msgDate);
                 newEntities.add(msgEntity);
                 created++;
@@ -292,7 +341,10 @@ public class GroupService {
             return created;
         } catch (Exception e) {
             log.warn("Could not fetch messages for chat {}: {}", telegramChatId, e.getMessage());
-            return telegramTdlibService.getLatestMessage(telegramChatId)
+            Optional<TelegramMessageDto> latestMessage = group.getAccountId() != null
+                    ? telegramTdlibService.getLatestMessage(group.getAccountId(), telegramChatId)
+                    : telegramTdlibService.getLatestMessage(telegramChatId);
+            return latestMessage
                     .map(message -> storeSingleMessage(group, message))
                     .orElse(0);
         }
@@ -311,15 +363,16 @@ public class GroupService {
         MessageEntity entity = new MessageEntity();
         entity.setTelegramMessageId(msg.id());
         entity.setGroupId(group.getId());
+        entity.setOwnerUserId(group.getOwnerUserId());
         entity.setText(msg.text());
         entity.setSenderName(msg.senderName());
         entity.setSenderTelegramUserId(msg.senderTelegramUserId());
         entity.setIsBot(msg.isBot());
         entity.setReplyToMessageId(msg.replyToMessageId() > 0 ? msg.replyToMessageId() : null);
-        entity.setTopicName(msg.topicName());
         entity.setTopicId(msg.messageThreadId() > 0 ? msg.messageThreadId() : null);
+        entity.setTopicName(TelegramTopicNames.storedTopicName(group, msg.messageThreadId(), msg.topicName()));
         entity.setReplyCount(0);
-        entity.setProcessingStatus("UNPROCESSED");
+        applyInitialProcessingStatus(entity, group);
         entity.setMessageDate(msgDate);
         messageRepository.save(entity);
 
@@ -329,7 +382,7 @@ public class GroupService {
         return 1;
     }
 
-    private boolean repairMessageMetadata(MessageEntity entity, TelegramMessageDto msg, Instant msgDate) {
+    private boolean repairMessageMetadata(GroupEntity group, MessageEntity entity, TelegramMessageDto msg, Instant msgDate) {
         boolean changed = false;
 
         if (isPlaceholderSenderName(entity.getSenderName()) && !isPlaceholderSenderName(msg.senderName())) {
@@ -340,8 +393,10 @@ public class GroupService {
             entity.setSenderTelegramUserId(msg.senderTelegramUserId());
             changed = true;
         }
-        if ((entity.getTopicName() == null || entity.getTopicName().isBlank()) && msg.topicName() != null && !msg.topicName().isBlank()) {
-            entity.setTopicName(msg.topicName());
+        Long topicId = entity.getTopicId() != null ? entity.getTopicId() : (msg.messageThreadId() > 0 ? msg.messageThreadId() : null);
+        String topicName = TelegramTopicNames.storedTopicName(group, topicId == null ? 0L : topicId, msg.topicName());
+        if ((entity.getTopicName() == null || entity.getTopicName().isBlank()) && topicName != null && !topicName.isBlank()) {
+            entity.setTopicName(topicName);
             changed = true;
         }
         if (entity.getTopicId() == null && msg.messageThreadId() > 0) {
@@ -366,6 +421,16 @@ public class GroupService {
         }
 
         return changed;
+    }
+
+    private void applyInitialProcessingStatus(MessageEntity entity, GroupEntity group) {
+        if (Boolean.TRUE.equals(group.getEnabled())) {
+            entity.setProcessingStatus("UNPROCESSED");
+            return;
+        }
+
+        entity.setProcessingStatus("SKIPPED");
+        entity.setClassifierReason("Group is disabled; skipped at ingestion");
     }
 
     private boolean isPlaceholderSenderName(String senderName) {
@@ -412,11 +477,23 @@ public class GroupService {
 
     @Transactional
     public void bulkAssign(BulkAssignRequest request) {
-        TelegramAccountEntity account = accountRepository.findById(request.accountId())
+        bulkAssign(null, request);
+    }
+
+    @Transactional
+    public void bulkAssign(Long ownerUserId, BulkAssignRequest request) {
+        TelegramAccountEntity account = ownerUserId == null
+                ? accountRepository.findById(request.accountId())
+                .orElseThrow(() -> new IllegalArgumentException("Account not found: " + request.accountId()))
+                : accountRepository.findByIdAndOwnerUserId(request.accountId(), ownerUserId)
                 .orElseThrow(() -> new IllegalArgumentException("Account not found: " + request.accountId()));
         List<GroupEntity> groups = groupRepository.findAllById(request.groupIds());
+        if (ownerUserId != null && groups.stream().anyMatch(group -> !ownerUserId.equals(group.getOwnerUserId()))) {
+            throw new IllegalArgumentException("One or more groups were not found");
+        }
         for (GroupEntity group : groups) {
             group.setAccountId(account.getId());
+            group.setOwnerUserId(account.getOwnerUserId());
         }
         groupRepository.saveAll(groups);
     }
@@ -424,7 +501,9 @@ public class GroupService {
     private GroupResponse toResponse(GroupEntity group) {
         Instant dayAgo = Instant.now().minusSeconds(24 * 60 * 60L);
         long messagesPerDay = messageRepository.countByGroupIdAndMessageDateAfter(group.getId(), dayAgo);
-        long guidesFound = guideRepository.countByGroupId(group.getId());
+        long guidesFound = group.getOwnerUserId() != null
+            ? guideRepository.countByGroupIdAndOwnerUserId(group.getId(), group.getOwnerUserId())
+            : guideRepository.countByGroupId(group.getId());
 
         return new GroupResponse(
                 group.getId(),
@@ -546,5 +625,28 @@ public class GroupService {
             return 0;
         }
         return syncRecentMessages(persistedGroup, telegramChatId);
+    }
+
+    private Optional<GroupEntity> findGroupForOwner(Long ownerUserId, Long groupId) {
+        return ownerUserId == null
+            ? groupRepository.findById(groupId)
+            : groupRepository.findByIdAndOwnerUserId(groupId, ownerUserId);
+    }
+
+    private TelegramAccountEntity resolveSyncAccount(Long ownerUserId) {
+        if (ownerUserId == null) {
+            return null;
+        }
+        List<TelegramAccountEntity> accounts = accountRepository.findByOwnerUserIdOrderByCreatedAtAsc(ownerUserId);
+        if (accounts.isEmpty()) {
+            throw new IllegalStateException("Telegram account is not connected for current user");
+        }
+        if (accounts.size() > 1) {
+            return accounts.stream()
+                .filter(account -> "CONNECTED".equals(account.getStatus()))
+                .findFirst()
+                .orElse(accounts.get(0));
+        }
+        return accounts.get(0);
     }
 }

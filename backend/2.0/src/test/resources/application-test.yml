@@ -1,0 +1,13 @@
+spring:
+  flyway:
+    enabled: false
+  datasource:
+    url: jdbc:h2:mem:nig2test;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH
+    username: sa
+    password:
+
+neuroinfogrinder:
+  local-reset:
+    allowed-hosts: localhost,127.0.0.1,host.docker.internal,postgres
+    allowed-profiles: local,dev,test
+    allowed-db-name-markers: dev,local,test,neuroinfogrinder2

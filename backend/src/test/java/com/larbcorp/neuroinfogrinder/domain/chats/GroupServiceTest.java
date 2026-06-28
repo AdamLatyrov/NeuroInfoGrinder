@@ -16,8 +16,10 @@ import org.springframework.data.domain.PageRequest;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -108,5 +110,31 @@ class GroupServiceTest {
         verify(telegramSyncTaskExecutor).execute(eq("group-enable-sync:340"), any(Runnable.class));
         verify(telegramTdlibService, never()).getMessages(any(Long.class), any(Long.class), any(Integer.class));
         verify(telegramTdlibService, never()).getLatestMessage(any(Long.class));
+    }
+
+    @Test
+    void updateGroupRejectsGroupOwnedByAnotherUser() {
+        GroupRepository groupRepository = mock(GroupRepository.class);
+        TelegramAccountRepository accountRepository = mock(TelegramAccountRepository.class);
+        TelegramTdlibService telegramTdlibService = mock(TelegramTdlibService.class);
+        MessageRepository messageRepository = mock(MessageRepository.class);
+        GuideRepository guideRepository = mock(GuideRepository.class);
+        TelegramSyncTaskExecutor telegramSyncTaskExecutor = mock(TelegramSyncTaskExecutor.class);
+        GroupService service = new GroupService(
+                groupRepository,
+                accountRepository,
+                telegramTdlibService,
+                messageRepository,
+                guideRepository,
+                telegramSyncTaskExecutor
+        );
+
+        when(groupRepository.findByIdAndOwnerUserId(340L, 1L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.updateGroup(1L, 340L, new UpdateGroupRequest(true, null, null, null)))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("Group not found");
+
+        verify(groupRepository, never()).save(any(GroupEntity.class));
     }
 }

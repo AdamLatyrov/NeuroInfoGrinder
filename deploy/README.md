@@ -103,6 +103,7 @@ nano .env
 - `TDLIB_SYNC_QUEUE_CAPACITY=2`
 - `TDLIB_SYNC_FIXED_DELAY_MS=60000`
 - `SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE=5`
+- `PIPELINE_TRACE_RETENTION_DAYS=45`
 
 ## Start
 
@@ -205,8 +206,12 @@ df -h
 
 ## TDLib JNI
 
-По умолчанию `backend/Dockerfile` скачивает Linux JNI binary из release:
+`backend/Dockerfile` собирает `libtdjni.so` из исходников TDLib на commit,
+который совпадает с Java bindings в `backend/src/main/java/org/drinkless/tdlib`.
+По умолчанию используется:
 
-- `https://github.com/all4fun/build-tdlib/releases/download/v1.2.1/tdlib-v1.2.1-linux-amd64.tar.gz`
+- `TDLIB_GIT_COMMIT=e0943d068ce90b5010f1aea946e6901e25b43bf6`
+- `TDLIB_BUILD_JOBS=4`
 
-URL можно переопределить через `TDLIB_RELEASE_URL` в `.env`.
+Не подменяйте TDLib binary на готовый release без обновления `TdApi.java`: JVM
+завершится с ошибкой несовпадения native/Java версий.

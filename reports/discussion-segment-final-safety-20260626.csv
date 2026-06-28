@@ -1,0 +1,21 @@
+﻿check_name,value
+setting_absent_uses_code_fallback_0,0
+(1 row)
+check_name,value
+discussion_judge_provider_calls,0
+(1 row)
+check_name,value
+discussion_generation_provider_calls,0
+(1 row)
+check_name,value
+dryrun_segments_with_skip_reason,89
+(1 row)
+check_name,value
+dryrun_sources_with_dataset_link,501
+(1 row)
+check_name,value
+dryrun_sources_with_raw_link,501
+(1 row)
+check_name,value
+discussion_materials,0
+(1 row)

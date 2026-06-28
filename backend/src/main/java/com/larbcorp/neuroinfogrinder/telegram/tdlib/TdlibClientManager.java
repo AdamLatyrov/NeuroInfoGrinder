@@ -34,6 +34,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -42,33 +43,60 @@ public class TdlibClientManager {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private static final long REQUEST_TIMEOUT_SECONDS = 30L;
-    private static final long CHAT_HISTORY_TIMEOUT_SECONDS = 8L;
+    private static final long HISTORY_REQUEST_TIMEOUT_SECONDS = 90L;
+    private static final long HISTORY_SMALL_PAGE_TIMEOUT_SECONDS = 8L;
     private static final long TDLIB_NATIVE_LOG_MAX_FILE_SIZE = 50L * 1024L * 1024L;
+    private static final long LEGACY_ACCOUNT_ID = 0L;
+    private static final long FIRST_ACCOUNT_ID = 1L;
+    private static final long MIN_INITIALIZED_TDLIB_DB_BYTES = 1024L * 1024L;
     private static final Logger log = LoggerFactory.getLogger(TdlibClientManager.class);
 
     private final TdlibProperties properties;
     private final List<TelegramUpdateListener> updateListeners;
-    private final AtomicBoolean started = new AtomicBoolean(false);
-    private final AtomicReference<TdApi.AuthorizationState> authorizationState = new AtomicReference<>();
-    private final AtomicReference<String> lastError = new AtomicReference<>();
-    private final AtomicLong authorizationStateVersion = new AtomicLong(0);
-    private final ReentrantLock authorizationLock = new ReentrantLock();
-    private final Condition authorizationChanged = authorizationLock.newCondition();
-    private final ConcurrentMap<Long, TdApi.Chat> chatCache = new ConcurrentHashMap<>();
-    private final ConcurrentMap<Long, TdApi.User> userCache = new ConcurrentHashMap<>();
-    private final ConcurrentMap<Long, TdApi.Supergroup> supergroupCache = new ConcurrentHashMap<>();
-    private final ConcurrentMap<Long, ConcurrentMap<Long, String>> topicNameCache = new ConcurrentHashMap<>();
-    private final ConcurrentMap<Long, ConcurrentMap<Long, TelegramTopicDto>> topicCache = new ConcurrentHashMap<>();
-
-    private volatile Client client;
+    private final ConcurrentMap<Long, ClientState> clientStates = new ConcurrentHashMap<>();
+    private final ThreadLocal<ClientState> activeState = ThreadLocal.withInitial(() -> clientState(LEGACY_ACCOUNT_ID));
 
     public TdlibClientManager(TdlibProperties properties, List<TelegramUpdateListener> updateListeners) {
         this.properties = properties;
         this.updateListeners = updateListeners;
     }
 
+    private ClientState clientState(Long accountId) {
+        long effectiveAccountId = accountId != null ? accountId : LEGACY_ACCOUNT_ID;
+        return clientStates.computeIfAbsent(effectiveAccountId, ClientState::new);
+    }
+
+    private ClientState state() {
+        return activeState.get();
+    }
+
+    private <T> T withAccount(Long accountId, Supplier<T> action) {
+        ClientState previous = activeState.get();
+        activeState.set(clientState(accountId));
+        try {
+            return action.get();
+        } finally {
+            activeState.set(previous);
+        }
+    }
+
+    private void withState(ClientState clientState, Runnable action) {
+        ClientState previous = activeState.get();
+        activeState.set(clientState);
+        try {
+            action.run();
+        } finally {
+            activeState.set(previous);
+        }
+    }
+
+    public TelegramAuthStateResponse getAuthorizationState(Long accountId) {
+        return withAccount(accountId, this::getAuthorizationState);
+    }
+
     public TelegramAuthStateResponse getAuthorizationState() {
         ensureStarted();
+        refreshAuthorizationStateIfMissing();
         String stateName = getAuthorizationStateName();
         return new TelegramAuthStateResponse(
                 stateName,
@@ -76,32 +104,48 @@ public class TdlibClientManager {
                 "AuthorizationStateWaitPhoneNumber".equals(stateName),
                 "AuthorizationStateWaitCode".equals(stateName),
                 "AuthorizationStateWaitPassword".equals(stateName),
-                lastError.get()
+                state().lastError.get()
         );
+    }
+
+    public TelegramAuthStateResponse submitPhoneNumber(Long accountId, String phoneNumber) {
+        return withAccount(accountId, () -> submitPhoneNumber(phoneNumber));
     }
 
     public TelegramAuthStateResponse submitPhoneNumber(String phoneNumber) {
         ensureStarted();
-        long previousVersion = authorizationStateVersion.get();
+        long previousVersion = state().authorizationStateVersion.get();
         sendExpectOk(new TdApi.SetAuthenticationPhoneNumber(phoneNumber, null));
         awaitAuthorizationStateChange(previousVersion);
         return getAuthorizationState();
     }
 
+    public TelegramAuthStateResponse submitCode(Long accountId, String code) {
+        return withAccount(accountId, () -> submitCode(code));
+    }
+
     public TelegramAuthStateResponse submitCode(String code) {
         ensureStarted();
-        long previousVersion = authorizationStateVersion.get();
+        long previousVersion = state().authorizationStateVersion.get();
         sendExpectOk(new TdApi.CheckAuthenticationCode(code));
         awaitAuthorizationStateChange(previousVersion);
         return getAuthorizationState();
     }
 
+    public TelegramAuthStateResponse submitPassword(Long accountId, String password) {
+        return withAccount(accountId, () -> submitPassword(password));
+    }
+
     public TelegramAuthStateResponse submitPassword(String password) {
         ensureStarted();
-        long previousVersion = authorizationStateVersion.get();
+        long previousVersion = state().authorizationStateVersion.get();
         sendExpectOk(new TdApi.CheckAuthenticationPassword(password));
         awaitAuthorizationStateChange(previousVersion);
         return getAuthorizationState();
+    }
+
+    public List<TelegramChatDto> getChats(Long accountId, int limit) {
+        return withAccount(accountId, () -> getChats(limit));
     }
 
     public List<TelegramChatDto> getChats(int limit) {
@@ -117,6 +161,10 @@ public class TdlibClientManager {
         }
         result.sort(Comparator.comparing(TelegramChatDto::title, String.CASE_INSENSITIVE_ORDER));
         return result;
+    }
+
+    public List<TelegramTopicDto> getTopics(Long accountId, long chatId, int limit) {
+        return withAccount(accountId, () -> getTopics(chatId, limit));
     }
 
     public List<TelegramTopicDto> getTopics(long chatId, int limit) {
@@ -155,9 +203,13 @@ public class TdlibClientManager {
         return topics;
     }
 
+    public List<TelegramTopicDto> getCachedTopics(Long accountId, long chatId, int limit) {
+        return withAccount(accountId, () -> getCachedTopics(chatId, limit));
+    }
+
     public List<TelegramTopicDto> getCachedTopics(long chatId, int limit) {
         List<TelegramTopicDto> topics = new ArrayList<>(
-                Optional.ofNullable(topicCache.get(chatId))
+                Optional.ofNullable(state().topicCache.get(chatId))
                         .map(cache -> cache.values().stream().distinct().toList())
                         .orElseGet(List::of)
         );
@@ -168,6 +220,10 @@ public class TdlibClientManager {
             return topics.subList(0, limit);
         }
         return topics;
+    }
+
+    public List<TelegramMessageDto> getMessages(Long accountId, long chatId, long fromMessageId, int limit) {
+        return withAccount(accountId, () -> getMessages(chatId, fromMessageId, limit));
     }
 
     public List<TelegramMessageDto> getMessages(long chatId, long fromMessageId, int limit) {
@@ -209,13 +265,24 @@ public class TdlibClientManager {
     }
 
     private TdApi.Messages getChatHistoryWithFallback(long chatId, long fromMessageId, int limit) {
+        if (state().historyRequestsInFlight.putIfAbsent(chatId, Boolean.TRUE) != null) {
+            throw new TdlibException("TDLib chat history request already in progress for chat " + chatId);
+        }
+
+        try {
+            return doGetChatHistoryWithFallback(chatId, fromMessageId, limit);
+        } finally {
+            state().historyRequestsInFlight.remove(chatId);
+        }
+    }
+
+    private TdApi.Messages doGetChatHistoryWithFallback(long chatId, long fromMessageId, int limit) {
         int normalizedLimit = normalizeLimit(limit, 100);
-        int[] retryLimits = new int[] {
-                normalizedLimit,
-                Math.min(normalizedLimit, 20),
-                Math.min(normalizedLimit, 10),
-                5
-        };
+        List<Integer> retryLimits = new ArrayList<>();
+        addRetryLimit(retryLimits, Math.min(normalizedLimit, 1));
+        addRetryLimit(retryLimits, 5);
+        addRetryLimit(retryLimits, Math.min(normalizedLimit, 20));
+        addRetryLimit(retryLimits, normalizedLimit);
 
         TdlibException lastException = null;
         for (int attemptLimit : retryLimits) {
@@ -230,7 +297,7 @@ public class TdlibClientManager {
                         0,
                         attemptLimit,
                         false
-                ), CHAT_HISTORY_TIMEOUT_SECONDS);
+                ), historyTimeoutFor(attemptLimit, normalizedLimit));
             } catch (TdlibException exception) {
                 lastException = exception;
                 if (!isTimeout(exception) || attemptLimit <= 5) {
@@ -247,9 +314,26 @@ public class TdlibClientManager {
         throw lastException != null ? lastException : new TdlibException("Failed to fetch chat history for chat " + chatId);
     }
 
+    private void addRetryLimit(List<Integer> retryLimits, int limit) {
+        if (limit > 0 && !retryLimits.contains(limit)) {
+            retryLimits.add(limit);
+        }
+    }
+
+    private long historyTimeoutFor(int attemptLimit, int requestedLimit) {
+        if (attemptLimit >= requestedLimit && requestedLimit > 20) {
+            return HISTORY_REQUEST_TIMEOUT_SECONDS;
+        }
+        return HISTORY_SMALL_PAGE_TIMEOUT_SECONDS;
+    }
+
     private boolean isTimeout(TdlibException exception) {
         String message = exception.getMessage();
         return message != null && message.toLowerCase().contains("timed out");
+    }
+
+    public TelegramMessagesBatchResponse getMessagesForChats(Long accountId, List<Long> chatIds, int limitPerChat) {
+        return withAccount(accountId, () -> getMessagesForChats(chatIds, limitPerChat));
     }
 
     public TelegramMessagesBatchResponse getMessagesForChats(List<Long> chatIds, int limitPerChat) {
@@ -266,15 +350,51 @@ public class TdlibClientManager {
         return new TelegramMessagesBatchResponse(items);
     }
 
+    public Optional<TelegramMessageDto> getLatestMessage(Long accountId, long chatId) {
+        return withAccount(accountId, () -> getLatestMessage(chatId));
+    }
+
     public Optional<TelegramMessageDto> getLatestMessage(long chatId) {
         ensureReady();
         return getLatestChatMessage(chatId).map(message -> toMessageDto(chatId, message));
     }
 
+    public long sendTextMessage(Long accountId, long chatId, Long topicId, String text) {
+        return withAccount(accountId, () -> sendTextMessage(chatId, topicId, text));
+    }
+
+    public long sendTextMessage(long chatId, Long topicId, String text) {
+        ensureReady();
+        if (text == null || text.isBlank()) {
+            throw new TdlibException("Message text must not be empty");
+        }
+
+        TdApi.MessageTopic messageTopic = topicId == null || topicId <= 0
+                ? null
+                : new TdApi.MessageTopicForum(Math.toIntExact(topicId));
+        TdApi.InputMessageText inputMessageText = new TdApi.InputMessageText(
+                new TdApi.FormattedText(text, null),
+                null,
+                true
+        );
+        TdApi.Message message = send(new TdApi.SendMessage(
+                chatId,
+                messageTopic,
+                null,
+                null,
+                null,
+                inputMessageText
+        ));
+        return message.id;
+    }
+
     @PreDestroy
     public void shutdown() {
-        Client localClient = client;
-        if (localClient != null) {
+        for (ClientState clientState : clientStates.values()) {
+            Client localClient = clientState.client;
+            if (localClient == null) {
+                continue;
+            }
             try {
                 localClient.send(new TdApi.Close(), object -> {
                 });
@@ -291,16 +411,24 @@ public class TdlibClientManager {
             throw new TdlibException("TDLib apiId/apiHash are not configured");
         }
 
-        if (started.compareAndSet(false, true)) {
+        ClientState clientState = state();
+        if (clientState.started.compareAndSet(false, true)) {
             try {
                 createDirectories();
                 TdlibNativeLoader.load(properties);
                 configureTdlibLogging();
                 Client.setLogMessageHandler(0, null);
-                client = Client.create(this::handleUpdate, null, throwable -> lastError.set(throwable.getMessage()));
-                send(new TdApi.GetAuthorizationState());
+                clientState.client = Client.create(
+                        object -> withState(clientState, () -> handleUpdate(object)),
+                        null,
+                        throwable -> clientState.lastError.set(throwable.getMessage())
+                );
+                configureProxyIfNeeded();
+                TdApi.AuthorizationState authorizationState = send(new TdApi.GetAuthorizationState());
+                onAuthorizationStateUpdated(authorizationState);
             } catch (Exception exception) {
-                started.set(false);
+                clientState.started.set(false);
+                clientState.proxyConfigured.set(false);
                 throw new TdlibException("Failed to initialize TDLib JNI client", exception);
             }
         }
@@ -315,8 +443,8 @@ public class TdlibClientManager {
     }
 
     private void createDirectories() throws IOException {
-        Files.createDirectories(Path.of(properties.getDatabaseDirectory()).toAbsolutePath());
-        Files.createDirectories(Path.of(properties.getFilesDirectory()).toAbsolutePath());
+        Files.createDirectories(databaseDirectory(state()).toAbsolutePath());
+        Files.createDirectories(filesDirectory(state()).toAbsolutePath());
     }
 
     private void configureTdlibLogging() {
@@ -331,7 +459,80 @@ public class TdlibClientManager {
         }
     }
 
+    private void configureProxyIfNeeded() {
+        ClientState clientState = state();
+        TdlibProperties.Proxy proxy = properties.getProxy();
+        if (proxy == null || !proxy.isEnabled()) {
+            return;
+        }
+        if (!clientState.proxyConfigured.compareAndSet(false, true)) {
+            return;
+        }
+
+        try {
+            validateProxy(proxy);
+            TdApi.AddedProxy addedProxy = send(new TdApi.AddProxy(
+                    new TdApi.Proxy(proxy.getHost().trim(), proxy.getPort(), buildProxyType(proxy)),
+                    true,
+                    "neuroinfogrinder"
+            ));
+            log.info(
+                    "TDLib proxy enabled: type={} host={} port={} id={}",
+                    normalizeProxyType(proxy.getType()),
+                    proxy.getHost().trim(),
+                    proxy.getPort(),
+                    addedProxy.id
+            );
+        } catch (RuntimeException exception) {
+            clientState.proxyConfigured.set(false);
+            throw exception;
+        }
+    }
+
+    private void validateProxy(TdlibProperties.Proxy proxy) {
+        if (proxy.getHost() == null || proxy.getHost().isBlank()) {
+            throw new TdlibException("TDLib proxy host is not configured");
+        }
+        if (proxy.getPort() <= 0 || proxy.getPort() > 65535) {
+            throw new TdlibException("TDLib proxy port is invalid");
+        }
+    }
+
+    static TdApi.ProxyType buildProxyType(TdlibProperties.Proxy proxy) {
+        String type = normalizeProxyType(proxy.getType());
+        return switch (type) {
+            case "socks5", "socks" -> new TdApi.ProxyTypeSocks5(
+                    blankToEmpty(proxy.getUsername()),
+                    blankToEmpty(proxy.getPassword())
+            );
+            case "http" -> new TdApi.ProxyTypeHttp(
+                    blankToEmpty(proxy.getUsername()),
+                    blankToEmpty(proxy.getPassword()),
+                    false
+            );
+            case "mtproto" -> {
+                if (proxy.getSecret() == null || proxy.getSecret().isBlank()) {
+                    throw new TdlibException("TDLib MTProto proxy secret is not configured");
+                }
+                yield new TdApi.ProxyTypeMtproto(proxy.getSecret().trim());
+            }
+            default -> throw new TdlibException("Unsupported TDLib proxy type: " + type);
+        };
+    }
+
+    private static String normalizeProxyType(String type) {
+        if (type == null || type.isBlank()) {
+            return "socks5";
+        }
+        return type.trim().toLowerCase();
+    }
+
+    private static String blankToEmpty(String value) {
+        return value == null ? "" : value.trim();
+    }
+
     private void handleUpdate(TdApi.Object object) {
+        ClientState clientState = state();
         if (object == null) {
             return;
         }
@@ -341,15 +542,15 @@ public class TdlibClientManager {
             return;
         }
         if (object instanceof TdApi.UpdateNewChat updateNewChat) {
-            chatCache.put(updateNewChat.chat.id, updateNewChat.chat);
+            clientState.chatCache.put(updateNewChat.chat.id, updateNewChat.chat);
             return;
         }
         if (object instanceof TdApi.UpdateUser updateUser) {
-            userCache.put(updateUser.user.id, updateUser.user);
+            clientState.userCache.put(updateUser.user.id, updateUser.user);
             return;
         }
         if (object instanceof TdApi.UpdateChatTitle updateChatTitle) {
-            TdApi.Chat chat = chatCache.get(updateChatTitle.chatId);
+            TdApi.Chat chat = clientState.chatCache.get(updateChatTitle.chatId);
             if (chat != null) {
                 chat.title = updateChatTitle.title;
             }
@@ -370,22 +571,23 @@ public class TdlibClientManager {
             TelegramMessageDto message = toRealtimeMessageDto(updateNewMessage.message.chatId, updateNewMessage.message);
             for (TelegramUpdateListener listener : updateListeners) {
                 try {
-                    listener.onNewMessage(message);
+                    listener.onNewMessage(clientState.accountId(), message);
                 } catch (Exception exception) {
-                    lastError.set(exception.getMessage());
+                    clientState.lastError.set(exception.getMessage());
                 }
             }
         }
     }
 
     private void onAuthorizationStateUpdated(TdApi.AuthorizationState state) {
-        authorizationState.set(state);
-        authorizationStateVersion.incrementAndGet();
-        authorizationLock.lock();
+        ClientState clientState = state();
+        clientState.authorizationState.set(state);
+        clientState.authorizationStateVersion.incrementAndGet();
+        clientState.authorizationLock.lock();
         try {
-            authorizationChanged.signalAll();
+            clientState.authorizationChanged.signalAll();
         } finally {
-            authorizationLock.unlock();
+            clientState.authorizationLock.unlock();
         }
 
         if (state instanceof TdApi.AuthorizationStateWaitTdlibParameters) {
@@ -393,15 +595,16 @@ public class TdlibClientManager {
             return;
         }
         if (state instanceof TdApi.AuthorizationStateClosed) {
-            started.set(false);
+            clientState.started.set(false);
         }
     }
 
     private TdApi.SetTdlibParameters buildTdlibParameters() {
+        ClientState clientState = state();
         TdApi.SetTdlibParameters parameters = new TdApi.SetTdlibParameters();
         parameters.useTestDc = properties.isUseTestDc();
-        parameters.databaseDirectory = Path.of(properties.getDatabaseDirectory()).toAbsolutePath().toString();
-        parameters.filesDirectory = Path.of(properties.getFilesDirectory()).toAbsolutePath().toString();
+        parameters.databaseDirectory = databaseDirectory(clientState).toAbsolutePath().toString();
+        parameters.filesDirectory = filesDirectory(clientState).toAbsolutePath().toString();
         parameters.databaseEncryptionKey = properties.getDatabaseEncryptionKey().getBytes(StandardCharsets.UTF_8);
         parameters.useFileDatabase = properties.isUseFileDatabase();
         parameters.useChatInfoDatabase = properties.isUseChatInfoDatabase();
@@ -417,47 +620,58 @@ public class TdlibClientManager {
     }
 
     private void awaitAuthorizationStateChange(long previousVersion) {
+        ClientState clientState = state();
         long remainingNanos = TimeUnit.SECONDS.toNanos(REQUEST_TIMEOUT_SECONDS);
-        authorizationLock.lock();
+        clientState.authorizationLock.lock();
         try {
-            while (authorizationStateVersion.get() == previousVersion && remainingNanos > 0) {
-                remainingNanos = authorizationChanged.awaitNanos(remainingNanos);
+            while (clientState.authorizationStateVersion.get() == previousVersion && remainingNanos > 0) {
+                remainingNanos = clientState.authorizationChanged.awaitNanos(remainingNanos);
             }
         } catch (InterruptedException exception) {
             Thread.currentThread().interrupt();
             throw new TdlibException("Interrupted while waiting for authorization state update", exception);
         } finally {
-            authorizationLock.unlock();
+            clientState.authorizationLock.unlock();
         }
+    }
+
+    private void refreshAuthorizationStateIfMissing() {
+        if (state().authorizationState.get() != null) {
+            return;
+        }
+        TdApi.AuthorizationState authorizationState = send(new TdApi.GetAuthorizationState());
+        onAuthorizationStateUpdated(authorizationState);
     }
 
     private void loadChats(int limit) {
         TdApi.Object response = sendRaw(new TdApi.LoadChats(new TdApi.ChatListMain(), normalizeLimit(limit, properties.getChatLimit())));
         if (response instanceof TdApi.Error error && error.code != 404) {
-            lastError.set(error.message);
+            state().lastError.set(error.message);
             throw new TdlibException("TDLib request failed: " + error.code + " " + error.message);
         }
     }
 
     private TdApi.Chat getChat(long chatId) {
-        TdApi.Chat cachedChat = chatCache.get(chatId);
+        ClientState clientState = state();
+        TdApi.Chat cachedChat = clientState.chatCache.get(chatId);
         if (cachedChat != null) {
             return cachedChat;
         }
 
         TdApi.Chat chat = send(new TdApi.GetChat(chatId));
-        chatCache.put(chat.id, chat);
+        clientState.chatCache.put(chat.id, chat);
         return chat;
     }
 
     private TdApi.Supergroup getSupergroup(long supergroupId) {
-        TdApi.Supergroup cachedSupergroup = supergroupCache.get(supergroupId);
+        ClientState clientState = state();
+        TdApi.Supergroup cachedSupergroup = clientState.supergroupCache.get(supergroupId);
         if (cachedSupergroup != null) {
             return cachedSupergroup;
         }
 
         TdApi.Supergroup supergroup = send(new TdApi.GetSupergroup(supergroupId));
-        supergroupCache.put(supergroup.id, supergroup);
+        clientState.supergroupCache.put(supergroup.id, supergroup);
         return supergroup;
     }
 
@@ -466,10 +680,11 @@ public class TdlibClientManager {
     }
 
     private void sendWithoutResult(TdApi.Function<?> function) {
+        ClientState clientState = state();
         Client localClient = requireClient();
         localClient.send(function, object -> {
             if (object instanceof TdApi.Error error) {
-                lastError.set(error.message);
+                clientState.lastError.set(error.message);
             }
         });
     }
@@ -477,7 +692,7 @@ public class TdlibClientManager {
     private <T extends TdApi.Object> T send(TdApi.Function<T> function) {
         TdApi.Object object = sendRaw(function, REQUEST_TIMEOUT_SECONDS);
         if (object instanceof TdApi.Error error) {
-            lastError.set(error.message);
+            state().lastError.set(error.message);
             throw new TdlibException("TDLib request failed: " + error.code + " " + error.message);
         }
         @SuppressWarnings("unchecked")
@@ -488,7 +703,7 @@ public class TdlibClientManager {
     private <T extends TdApi.Object> T send(TdApi.Function<T> function, long timeoutSeconds) {
         TdApi.Object object = sendRaw(function, timeoutSeconds);
         if (object instanceof TdApi.Error error) {
-            lastError.set(error.message);
+            state().lastError.set(error.message);
             throw new TdlibException("TDLib request failed: " + error.code + " " + error.message);
         }
         @SuppressWarnings("unchecked")
@@ -516,13 +731,13 @@ public class TdlibClientManager {
     }
 
     private void ensureStartedWithoutRecursion() {
-        if (!started.get()) {
+        if (!state().started.get()) {
             ensureStarted();
         }
     }
 
     private Client requireClient() {
-        Client localClient = client;
+        Client localClient = state().client;
         if (localClient == null) {
             throw new TdlibException("TDLib client is not initialized");
         }
@@ -592,12 +807,11 @@ public class TdlibClientManager {
 
     private TelegramMessageDto toRealtimeMessageDto(long chatId, TdApi.Message message) {
         long topicKey = extractTopicKey(message.topicId);
-        String topicName = resolveTopicName(chatId, message.topicId);
-        String senderName = extractSenderName(message);
-        String senderUsername = extractSenderUsername(message);
+        String topicName = resolveCachedTopicName(chatId, topicKey);
+        String senderName = extractCachedSenderName(message);
+        String senderUsername = extractCachedSenderUsername(message);
         Long senderTelegramUserId = extractSenderUserId(message);
-        boolean isBot = message.senderId instanceof TdApi.MessageSenderUser senderUser
-                && getUser(senderUser.userId).type instanceof TdApi.UserTypeBot;
+        boolean isBot = isCachedBot(message);
 
         return new TelegramMessageDto(
                 message.id,
@@ -614,6 +828,46 @@ public class TdlibClientManager {
                 extractReplyToMessageId(message),
                 message.date > 0 ? message.date : Instant.now().getEpochSecond()
         );
+    }
+
+    private String resolveCachedTopicName(long chatId, long topicKey) {
+        if (topicKey <= 0) {
+            return null;
+        }
+        return Optional.ofNullable(state().topicNameCache.get(chatId))
+                .map(cache -> cache.get(topicKey))
+                .orElse(null);
+    }
+
+    private String extractCachedSenderName(TdApi.Message message) {
+        if (message.senderId instanceof TdApi.MessageSenderUser senderUser) {
+            TdApi.User user = state().userCache.get(senderUser.userId);
+            String displayName = formatUserDisplayName(user);
+            return displayName != null ? displayName : "User " + senderUser.userId;
+        }
+        if (message.senderId instanceof TdApi.MessageSenderChat senderChat) {
+            TdApi.Chat chat = state().chatCache.get(senderChat.chatId);
+            if (chat != null && chat.title != null && !chat.title.isBlank()) {
+                return chat.title;
+            }
+        }
+        return null;
+    }
+
+    private String extractCachedSenderUsername(TdApi.Message message) {
+        if (message.senderId instanceof TdApi.MessageSenderUser senderUser) {
+            TdApi.User user = state().userCache.get(senderUser.userId);
+            return user == null ? null : firstActiveUsername(user.usernames);
+        }
+        return null;
+    }
+
+    private boolean isCachedBot(TdApi.Message message) {
+        if (message.senderId instanceof TdApi.MessageSenderUser senderUser) {
+            TdApi.User user = state().userCache.get(senderUser.userId);
+            return user != null && user.type instanceof TdApi.UserTypeBot;
+        }
+        return false;
     }
 
     private long extractReplyToMessageId(TdApi.Message message) {
@@ -634,7 +888,7 @@ public class TdlibClientManager {
                     return chat.title;
                 }
             } catch (TdlibException ignored) {
-                TdApi.Chat chat = chatCache.get(senderChat.chatId);
+                TdApi.Chat chat = state().chatCache.get(senderChat.chatId);
                 if (chat != null && chat.title != null && !chat.title.isBlank()) {
                     return chat.title;
                 }
@@ -663,18 +917,27 @@ public class TdlibClientManager {
         return displayName != null ? displayName : "User " + userId;
     }
 
+    public String resolveUserDisplayName(Long accountId, long userId) {
+        return withAccount(accountId, () -> resolveUserDisplayName(userId));
+    }
+
     public String resolveUserUsername(long userId) {
         return firstActiveUsername(getUser(userId).usernames);
     }
 
+    public String resolveUserUsername(Long accountId, long userId) {
+        return withAccount(accountId, () -> resolveUserUsername(userId));
+    }
+
     private TdApi.User getUser(long userId) {
-        TdApi.User cachedUser = userCache.get(userId);
+        ClientState clientState = state();
+        TdApi.User cachedUser = clientState.userCache.get(userId);
         if (cachedUser != null) {
             return cachedUser;
         }
         try {
             TdApi.User user = send(new TdApi.GetUser(userId));
-            userCache.put(user.id, user);
+            clientState.userCache.put(user.id, user);
             return user;
         } catch (TdlibException e) {
             TdApi.User fallback = new TdApi.User();
@@ -729,7 +992,7 @@ public class TdlibClientManager {
             return null;
         }
 
-        String cached = Optional.ofNullable(topicNameCache.get(chatId))
+        String cached = Optional.ofNullable(state().topicNameCache.get(chatId))
                 .map(cache -> cache.get(topicKey))
                 .orElse(null);
         if (cached != null) {
@@ -755,7 +1018,7 @@ public class TdlibClientManager {
             return null;
         }
 
-        return Optional.ofNullable(topicNameCache.get(chatId))
+        return Optional.ofNullable(state().topicNameCache.get(chatId))
                 .map(cache -> cache.get(topicKey))
                 .orElse(null);
     }
@@ -764,11 +1027,11 @@ public class TdlibClientManager {
         if (topicKey <= 0 || name == null || name.isBlank()) {
             return;
         }
-        topicNameCache.computeIfAbsent(chatId, ignored -> new ConcurrentHashMap<>()).put(topicKey, name);
+        state().topicNameCache.computeIfAbsent(chatId, ignored -> new ConcurrentHashMap<>()).put(topicKey, name);
     }
 
     private void cacheTopic(long chatId, TelegramTopicDto topic) {
-        ConcurrentMap<Long, TelegramTopicDto> topics = topicCache.computeIfAbsent(chatId, ignored -> new ConcurrentHashMap<>());
+        ConcurrentMap<Long, TelegramTopicDto> topics = state().topicCache.computeIfAbsent(chatId, ignored -> new ConcurrentHashMap<>());
         topics.put(topic.forumTopicId(), topic);
         topics.put(topic.messageThreadId(), topic);
     }
@@ -947,11 +1210,11 @@ public class TdlibClientManager {
     }
 
     private String getAuthorizationStateName() {
-        TdApi.AuthorizationState state = authorizationState.get();
-        if (state == null) {
+        TdApi.AuthorizationState authorizationState = state().authorizationState.get();
+        if (authorizationState == null) {
             return "not_initialized";
         }
-        return state.getClass().getSimpleName();
+        return authorizationState.getClass().getSimpleName();
     }
 
     private int normalizeLimit(int limit, int fallback) {
@@ -959,5 +1222,92 @@ public class TdlibClientManager {
             return fallback;
         }
         return Math.min(limit, 100);
+    }
+
+    Path databaseDirectoryForAccount(Long accountId) {
+        return databaseDirectory(clientState(accountId));
+    }
+
+    Path filesDirectoryForAccount(Long accountId) {
+        return filesDirectory(clientState(accountId));
+    }
+
+    private Path databaseDirectory(ClientState clientState) {
+        if (clientState.isLegacy() || shouldUseLegacyStorageForFirstAccount(clientState)) {
+            return Path.of(properties.getDatabaseDirectory());
+        }
+        return accountDataRoot(properties.getDatabaseDirectory()).resolve(String.valueOf(clientState.accountId())).resolve("db");
+    }
+
+    private Path filesDirectory(ClientState clientState) {
+        if (clientState.isLegacy() || shouldUseLegacyStorageForFirstAccount(clientState)) {
+            return Path.of(properties.getFilesDirectory());
+        }
+        return accountDataRoot(properties.getFilesDirectory()).resolve(String.valueOf(clientState.accountId())).resolve("files");
+    }
+
+    private boolean shouldUseLegacyStorageForFirstAccount(ClientState clientState) {
+        if (clientState.accountId != FIRST_ACCOUNT_ID) {
+            return false;
+        }
+
+        Path legacyDatabaseFile = Path.of(properties.getDatabaseDirectory()).resolve("db.sqlite");
+        if (!Files.isRegularFile(legacyDatabaseFile)) {
+            return false;
+        }
+
+        Path accountDatabaseFile = accountDataRoot(properties.getDatabaseDirectory())
+                .resolve(String.valueOf(clientState.accountId()))
+                .resolve("db")
+                .resolve("db.sqlite");
+        if (!Files.isRegularFile(accountDatabaseFile)) {
+            return true;
+        }
+
+        try {
+            long legacySize = Files.size(legacyDatabaseFile);
+            long accountSize = Files.size(accountDatabaseFile);
+            return legacySize >= MIN_INITIALIZED_TDLIB_DB_BYTES && accountSize < MIN_INITIALIZED_TDLIB_DB_BYTES;
+        } catch (IOException exception) {
+            log.debug("Failed to inspect TDLib storage compatibility paths: {}", exception.getMessage());
+            return false;
+        }
+    }
+
+    private Path accountDataRoot(String configuredDirectory) {
+        Path configured = Path.of(configuredDirectory);
+        Path parent = configured.getParent();
+        Path root = parent != null ? parent : configured;
+        return root.resolve("accounts");
+    }
+
+    private static final class ClientState {
+        private final long accountId;
+        private final AtomicBoolean started = new AtomicBoolean(false);
+        private final AtomicBoolean proxyConfigured = new AtomicBoolean(false);
+        private final AtomicReference<TdApi.AuthorizationState> authorizationState = new AtomicReference<>();
+        private final AtomicReference<String> lastError = new AtomicReference<>();
+        private final AtomicLong authorizationStateVersion = new AtomicLong(0);
+        private final ReentrantLock authorizationLock = new ReentrantLock();
+        private final Condition authorizationChanged = authorizationLock.newCondition();
+        private final ConcurrentMap<Long, TdApi.Chat> chatCache = new ConcurrentHashMap<>();
+        private final ConcurrentMap<Long, TdApi.User> userCache = new ConcurrentHashMap<>();
+        private final ConcurrentMap<Long, TdApi.Supergroup> supergroupCache = new ConcurrentHashMap<>();
+        private final ConcurrentMap<Long, ConcurrentMap<Long, String>> topicNameCache = new ConcurrentHashMap<>();
+        private final ConcurrentMap<Long, ConcurrentMap<Long, TelegramTopicDto>> topicCache = new ConcurrentHashMap<>();
+        private final ConcurrentMap<Long, Boolean> historyRequestsInFlight = new ConcurrentHashMap<>();
+        private volatile Client client;
+
+        private ClientState(long accountId) {
+            this.accountId = accountId;
+        }
+
+        private Long accountId() {
+            return isLegacy() ? null : accountId;
+        }
+
+        private boolean isLegacy() {
+            return accountId == LEGACY_ACCOUNT_ID;
+        }
     }
 }

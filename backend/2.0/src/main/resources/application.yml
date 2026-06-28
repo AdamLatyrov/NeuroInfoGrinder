@@ -1,0 +1,52 @@
+server:
+  port: ${SERVER_PORT:8080}
+
+spring:
+  application:
+    name: neuroinfogrinder-backend-2
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://127.0.0.1:5433/neuroinfogrinder2_dev}
+    username: ${DB_USERNAME:neuroinfogrinder2}
+    password: ${DB_PASSWORD:neuroinfogrinder2_local}
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+neuroinfogrinder:
+  model-worker:
+    base-url: ${MODEL_WORKER_BASE_URL:http://127.0.0.1:8095}
+    timeout-ms: ${MODEL_WORKER_TIMEOUT_MS:120000}
+  local-reset:
+    allowed-hosts: localhost,127.0.0.1,host.docker.internal,postgres
+    allowed-profiles: local,dev,test,prod
+    allowed-db-name-markers: dev,local,test,neuroinfogrinder2
+
+telegram:
+  tdlib:
+    enabled: ${TDLIB_ENABLED:false}
+    library-name: ${TDLIB_LIBRARY_NAME:tdjni}
+    library-path: ${TDLIB_LIBRARY_PATH:}
+    api-id: ${TDLIB_API_ID:0}
+    api-hash: ${TDLIB_API_HASH:}
+    database-directory: ${TDLIB_DATABASE_DIRECTORY:./tdlib-data/backend-2/db}
+    files-directory: ${TDLIB_FILES_DIRECTORY:./tdlib-data/backend-2/files}
+    database-encryption-key: ${TDLIB_DATABASE_ENCRYPTION_KEY:local-dev-only}
+    use-test-dc: ${TDLIB_USE_TEST_DC:false}
+    use-file-database: true
+    use-chat-info-database: true
+    use-message-database: true
+    use-secret-chats: false
+    system-language-code: ru
+    device-model: desktop
+    system-version: Windows
+    application-version: 2.0-local
+    chat-limit: ${TDLIB_CHAT_LIMIT:100}
+    topic-limit: ${TDLIB_TOPIC_LIMIT:100}

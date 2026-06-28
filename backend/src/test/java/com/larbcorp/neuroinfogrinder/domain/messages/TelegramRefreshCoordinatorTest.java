@@ -9,8 +9,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import java.util.List;
-
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -44,58 +42,95 @@ class TelegramRefreshCoordinatorTest {
     }
 
     @Test
-    void runScheduledCatchUpRequestsSyncForEnabledGroupsWhenTdlibIsReady() {
-        GroupEntity first = new GroupEntity();
-        first.setId(101L);
-        GroupEntity second = new GroupEntity();
-        second.setId(202L);
-        GroupEntity third = new GroupEntity();
-        third.setId(303L);
-
-        when(telegramTdlibService.getAuthorizationState())
-                .thenReturn(new TelegramAuthStateResponse("AuthorizationStateReady", true, false, false, false, null));
-        when(groupRepository.findByEnabledTrue()).thenReturn(List.of(first, second, third));
-        when(syncTaskExecutor.execute(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.any(Runnable.class)))
-                .thenReturn(true);
-
-        coordinator.runScheduledCatchUp();
-
-        verify(groupRepository).findByEnabledTrue();
-        verify(syncTaskExecutor, org.mockito.Mockito.times(2))
-                .execute(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.any(Runnable.class));
-    }
-
-    @Test
-    void runScheduledCatchUpSkipsGroupsWhenTdlibIsNotReady() {
-        when(telegramTdlibService.getAuthorizationState())
-                .thenReturn(new TelegramAuthStateResponse("AuthorizationStateWaitCode", false, false, true, false, null));
+    void runScheduledCatchUpDoesNotScanEnabledGroupsOrScheduleAutomaticSync() {
 
         coordinator.runScheduledCatchUp();
 
         verify(groupRepository, never()).findByEnabledTrue();
+        verify(syncTaskExecutor, never())
+                .execute(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.any(Runnable.class));
     }
 
     @Test
     void requestMessageSyncSkipsGroupAlreadyInFlight() {
+        GroupEntity group = new GroupEntity();
+        group.setId(10L);
+        group.setTelegramChatId(-100L);
+        group.setEnabled(true);
+
+        when(groupRepository.findById(10L)).thenReturn(java.util.Optional.of(group));
+        when(telegramTdlibService.getAuthorizationState())
+                .thenReturn(new TelegramAuthStateResponse("AuthorizationStateReady", true, false, false, false, null));
         when(syncTaskExecutor.execute(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.any(Runnable.class)))
                 .thenReturn(true);
 
-        boolean first = coordinator.requestMessageSync(10L, "test");
-        boolean second = coordinator.requestMessageSync(10L, "test");
+        MessageSyncRequestResponse first = coordinator.requestMessageSync(10L, "test");
+        MessageSyncRequestResponse second = coordinator.requestMessageSync(10L, "test");
 
-        org.junit.jupiter.api.Assertions.assertTrue(first);
-        org.junit.jupiter.api.Assertions.assertFalse(second);
+        org.junit.jupiter.api.Assertions.assertTrue(first.scheduled());
+        org.junit.jupiter.api.Assertions.assertFalse(second.scheduled());
+        org.junit.jupiter.api.Assertions.assertEquals("already_running", second.reason());
         verify(syncTaskExecutor, org.mockito.Mockito.times(1))
                 .execute(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.any(Runnable.class));
     }
 
     @Test
+    void requestMessageSyncAllowsSameTelegramChatAcrossDifferentAccounts() {
+        GroupEntity first = new GroupEntity();
+        first.setId(10L);
+        first.setAccountId(1L);
+        first.setTelegramChatId(-100L);
+        first.setEnabled(true);
+        GroupEntity duplicateChat = new GroupEntity();
+        duplicateChat.setId(20L);
+        duplicateChat.setAccountId(2L);
+        duplicateChat.setTelegramChatId(-100L);
+        duplicateChat.setEnabled(true);
+
+        when(groupRepository.findById(10L)).thenReturn(java.util.Optional.of(first));
+        when(groupRepository.findById(20L)).thenReturn(java.util.Optional.of(duplicateChat));
+        when(telegramTdlibService.getAuthorizationState(1L))
+                .thenReturn(new TelegramAuthStateResponse("AuthorizationStateReady", true, false, false, false, null));
+        when(telegramTdlibService.getAuthorizationState(2L))
+                .thenReturn(new TelegramAuthStateResponse("AuthorizationStateReady", true, false, false, false, null));
+        when(syncTaskExecutor.execute(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.any(Runnable.class)))
+                .thenReturn(true);
+
+        MessageSyncRequestResponse firstResponse = coordinator.requestMessageSync(10L, "test");
+        MessageSyncRequestResponse secondResponse = coordinator.requestMessageSync(20L, "test");
+
+        org.junit.jupiter.api.Assertions.assertTrue(firstResponse.scheduled());
+        org.junit.jupiter.api.Assertions.assertTrue(secondResponse.scheduled());
+        verify(syncTaskExecutor, org.mockito.Mockito.times(2))
+                .execute(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.any(Runnable.class));
+    }
+
+    @Test
     void requestMessageSyncSkipsWhenExecutorIsSaturated() {
+        GroupEntity group = new GroupEntity();
+        group.setId(10L);
+        group.setTelegramChatId(-100L);
+        group.setEnabled(true);
+
+        when(groupRepository.findById(10L)).thenReturn(java.util.Optional.of(group));
+        when(telegramTdlibService.getAuthorizationState())
+                .thenReturn(new TelegramAuthStateResponse("AuthorizationStateReady", true, false, false, false, null));
         when(syncTaskExecutor.execute(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.any(Runnable.class)))
                 .thenReturn(false);
 
-        boolean accepted = coordinator.requestMessageSync(10L, "test");
+        MessageSyncRequestResponse accepted = coordinator.requestMessageSync(10L, "test");
 
-        org.junit.jupiter.api.Assertions.assertFalse(accepted);
+        org.junit.jupiter.api.Assertions.assertFalse(accepted.scheduled());
+        org.junit.jupiter.api.Assertions.assertEquals("executor_saturated", accepted.reason());
+    }
+
+    @Test
+    void requestMessageSyncReturnsErrorWhenSchedulingFailsUnexpectedly() {
+        when(groupRepository.findById(10L)).thenThrow(new IllegalStateException("database unavailable"));
+
+        MessageSyncRequestResponse response = coordinator.requestMessageSync(10L, "test");
+
+        org.junit.jupiter.api.Assertions.assertFalse(response.scheduled());
+        org.junit.jupiter.api.Assertions.assertEquals("error", response.reason());
     }
 }

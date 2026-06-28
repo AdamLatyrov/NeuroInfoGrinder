@@ -25,5 +25,10 @@ public record PipelineTraceResponse(
     Double costUsd,
     Double score,
     Double confidence,
-    String reason
+    String reason,
+    String entityType,
+    String entityName,
+    String entityVersion,
+    String configSnapshotJson,
+    String tuningHint
 ) {}

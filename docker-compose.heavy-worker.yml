@@ -1,0 +1,18 @@
+services:
+  model-worker:
+    build:
+      context: ./backend/2.0
+      dockerfile: model-worker/Dockerfile.heavy
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8095:8095"
+    environment:
+      NIG_LOAD_EMBEDDINGS_ON_STARTUP: "true"
+      NIG_EMBEDDING_MODEL: "BAAI/bge-m3"
+      NIG_CLASSIFIER_MODEL: "BOOTSTRAP_BERT_CLASSIFIER"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8095/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 180s

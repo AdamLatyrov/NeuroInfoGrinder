@@ -1,0 +1,30 @@
+services:
+  model-worker:
+    build:
+      context: ./backend/2.0
+      dockerfile: model-worker/Dockerfile
+    restart: unless-stopped
+    environment:
+      NIG_LOAD_EMBEDDINGS_ON_STARTUP: ${NIG_LOAD_EMBEDDINGS_ON_STARTUP:-false}
+      NIG_EMBEDDING_MODEL: ${NIG_EMBEDDING_MODEL:-BAAI/bge-m3}
+      NIG_CLASSIFIER_MODEL: ${NIG_CLASSIFIER_MODEL:-BOOTSTRAP_BERT_CLASSIFIER}
+    ports:
+      - "127.0.0.1:8095:8095"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8095/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  backend:
+    build:
+      context: ./backend/2.0
+      dockerfile: Dockerfile.fast
+      args:
+        TDLIB_IMAGE: ${TDLIB_IMAGE:-neuroinfogrinder-tdlib:e0943d068ce90b5010f1aea946e6901e25b43bf6}
+    depends_on:
+      model-worker:
+        condition: service_healthy
+    environment:
+      MODEL_WORKER_BASE_URL: ${MODEL_WORKER_BASE_URL:-http://model-worker:8095}

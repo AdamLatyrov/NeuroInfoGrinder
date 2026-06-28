@@ -1,816 +1,799 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { PageHeaderCard } from "@/components/domain/page-header-card";
-import { EmptyState } from "@/components/domain/empty-state";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { cn } from "@/lib/utils";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Separator } from "@/components/ui/separator";
+import { Progress } from "@/components/ui/progress";
+import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { getJsonAuth, postJsonAuth, putJsonAuth, deleteJsonAuth } from "@/shared/api/http";
 import {
-  type CreateClassifierRequest,
-  type CreateRuleRequest,
-  type UpdateClassifierRequest,
-  type UpdateRuleRequest,
-  useClassifiersQuery,
-  useCreateClassifierMutation,
-  useCreateRuleMutation,
-  useDeleteClassifierMutation,
-  useDeleteRuleMutation,
-  useReorderClassifiersMutation,
-  useReorderRulesMutation,
-  useRulesQuery,
-  useUpdateClassifierMutation,
-  useUpdateClassifierStatusMutation,
-  useUpdateRuleMutation,
-  useUpdateRuleStatusMutation,
-} from "@/shared/api/classifiersApi";
-import { usePromptsQuery } from "@/shared/api/promptsApi";
-import { useProvidersQuery } from "@/shared/api/providersApi";
-import { tryParseJson, type Classifier, type Rule } from "@/shared/types";
-import { Brain, Funnel, Pencil, Plus, Power, Scales, Trash, ArrowUp, ArrowDown } from "@phosphor-icons/react";
+  MagnifyingGlass, Flask, GitFork, ArrowsDownUp, ChartBar,
+  Stack, Gear, Clock, Link, PencilSimple, ArrowClockwise,
+  CheckCircle, XCircle, WarningCircle, FileText, CaretRight,
+  CaretDown, Eye, EyeSlash, Plus, Sliders, ArrowCounterClockwise, ArrowRight
+} from "@phosphor-icons/react";
 
-const DEFAULT_LINEAR_MODEL = {
-  bias: -0.35,
-  threshold: 0.58,
-  normalization: "sigmoid",
-  features: {
-    text_length_norm: 0.25,
-    reply_count_norm: 0.15,
-    has_ai_marker: 1.1,
-    has_value_marker: 0.75,
-    has_guide_marker: 0.65,
-    has_tool_marker: 0.55,
-    has_release_marker: 0.45,
-    has_url: 0.2,
-    has_topic: 0.1,
-    is_not_bot: 0.1,
-    has_code_marker: 0.2,
-    has_deadline_marker: 0.35,
-    has_price_marker: 0.3,
-    has_question_marker: -0.3,
-  },
+type ClassifierStatus = {
+  workerReachable: boolean; workerStatus: string; classifierStatus: string;
+  classifierName: string; embeddingStatus: string; embeddingName: string;
+  ruleEngineEnabled: boolean; ruleCount: number;
+  singleMessageDetectorEnabled: boolean;
+  singleMessageThresholdDirect: number; singleMessageThresholdCandidate: number;
 };
 
-type LinearFeature = { name: string; weight: string };
+type PipelineSetting = {
+  key: string; value: string; type: string; category?: string;
+  settingKey?: string; settingValue?: string; settingType?: string;
+  description: string; safeMin: string | null; safeMax: string | null; defaultValue?: string | null;
+};
 
-interface LinearForm {
-  name: string;
-  version: string;
-  order: string;
-  bias: string;
-  threshold: string;
-  normalization: string;
-  features: LinearFeature[];
-}
+type RouteMappingEntry = {
+  stage: string; providerRoute?: string; provider?: string; modelName?: string; model?: string;
+  fallbackModel?: string | null; fallback?: string | null; promptId?: number; promptVersion?: number; isActive?: boolean;
+};
 
-function linearConfigToForm(classifier?: Classifier): LinearForm {
-  const parsed = tryParseJson<{
-    bias?: number;
-    threshold?: number;
-    normalization?: string;
-    features?: Record<string, number>;
-  }>(classifier?.modelConfig ?? null);
-  const config = {
-    ...DEFAULT_LINEAR_MODEL,
-    ...parsed,
-    features: parsed?.features ?? DEFAULT_LINEAR_MODEL.features,
-  };
-  return {
-    name: classifier?.name ?? "AI useful content linear",
-    version: classifier?.version ?? "1.0",
-    order: String(classifier?.order ?? 10),
-    bias: String(config.bias),
-    threshold: String(config.threshold),
-    normalization: config.normalization ?? "sigmoid",
-    features: Object.entries(config.features).map(([name, weight]) => ({ name, weight: String(weight) })),
-  };
-}
+type Rule = {
+  id: number; code: string; name: string; description: string; decision: string;
+  priority: number; enabled: boolean; conditionType: string;
+  keywordsJson: string[]; regexJson: string[]; minTextLength: number | null;
+  maxTextLength: number | null; requiresLink: boolean; requiresCodeBlock: boolean;
+  requiresErrorPattern: boolean; requiresPricePattern: boolean;
+  requiresQuestionPattern: boolean; requiresSolutionPattern: boolean;
+  examplesJson: string[]; scoringWeightsJson: Record<string, number>;
+  version: number; isActive: boolean; createdAt: string; updatedAt: string; updatedBy: string;
+};
 
-function linearFormToConfig(form: LinearForm) {
-  return JSON.stringify(
-    {
-      bias: Number(form.bias) || 0,
-      threshold: Number(form.threshold) || 0,
-      normalization: form.normalization || "sigmoid",
-      features: Object.fromEntries(
-        form.features
-          .filter((feature) => feature.name.trim())
-          .map((feature) => [feature.name.trim(), Number(feature.weight) || 0]),
-      ),
-    },
-    null,
-    2,
-  );
-}
+type TestResult = {
+  ruleMatches: {ruleId: number; ruleName: string; decision: string; keywordMatches: string[]; regexMatches: string[]}[];
+  classifier: {label: string; confidence: number; model: string};
+  singleMessage: {score: number; textLengthScore: number; structureScore: number; guideHowToScore: number;
+    troubleshootingScore: number; errorSignalScore: number; solutionSignalScore: number;
+    resourceSignalScore: number; priceAccessSignalScore: number; questionAnswerScore: number;
+    codeOrCommandScore: number; linkScore: number; classificationConfidence: number;
+    noisePenalty: number; decision: string; signals: string[]};
+  finalDecision: string; pipelineAction: string; explanation: string;
+  llmNextRoute?: {stage: string; promptCode: string; promptName: string; mode: string};
+};
 
-function classifierTypeLabel(type: string) {
-  const labels: Record<string, string> = {
-    KEYWORD: "Ключевые слова",
-    REGEX: "Регулярка",
-    LLM: "LLM",
-    LINEAR_MODEL: "Линейный скоринг",
-  };
-  return labels[type] ?? type;
-}
+type Distribution = Record<string, number>;
+type RecentDecision = Record<string, unknown>;
+type SingleCandidate = Record<string, unknown>;
 
-function entityStatusLabel(status: string) {
-  const labels: Record<string, string> = {
-    ACTIVE: "Включено",
-    DRAFT: "Черновик",
-    DISABLED: "Выключено",
-  };
-  return labels[status] ?? status;
-}
+const API = "/api/v2/classifiers";
+const PIPELINE_API = "/api/v2/pipeline";
 
-function entityStatusVariant(status: string) {
-  if (status === "ACTIVE") return "success";
-  if (status === "DISABLED") return "secondary";
+function variant(s: string): "success" | "danger" | "warning" | "outline" {
+  if (!s) return "outline";
+  if (["OK", "UP", "READY"].includes(s)) return "success";
+  if (["DOWN", "MODEL_WORKER_DOWN", "MODEL_NOT_CONFIGURED", "FAILED", "ERROR", "NO_CLUSTERS"].includes(s)) return "danger";
   return "warning";
 }
 
-function ruleName(name: string) {
-  const names: Record<string, string> = {
-    "Exclude ultra short noise": "Отсечь совсем короткий шум",
-    "Exclude tiny noise": "Отсечь короткий шум",
-    "Exclude reaction chatter": "Отсечь реакции и флуд",
-    "Exclude short bot noise": "Отсечь короткие сообщения ботов",
-    "Include AI value signals": "Пропустить AI-сигналы",
-    "Include how-to markers": "Пропустить how-to / гайды",
-  };
-  return names[name] ?? name;
-}
+const decisionBadgeVariant: Record<string, "success" | "danger" | "warning" | "outline"> = {
+  SUPPRESS: "outline", ACCUMULATE: "warning", CANDIDATE: "warning",
+  SINGLE_MESSAGE_MATERIAL_CANDIDATE: "warning", DIRECT_MATERIAL_READY: "success",
+};
 
-function ruleDescription(rule: Rule) {
-  const descriptions: Record<string, string> = {
-    "Exclude ultra short noise": "Сообщения короче 5 символов почти всегда мусор.",
-    "Exclude tiny noise": "Сообщения короче 8 символов обычно не несут полезной инструкции.",
-    "Exclude reaction chatter": "Короткие реакции вроде «ок», «лол», «понял» не должны идти дальше.",
-    "Exclude short bot noise": "Короткие сообщения от ботов отсекаются до классификации.",
-    "Include AI value signals": "Сообщения про модели, лимиты, API, релизы и доступы помечаются как кандидаты.",
-    "Include how-to markers": "Сообщения с маркерами инструкций и гайдов явно пропускаются дальше.",
-  };
-  if (rule.description && !/[ÐÑ]/.test(rule.description)) return rule.description;
-  return descriptions[rule.name] ?? "Пользовательское правило.";
-}
+const pipelineActionLabel: Record<string, string> = {
+  GENERATE_MATERIAL_DIRECTLY: "Создать материал напрямую",
+  LLM_JUDGE_FOR_SINGLE_MESSAGE: "Отправить на LLM Judge",
+  WAIT_FOR_CLUSTER: "Ожидать кластер",
+  ACCUMULATE_FOR_CLUSTER: "Копить для кластера",
+  SKIP: "Пропустить",
+};
 
-function conditionLabel(type: string) {
-  const labels: Record<string, string> = {
-    LENGTH_LT: "Длина меньше",
-    LENGTH_GT: "Длина больше",
-    TEXT_CONTAINS: "Текст содержит",
-    KEYWORD_MATCH: "Словарь ключевых слов",
-    REGEX_MATCH: "Регулярное выражение",
-    SENDER_IS_BOT: "Отправитель — бот",
-  };
-  return labels[type] ?? type;
-}
+const decisionDescriptions: Record<string, string> = {
+  SUPPRESS: "Шум/флуд — исключено из обработки",
+  ACCUMULATE: "Короткий полезный контекст, но самостоятельно ценности нет",
+  CANDIDATE: "Полезное сообщение, нужны похожие для кластера",
+  SINGLE_MESSAGE_MATERIAL_CANDIDATE: "Одно сообщение содержит материал, нужен LLM Judge",
+  DIRECT_MATERIAL_READY: "Одно сообщение уже похоже на готовый гайд/фикс/ресурс",
+};
 
-function readableConditions(rule: Rule) {
-  const conditions = tryParseJson<Array<{ type?: string; value?: string }>>(rule.conditionsJson) ?? [];
-  if (conditions.length === 0) return ["Условия не заданы"];
-  return conditions.map((condition) => `${conditionLabel(condition.type ?? "UNKNOWN")}: ${condition.value ?? "—"}`);
-}
+const routeCards = [
+  { decision: "SUPPRESS", action: "Не обрабатывать", tone: "outline" as const },
+  { decision: "ACCUMULATE", action: "Ждать похожие сообщения", tone: "warning" as const },
+  { decision: "CANDIDATE", action: "Embeddings / clustering", tone: "warning" as const },
+  { decision: "SINGLE_MESSAGE_MATERIAL_CANDIDATE", action: "LLM single-message judge", tone: "warning" as const },
+  { decision: "DIRECT_MATERIAL_READY", action: "LLM / material generation", tone: "success" as const },
+];
 
-function shortClassifierConfig(classifier: Classifier) {
-  if (classifier.type === "KEYWORD") return classifier.keywords || "Ключевые слова не заданы";
-  if (classifier.type === "REGEX") return classifier.regexPattern || "Регулярное выражение не задано";
-  if (classifier.type === "LLM") {
-    const provider = classifier.providerId === "3001"
-      ? "Тестовый mock-провайдер"
-      : classifier.providerId
-        ? `Провайдер #${classifier.providerId}`
-        : "Провайдер не задан";
-    const prompt = classifier.promptId ? `Промпт #${classifier.promptId}` : "промпт не задан";
-    return `${provider} · ${prompt}`;
-  }
-  return null;
-}
-
-function confirmDelete(label: string) {
-  return window.confirm(`Удалить «${label}»? Это действие нельзя отменить.`);
-}
-
-function ClassifierCard({
-  classifier,
-  isFirst,
-  isLast,
-  onMoveUp,
-  onMoveDown,
-  onToggle,
-  onEditLinear,
-  onEditLlm,
-  onDelete,
-}: {
-  classifier: Classifier;
-  isFirst: boolean;
-  isLast: boolean;
-  onMoveUp: () => void;
-  onMoveDown: () => void;
-  onToggle: (classifier: Classifier) => void;
-  onEditLinear: (classifier: Classifier) => void;
-  onEditLlm: (classifier: Classifier) => void;
-  onDelete: (classifier: Classifier) => void;
-}) {
-  const parsed = tryParseJson<{ bias?: number; threshold?: number; features?: Record<string, number> }>(
-    classifier.modelConfig,
-  );
-  const features = Object.entries(parsed?.features ?? {})
-    .sort((left, right) => Math.abs(right[1]) - Math.abs(left[1]))
-    .slice(0, 7);
-
-  return (
-    <Card className={cn(classifier.status !== "ACTIVE" && "opacity-70")}>
-      <CardContent className="p-5">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <h3 className="truncate text-sm font-semibold text-text-strong">{classifier.name}</h3>
-              <Badge variant="outline" className="text-[10px]">{classifierTypeLabel(classifier.type)}</Badge>
-            </div>
-            <p className="mt-1 text-xs text-text-muted">Версия {classifier.version}</p>
-          </div>
-          <Badge variant={entityStatusVariant(classifier.status)} dot>
-            {entityStatusLabel(classifier.status)}
-          </Badge>
-        </div>
-
-        {classifier.type === "LINEAR_MODEL" ? (
-          <div className="mt-4 rounded-xl border border-border-subtle bg-bg-app p-3">
-            <div className="grid grid-cols-2 gap-3 text-xs sm:grid-cols-3">
-              <div>
-                <div className="text-text-muted">Смещение</div>
-                <div className="font-mono-value text-text-strong">{parsed?.bias ?? "—"}</div>
-              </div>
-              <div>
-                <div className="text-text-muted">Порог</div>
-                <div className="font-mono-value text-text-strong">{parsed?.threshold ?? "—"}</div>
-              </div>
-              <div>
-                <div className="text-text-muted">Признаков</div>
-                <div className="font-mono-value text-text-strong">{Object.keys(parsed?.features ?? {}).length}</div>
-              </div>
-            </div>
-            <div className="mt-3 grid gap-1.5">
-              {features.map(([feature, weight]) => (
-                <div key={feature} className="flex items-center justify-between gap-3 text-xs">
-                  <span className="truncate text-text-strong">{feature}</span>
-                  <span className={cn("font-mono-value", weight >= 0 ? "text-success" : "text-danger")}>
-                    {weight.toFixed(2)}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : (
-          <p className="mt-4 line-clamp-3 rounded-xl border border-border-subtle bg-bg-app p-3 text-xs text-text-muted">
-            {shortClassifierConfig(classifier)}
-          </p>
-        )}
-
-        <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-border-subtle pt-3">
-          <Button variant="outline" size="icon" className="h-7 w-7" onClick={onMoveUp} disabled={isFirst} title="Выше">
-            <ArrowUp size={14} />
-          </Button>
-          <Button variant="outline" size="icon" className="h-7 w-7" onClick={onMoveDown} disabled={isLast} title="Ниже">
-            <ArrowDown size={14} />
-          </Button>
-          <Badge variant="outline">Порядок {classifier.order}</Badge>
-          <Button variant="outline" size="sm" onClick={() => onToggle(classifier)}>
-            <Power size={14} />
-            {classifier.status === "ACTIVE" ? "Отключить" : "Включить"}
-          </Button>
-          {classifier.type === "LINEAR_MODEL" && (
-            <Button variant="outline" size="sm" onClick={() => onEditLinear(classifier)}>
-              <Pencil size={14} />
-              Настроить
-            </Button>
-          )}
-          {classifier.type === "LLM" && (
-            <Button variant="outline" size="sm" onClick={() => onEditLlm(classifier)}>
-              <Pencil size={14} />
-              Провайдер и промпт
-            </Button>
-          )}
-          <Button variant="outline" size="sm" className="text-danger" onClick={() => onDelete(classifier)}>
-            <Trash size={14} />
-            Удалить
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function RuleCard({
-  rule,
-  isFirst,
-  isLast,
-  onMoveUp,
-  onMoveDown,
-  onEdit,
-  onToggle,
-  onDelete,
-}: {
-  rule: Rule;
-  isFirst: boolean;
-  isLast: boolean;
-  onMoveUp: () => void;
-  onMoveDown: () => void;
-  onEdit: (rule: Rule) => void;
-  onToggle: (rule: Rule) => void;
-  onDelete: (rule: Rule) => void;
-}) {
-  return (
-    <Card className={cn(rule.status !== "ACTIVE" && "opacity-70")}>
-      <CardContent className="p-5">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <div className="flex flex-wrap items-center gap-2">
-              <h3 className="text-sm font-semibold text-text-strong">{ruleName(rule.name)}</h3>
-              <Badge variant={rule.actionType === "EXCLUDE" ? "danger" : "success"}>
-                {rule.actionType === "EXCLUDE" ? "Отсекает" : "Пропускает"}
-              </Badge>
-            </div>
-            <p className="mt-1 text-xs text-text-muted">{ruleDescription(rule)}</p>
-          </div>
-          <Badge variant={entityStatusVariant(rule.status)} dot>
-            {entityStatusLabel(rule.status)}
-          </Badge>
-        </div>
-        <div className="mt-3 flex flex-wrap gap-2">
-          <Badge variant="outline">Порядок {rule.ruleOrder}</Badge>
-          <Badge variant="outline">{rule.conditionType}</Badge>
-        </div>
-        <div className="mt-3 grid gap-2">
-          {readableConditions(rule).map((condition) => (
-            <div key={condition} className="rounded-xl border border-border-subtle bg-bg-app px-3 py-2 text-xs text-text-strong">
-              {condition}
-            </div>
-          ))}
-        </div>
-        <div className="mt-4 flex items-center justify-between gap-2 border-t border-border-subtle pt-3">
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="icon" className="h-7 w-7" onClick={onMoveUp} disabled={isFirst} title="Выше">
-              <ArrowUp size={14} />
-            </Button>
-            <Button variant="outline" size="icon" className="h-7 w-7" onClick={onMoveDown} disabled={isLast} title="Ниже">
-              <ArrowDown size={14} />
-            </Button>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => onEdit(rule)}>
-              <Pencil size={14} />
-              Редактировать
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => onToggle(rule)}>
-              <Power size={14} />
-              {rule.status === "ACTIVE" ? "Отключить" : "Включить"}
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-danger hover:bg-danger-soft"
-              title="Удалить правило"
-              onClick={() => onDelete(rule)}
-            >
-              <Trash size={16} />
-            </Button>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
+function settingCategory(setting: PipelineSetting) {
+  const key = setting.key ?? setting.settingKey ?? "";
+  if (/single|direct/i.test(key)) return "Single-message";
+  if (/cluster|judge/i.test(key)) return "Cluster / LLM judge";
+  if (/budget|cost|provider/i.test(key)) return "Provider budgets";
+  return setting.category || "Общие пороги";
 }
 
 export function ClassifiersPage() {
-  const classifiersQuery = useClassifiersQuery();
-  const rulesQuery = useRulesQuery();
-  const providersQuery = useProvidersQuery();
-  const promptsQuery = usePromptsQuery();
-  const createClassifier = useCreateClassifierMutation();
-  const updateClassifier = useUpdateClassifierMutation();
-  const updateClassifierStatus = useUpdateClassifierStatusMutation();
-  const updateRuleStatus = useUpdateRuleStatusMutation();
-  const updateRule = useUpdateRuleMutation();
-  const createRule = useCreateRuleMutation();
-  const deleteClassifier = useDeleteClassifierMutation();
-  const deleteRule = useDeleteRuleMutation();
-  const reorderRules = useReorderRulesMutation();
-  const reorderClassifiers = useReorderClassifiersMutation();
+  const [testText, setTestText] = useState("");
+  const [testResult, setTestResult] = useState<TestResult | null>(null);
+  const [activeTab, setActiveTab] = useState("overview");
+  const [editingRule, setEditingRule] = useState<Rule | null>(null);
+  const queryClient = useQueryClient();
 
-  const classifiers = classifiersQuery.data ?? [];
+  const statusQuery = useQuery({ queryKey: ["classifier-status"], queryFn: () => getJsonAuth<ClassifierStatus>(`${API}/status`), refetchInterval: 10000 });
+  const rulesQuery = useQuery({ queryKey: ["classifier-rules"], queryFn: () => getJsonAuth<Rule[]>(`${API}/rules`) });
+  const distributionQuery = useQuery({ queryKey: ["classifier-distribution"], queryFn: () => getJsonAuth<Distribution>(`${API}/distribution?runId=0`) });
+  const recentDecisionsQuery = useQuery({ queryKey: ["classifier-recent"], queryFn: () => getJsonAuth<RecentDecision[]>(`${API}/recent-decisions?runId=0&limit=20`) });
+  const candidatesQuery = useQuery({ queryKey: ["classifier-candidates"], queryFn: () => getJsonAuth<SingleCandidate[]>(`${API}/single-message-candidates?runId=0&limit=10`) });
+  const settingsQuery = useQuery({ queryKey: ["pipeline-settings"], queryFn: () => getJsonAuth<PipelineSetting[]>(`${PIPELINE_API}/settings/thresholds`) });
+  const routeMappingQuery = useQuery({ queryKey: ["prompt-route-mapping"], queryFn: () => getJsonAuth<{routes: RouteMappingEntry[]}>(`/api/v2/prompts/route-mapping`) });
+
+  const testMutation = useMutation({
+    mutationFn: (text: string) => postJsonAuth<TestResult>(`${API}/test`, { text }),
+    onSuccess: (r) => setTestResult(r),
+  });
+
+  const updateSettingMutation = useMutation({
+    mutationFn: ({ key, value }: { key: string; value: string }) =>
+      postJsonAuth(`${PIPELINE_API}/settings/${key}`, { value }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["pipeline-settings"] }),
+  });
+
+  const resetSettingMutation = useMutation({
+    mutationFn: (key: string) => postJsonAuth(`${PIPELINE_API}/settings/${key}/reset`, {}),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["pipeline-settings"] }),
+  });
+
+  const toggleRuleMutation = useMutation({
+    mutationFn: ({ id, enabled }: { id: number; enabled: boolean }) =>
+      postJsonAuth<Rule>(`${API}/rules/${id}/${enabled ? "activate" : "deactivate"}?updatedBy=ui`, {}),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["classifier-rules"] }),
+  });
+
+  const status = statusQuery.data;
   const rules = rulesQuery.data ?? [];
-  const linear = useMemo(() => classifiers.filter((classifier) => classifier.type === "LINEAR_MODEL"), [classifiers]);
-  const llm = useMemo(() => classifiers.filter((classifier) => classifier.type === "LLM"), [classifiers]);
-  const providers = providersQuery.data ?? [];
-  const classificationPrompts = useMemo(
-    () => (promptsQuery.data ?? []).filter((prompt) => prompt.type === "CLASSIFIER"),
-    [promptsQuery.data],
-  );
-
-  const [linearDialogOpen, setLinearDialogOpen] = useState(false);
-  const [editingLinearId, setEditingLinearId] = useState<string | null>(null);
-  const [linearForm, setLinearForm] = useState<LinearForm>(() => linearConfigToForm());
-  const [llmDialogOpen, setLlmDialogOpen] = useState(false);
-  const [editingLlm, setEditingLlm] = useState<Classifier | null>(null);
-  const [llmProviderId, setLlmProviderId] = useState("");
-  const [llmPromptId, setLlmPromptId] = useState("");
-  const [llmOrder, setLlmOrder] = useState("20");
-
-  // Rule edit dialog state
-  const [ruleDialogOpen, setRuleDialogOpen] = useState(false);
-  const [editingRuleId, setEditingRuleId] = useState<string | null>(null);
-  const [ruleForm, setRuleForm] = useState({ name: "", description: "", actionType: "INCLUDE", conditions: [{ type: "TEXT_CONTAINS", value: "" }], actions: [{ type: "SEND_TO_LLM", classifierId: "", threshold: "" }] });
-
-  const openCreateLinear = () => {
-    setEditingLinearId(null);
-    setLinearForm(linearConfigToForm());
-    setLinearDialogOpen(true);
-  };
-
-  const openEditLinear = (classifier: Classifier) => {
-    setEditingLinearId(classifier.id);
-    setLinearForm(linearConfigToForm(classifier));
-    setLinearDialogOpen(true);
-  };
-
-  const saveLinear = () => {
-    const body: CreateClassifierRequest | UpdateClassifierRequest = {
-      name: linearForm.name,
-      type: "LINEAR_MODEL",
-      version: linearForm.version,
-      order: Number(linearForm.order) || 10,
-      modelConfig: linearFormToConfig(linearForm),
-    };
-    if (editingLinearId) {
-      updateClassifier.mutate({ id: editingLinearId, ...(body as UpdateClassifierRequest) }, { onSuccess: () => setLinearDialogOpen(false) });
-      return;
-    }
-    createClassifier.mutate(body as CreateClassifierRequest, { onSuccess: () => setLinearDialogOpen(false) });
-  };
-
-  const openEditLlm = (classifier: Classifier) => {
-    setEditingLlm(classifier);
-    setLlmProviderId(classifier.providerId ?? "");
-    setLlmPromptId(classifier.promptId ?? "");
-    setLlmOrder(String(classifier.order ?? 20));
-    setLlmDialogOpen(true);
-  };
-
-  const saveLlm = () => {
-    if (!editingLlm || !llmProviderId || !llmPromptId) return;
-    updateClassifier.mutate(
-      {
-        id: editingLlm.id,
-        name: editingLlm.name,
-        type: "LLM",
-        providerId: Number(llmProviderId),
-        promptId: Number(llmPromptId),
-        version: editingLlm.version,
-        order: Number(llmOrder) || 20,
-      },
-      { onSuccess: () => setLlmDialogOpen(false) },
-    );
-  };
-
-  const toggleClassifier = (classifier: Classifier) => {
-    updateClassifierStatus.mutate({
-      id: classifier.id,
-      status: classifier.status === "ACTIVE" ? "DISABLED" : "ACTIVE",
-    });
-  };
-
-  const toggleRule = (rule: Rule) => {
-    updateRuleStatus.mutate({
-      id: rule.id,
-      status: rule.status === "ACTIVE" ? "DISABLED" : "ACTIVE",
-    });
-  };
-
-  const openEditRule = (rule: Rule) => {
-    setEditingRuleId(rule.id);
-    const conditions = tryParseJson<{ type: string; value?: string }[]>(rule.conditionsJson) ?? [{ type: "TEXT_CONTAINS", value: "" }];
-    const actions = tryParseJson<{ type: string; classifierId?: string; threshold?: number }[]>(rule.actionsJson) ?? [];
-    setRuleForm({
-      name: rule.name,
-      description: rule.description ?? "",
-      actionType: rule.actionType,
-      conditions: conditions.map((c) => ({ type: c.type, value: c.value ?? "" })),
-      actions: actions.length > 0 ? actions.map((a) => ({ type: a.type ?? "SEND_TO_LLM", classifierId: a.classifierId ?? "", threshold: a.threshold !== undefined ? String(a.threshold) : "" })) : [{ type: "SEND_TO_LLM", classifierId: "", threshold: "" }],
-    });
-    setRuleDialogOpen(true);
-  };
-
-  const saveRule = () => {
-    const conditionsJson = JSON.stringify(ruleForm.conditions.filter((c) => c.type).map((c) => ({ type: c.type, ...(c.value ? { value: c.value } : {}) })));
-    const actionsJson = JSON.stringify(ruleForm.actions.filter((a) => a.type).map((a) => ({ type: a.type, ...(a.classifierId ? { classifierId: a.classifierId } : {}), ...(a.threshold ? { threshold: Number(a.threshold) } : {}) })));
-    if (editingRuleId) {
-      updateRule.mutate({ id: editingRuleId, name: ruleForm.name, description: ruleForm.description, actionType: ruleForm.actionType, conditions: conditionsJson, actions: actionsJson }, { onSuccess: () => setRuleDialogOpen(false) });
-    } else {
-      createRule.mutate({ name: ruleForm.name, description: ruleForm.description, actionType: ruleForm.actionType, order: rules.length, conditions: conditionsJson, actions: actionsJson, status: "DRAFT" }, { onSuccess: () => setRuleDialogOpen(false) });
-    }
-  };
-
-  const removeClassifier = (classifier: Classifier) => {
-    if (confirmDelete(classifier.name)) deleteClassifier.mutate(classifier.id);
-  };
-
-  const removeRule = (rule: Rule) => {
-    if (confirmDelete(ruleName(rule.name))) deleteRule.mutate(rule.id);
-  };
-
-  const moveRule = (rule: Rule, direction: "up" | "down") => {
-    const sorted = [...rules].sort((a, b) => a.ruleOrder - b.ruleOrder);
-    const idx = sorted.findIndex((r) => r.id === rule.id);
-    if (direction === "up" && idx <= 0) return;
-    if (direction === "down" && idx >= sorted.length - 1) return;
-    const swapIdx = direction === "up" ? idx - 1 : idx + 1;
-    const newOrder = [...sorted];
-    [newOrder[idx], newOrder[swapIdx]] = [newOrder[swapIdx], newOrder[idx]];
-    reorderRules.mutate(newOrder.map((r) => r.id));
-  };
-
-  const moveClassifier = (classifier: Classifier, list: Classifier[], direction: "up" | "down") => {
-    const sorted = [...list].sort((a, b) => a.order - b.order);
-    const idx = sorted.findIndex((c) => c.id === classifier.id);
-    if (direction === "up" && idx <= 0) return;
-    if (direction === "down" && idx >= sorted.length - 1) return;
-    const swapIdx = direction === "up" ? idx - 1 : idx + 1;
-    const newOrder = [...sorted];
-    [newOrder[idx], newOrder[swapIdx]] = [newOrder[swapIdx], newOrder[idx]];
-    // Reorder among ALL classifiers, not just the tab
-    const allSorted = [...classifiers].sort((a, b) => a.order - b.order);
-    const reordered = allSorted.map((c) => {
-      const newIndex = newOrder.findIndex((n) => n.id === c.id);
-      if (newIndex >= 0) return { ...c, _newPos: newIndex };
-      return c;
-    });
-    reorderClassifiers.mutate(newOrder.map((c) => c.id));
-  };
 
   return (
     <div className="flex flex-col gap-5">
-      <PageHeaderCard
-        title="Классификаторы"
-        description="Правила отсекают очевидное, скоринг оценивает признаки, LLM принимает смысловое решение."
-      />
+      <PageHeaderCard title="Классификаторы" description="Rule engine, classifier, single-message detector и их настройка">
+        <div className="flex gap-2">
+          <Select value={activeTab} onValueChange={setActiveTab}>
+            <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="overview">Обзор</SelectItem>
+              <SelectItem value="rules">Правила</SelectItem>
+              <SelectItem value="thresholds">Пороги</SelectItem>
+              <SelectItem value="test">Тест</SelectItem>
+              <SelectItem value="decisions">Решения</SelectItem>
+              <SelectItem value="candidates">Кандидаты</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </PageHeaderCard>
 
-      <div className="grid gap-3 md:grid-cols-4">
-        <Card><CardContent className="p-4"><div className="text-xs text-text-muted">Активные правила</div><div className="mt-1 text-2xl font-semibold text-text-strong">{rules.filter((rule) => rule.status === "ACTIVE").length}</div></CardContent></Card>
-        <Card><CardContent className="p-4"><div className="text-xs text-text-muted">Активные классификаторы</div><div className="mt-1 text-2xl font-semibold text-text-strong">{classifiers.filter((classifier) => classifier.status === "ACTIVE").length}</div></CardContent></Card>
-        <Card><CardContent className="p-4"><div className="text-xs text-text-muted">Линейные модели</div><div className="mt-1 text-2xl font-semibold text-text-strong">{linear.length}</div></CardContent></Card>
-        <Card><CardContent className="p-4"><div className="text-xs text-text-muted">LLM</div><div className="mt-1 text-2xl font-semibold text-text-strong">{llm.length}</div></CardContent></Card>
-      </div>
-
-      <Tabs defaultValue="rules">
-        <TabsList className="flex h-auto flex-wrap justify-start">
-          <TabsTrigger value="rules" className="gap-1.5"><Funnel size={14} />Правила</TabsTrigger>
-          <TabsTrigger value="linear" className="gap-1.5"><Scales size={14} />Скоринг</TabsTrigger>
-          <TabsTrigger value="llm" className="gap-1.5"><Brain size={14} />LLM-классификация</TabsTrigger>
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="hidden">
+          <TabsTrigger value="overview">Обзор</TabsTrigger>
+          <TabsTrigger value="rules">Правила</TabsTrigger>
+          <TabsTrigger value="test">Тест</TabsTrigger>
+          <TabsTrigger value="thresholds">Пороги</TabsTrigger>
+          <TabsTrigger value="decisions">Решения</TabsTrigger>
+          <TabsTrigger value="candidates">Кандидаты</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="linear">
-          <div className="mb-4">
-            <div>
-              <h2 className="text-sm font-semibold text-text-strong">Линейные модели</h2>
-              <p className="text-xs text-text-muted">Признаки и веса редактируются полями, JSON собирается автоматически.</p>
-            </div>
-          </div>
-          {linear.length === 0 ? (
-            <EmptyState
-              icon={Scales}
-              title="Моделей пока нет"
-              description="Создай LINEAR_MODEL, чтобы настраивать веса признаков."
-              action={
-                <Button variant="primary" size="sm" onClick={openCreateLinear}>
-                  <Plus size={14} />
-                  Добавить модель
-                </Button>
-              }
+        {/* A: Status + Flow */}
+        <TabsContent value="overview" className="flex flex-col gap-5">
+          <div className="grid gap-3 md:grid-cols-5">
+            <StatusCard
+              label="Model worker"
+              value={status?.workerReachable ? status.workerStatus : "Недоступен"}
+              variant={status?.workerReachable ? variant(status.workerStatus) : "danger"}
             />
-          ) : (
-            <div className="grid gap-4 xl:grid-cols-2">
-              {linear.map((classifier, index) => (
-                <ClassifierCard key={classifier.id} classifier={classifier} isFirst={index === 0} isLast={index === linear.length - 1} onMoveUp={() => moveClassifier(classifier, linear, "up")} onMoveDown={() => moveClassifier(classifier, linear, "down")} onToggle={toggleClassifier} onEditLinear={openEditLinear} onEditLlm={openEditLlm} onDelete={removeClassifier} />
-              ))}
-              <button
-                type="button"
-                onClick={openCreateLinear}
-                className="flex min-h-[260px] flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-border-subtle bg-bg-app p-8 text-text-muted transition-colors hover:border-brand-blue/40 hover:bg-bg-card hover:text-brand-blue"
-              >
-                <div className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-current">
-                  <Plus size={24} />
-                </div>
-                <span className="text-sm font-medium">Добавить модель скоринга</span>
-              </button>
-            </div>
-          )}
-        </TabsContent>
+            <StatusCard
+              label="Rule engine"
+              value={status?.ruleEngineEnabled ? `Включено (${status.ruleCount} правил)` : "Выключено"}
+              variant="success"
+            />
+            <StatusCard
+              label="Classifier"
+              value={status?.classifierName ?? "BOOTSTRAP_BERT_CLASSIFIER"}
+              variant={variant(status?.classifierStatus ?? "")}
+              sub={status?.classifierStatus}
+            />
+            <StatusCard
+              label="BGE-M3 embeddings"
+              value={status?.embeddingName ?? "нет данных"}
+              variant={variant(status?.embeddingStatus ?? "")}
+              sub={status?.embeddingStatus}
+            />
+            <StatusCard
+              label="Single-message detector"
+              value={status?.singleMessageDetectorEnabled ? `Включён (≥${status.singleMessageThresholdDirect})` : "Выключен"}
+              variant="success"
+              sub={`candidate ≥${status?.singleMessageThresholdCandidate}`}
+            />
+          </div>
 
-        <TabsContent value="rules">
-          {rules.length === 0 ? (
-            <EmptyState icon={Funnel} title="Правил пока нет" description="Правила — жёсткие условия: текст, словарь, regex, длина, бот и другие быстрые проверки." />
-          ) : (
-            <div className="grid gap-4 xl:grid-cols-2">
-              {rules.map((rule, index) => <RuleCard key={rule.id} rule={rule} isFirst={index === 0} isLast={index === rules.length - 1} onMoveUp={() => moveRule(rule, "up")} onMoveDown={() => moveRule(rule, "down")} onEdit={openEditRule} onToggle={toggleRule} onDelete={removeRule} />)}
-            </div>
-          )}
-        </TabsContent>
-
-        <TabsContent value="llm">
-          {llm.length === 0 ? (
-            <EmptyState icon={Brain} title="LLM-классификаторов нет" description="LLM-классификатор связывает AI-провайдера и промпт классификации." />
-          ) : (
-            <div className="grid gap-4 xl:grid-cols-2">
-              {llm.map((classifier, index) => (
-                <ClassifierCard key={classifier.id} classifier={classifier} isFirst={index === 0} isLast={index === llm.length - 1} onMoveUp={() => moveClassifier(classifier, llm, "up")} onMoveDown={() => moveClassifier(classifier, llm, "down")} onToggle={toggleClassifier} onEditLinear={openEditLinear} onEditLlm={openEditLlm} onDelete={removeClassifier} />
-              ))}
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
-
-      <Dialog open={linearDialogOpen} onOpenChange={setLinearDialogOpen}>
-        <DialogContent className="sm:max-w-3xl">
-          <DialogHeader>
-            <DialogTitle>{editingLinearId ? "Настроить линейную модель" : "Создать линейную модель"}</DialogTitle>
-            <DialogDescription>Итог: bias + сумма признаков × вес. Если score выше порога — сообщение проходит дальше.</DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4">
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Input placeholder="Название" value={linearForm.name} onChange={(event) => setLinearForm((form) => ({ ...form, name: event.target.value }))} />
-              <Input placeholder="Версия" value={linearForm.version} onChange={(event) => setLinearForm((form) => ({ ...form, version: event.target.value }))} />
-              <Input placeholder="Порядок выполнения" type="number" min="1" value={linearForm.order} onChange={(event) => setLinearForm((form) => ({ ...form, order: event.target.value }))} />
-              <Input placeholder="Смещение" type="number" step="0.01" value={linearForm.bias} onChange={(event) => setLinearForm((form) => ({ ...form, bias: event.target.value }))} />
-              <Input placeholder="Порог" type="number" step="0.01" value={linearForm.threshold} onChange={(event) => setLinearForm((form) => ({ ...form, threshold: event.target.value }))} />
-            </div>
-
-            <div className="rounded-xl border border-border-subtle bg-bg-card p-3">
-              <div className="mb-3 flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-text-strong">Веса признаков</h3>
-                <Button variant="outline" size="sm" onClick={() => setLinearForm((form) => ({ ...form, features: [...form.features, { name: "", weight: "0" }] }))}><Plus size={14} />Признак</Button>
-              </div>
-              <div className="grid gap-2">
-                {linearForm.features.map((feature, index) => (
-                  <div key={`${feature.name}-${index}`} className="grid gap-2 sm:grid-cols-[1fr_120px_36px]">
-                    <Input value={feature.name} placeholder="feature_name" onChange={(event) => setLinearForm((form) => ({ ...form, features: form.features.map((item, itemIndex) => itemIndex === index ? { ...item, name: event.target.value } : item) }))} />
-                    <Input value={feature.weight} type="number" step="0.01" onChange={(event) => setLinearForm((form) => ({ ...form, features: form.features.map((item, itemIndex) => itemIndex === index ? { ...item, weight: event.target.value } : item) }))} />
-                    <Button variant="ghost" size="icon" className="text-danger" onClick={() => setLinearForm((form) => ({ ...form, features: form.features.filter((_, itemIndex) => itemIndex !== index) }))}><Trash size={14} /></Button>
-                  </div>
+          <Card>
+            <CardContent className="p-5">
+              <h2 className="text-lg font-semibold text-text-strong mb-4">Decision flow</h2>
+              <div className="flex flex-col items-center gap-0 text-sm">
+                {["Raw message", "Rule signals", "Bootstrap/BERT", "Single-message detector", "Final decision", "Pipeline action"].map((label, i) => (
+                  <TooltipProvider key={label}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="flex flex-col items-center">
+                          <span className="rounded-lg bg-bg-elevated px-4 py-2 text-text-strong border border-border-subtle cursor-help whitespace-nowrap">
+                            {label}
+                          </span>
+                          {i < 5 && (
+                            <div className="flex items-center justify-center h-6">
+                              <svg width="16" height="16" viewBox="0 0 16 16" className="text-text-muted">
+                                <line x1="8" y1="0" x2="8" y2="10" stroke="currentColor" strokeWidth="2" />
+                                <polygon points="4,10 8,16 12,10" fill="currentColor" />
+                              </svg>
+                            </div>
+                          )}
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent side="right">
+                        <p className="text-xs max-w-48">
+                          {i === 0 && "Исходное сообщение из Telegram"}
+                          {i === 1 && "Быстрые эвристики: ключевые слова, regex, длина, ссылки, код"}
+                          {i === 2 && "Локальный bootstrap BERT классификатор (20 классов)"}
+                          {i === 3 && "Оценка одиночного сообщения: структура, гайд, ошибка, решение"}
+                          {i === 4 && "SUPPRESS | ACCUMULATE | CANDIDATE | SINGLE_MESSAGE_MATERIAL_CANDIDATE | DIRECT_MATERIAL_READY"}
+                          {i === 5 && "Куда идёт сообщение: кластер, LLM Judge, генерация материала"}
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 ))}
               </div>
-            </div>
+            </CardContent>
+          </Card>
 
-            <details className="rounded-xl border border-border-subtle bg-bg-app p-3">
-              <summary className="cursor-pointer text-sm font-medium text-text-strong">Показать JSON, который будет сохранён</summary>
-              <Textarea readOnly className="mt-3 min-h-64 font-mono-value text-xs" value={linearFormToConfig(linearForm)} />
-            </details>
-            <Button variant="primary" onClick={saveLinear} disabled={!linearForm.name.trim() || createClassifier.isPending || updateClassifier.isPending}>Сохранить</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={llmDialogOpen} onOpenChange={setLlmDialogOpen}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Настроить LLM-классификатор</DialogTitle>
-            <DialogDescription>
-              Провайдер выполняет запрос к модели, а промпт объясняет модели, что считать полезным сообщением.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4">
-            <div className="grid gap-1.5">
-              <label className="text-xs font-medium text-text-muted">AI-провайдер</label>
-              <Select value={llmProviderId} onValueChange={setLlmProviderId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Выберите провайдера" />
-                </SelectTrigger>
-                <SelectContent>
-                  {editingLlm?.providerId === "3001" && (
-                    <SelectItem value="3001">Тестовый mock-провайдер</SelectItem>
-                  )}
-                  {providers.map((provider) => (
-                    <SelectItem key={provider.id} value={provider.id}>
-                      {provider.name} · {provider.model ?? "модель не указана"}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="grid gap-1.5">
-              <label className="text-xs font-medium text-text-muted">Промпт классификации</label>
-              <Select value={llmPromptId} onValueChange={setLlmPromptId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Выберите промпт" />
-                </SelectTrigger>
-                <SelectContent>
-                  {classificationPrompts.map((prompt) => (
-                    <SelectItem key={prompt.id} value={prompt.id}>
-                      {prompt.name} · {prompt.version}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="grid gap-1.5">
-              <label className="text-xs font-medium text-text-muted">Порядок выполнения</label>
-              <Input
-                type="number"
-                min="1"
-                value={llmOrder}
-                onChange={(event) => setLlmOrder(event.target.value)}
-              />
-              <p className="text-[10px] text-text-weak">
-                Меньшее число выполняется раньше. Все активные классификаторы всё равно проверяются.
-              </p>
-            </div>
-
-            <Button
-              variant="primary"
-              onClick={saveLlm}
-              disabled={!llmProviderId || !llmPromptId || updateClassifier.isPending}
-            >
-              Сохранить настройки
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-      {/* ── RULE EDIT DIALOG ── */}
-      <Dialog open={ruleDialogOpen} onOpenChange={setRuleDialogOpen}>
-        <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{editingRuleId ? "Редактировать правило" : "Новое правило"}</DialogTitle>
-            <DialogDescription>Условия определяют когда правило срабатывает, действие — что происходит.</DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4">
-            <div className="grid gap-1.5">
-              <label className="text-xs font-medium text-text-muted">Название</label>
-              <Input placeholder="Название правила" value={ruleForm.name} onChange={(e) => setRuleForm((f) => ({ ...f, name: e.target.value }))} />
-            </div>
-            <div className="grid gap-1.5">
-              <label className="text-xs font-medium text-text-muted">Описание</label>
-              <Textarea className="min-h-16" placeholder="Описание правила" value={ruleForm.description} onChange={(e) => setRuleForm((f) => ({ ...f, description: e.target.value }))} />
-            </div>
-            <div className="grid gap-1.5">
-              <label className="text-xs font-medium text-text-muted">Тип действия</label>
-              <Select value={ruleForm.actionType} onValueChange={(v) => setRuleForm((f) => ({ ...f, actionType: v }))}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="INCLUDE">Пропускает (INCLUDE)</SelectItem>
-                  <SelectItem value="EXCLUDE">Отсекает (EXCLUDE)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="grid gap-2">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-medium text-text-muted">Условия</label>
-                <Button variant="outline" size="sm" className="h-6 gap-1 text-xs" onClick={() => setRuleForm((f) => ({ ...f, conditions: [...f.conditions, { type: "TEXT_CONTAINS", value: "" }] }))}>
-                  <Plus size={12} />Добавить
-                </Button>
-              </div>
-              {ruleForm.conditions.map((condition, index) => (
-                <div key={index} className="flex items-center gap-2">
-                  <Select value={condition.type} onValueChange={(v) => setRuleForm((f) => ({ ...f, conditions: f.conditions.map((c, i) => i === index ? { ...c, type: v } : c) }))}>
-                    <SelectTrigger className="w-44 shrink-0"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {["TEXT_CONTAINS", "KEYWORD_MATCH", "REGEX_MATCH", "LENGTH_GT", "LENGTH_LT", "SENDER_IS_BOT", "HAS_TOPIC", "GROUP_MATCH"].map((ct) => (
-                        <SelectItem key={ct} value={ct}>{conditionLabel(ct) || ct}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Input className="flex-1" placeholder="Значение" value={condition.value} onChange={(e) => setRuleForm((f) => ({ ...f, conditions: f.conditions.map((c, i) => i === index ? { ...c, value: e.target.value } : c) }))} />
-                  <Button variant="outline" size="icon" className="h-8 w-8 shrink-0 text-danger" onClick={() => setRuleForm((f) => ({ ...f, conditions: f.conditions.length > 1 ? f.conditions.filter((_, i) => i !== index) : f.conditions }))} disabled={ruleForm.conditions.length <= 1}>
-                    <Trash size={14} />
-                  </Button>
+          <Card>
+            <CardHeader><CardTitle className="flex items-center gap-2"><GitFork weight="bold" />Маршрутизация решений</CardTitle></CardHeader>
+            <CardContent className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+              {routeCards.map((route) => (
+                <div key={route.decision} className="rounded-2xl border border-border-subtle bg-bg-elevated p-4">
+                  <Badge variant={route.tone}>{route.decision}</Badge>
+                  <div className="mt-3 text-sm font-semibold text-text-strong">{route.action}</div>
+                  <p className="mt-2 text-xs leading-relaxed text-text-muted">{decisionDescriptions[route.decision]}</p>
                 </div>
               ))}
-            </div>
+            </CardContent>
+          </Card>
 
-            <Button variant="primary" onClick={saveRule} disabled={!ruleForm.name.trim() || updateRule.isPending || createRule.isPending}>
-              {editingRuleId ? "Сохранить" : "Создать правило"}
-            </Button>
+          <Card>
+            <CardHeader><CardTitle className="flex items-center gap-2"><Link weight="bold" />LLM routes</CardTitle></CardHeader>
+            <CardContent className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              {(routeMappingQuery.data?.routes ?? []).map((r) => (
+                <div key={r.stage} className="rounded-2xl border border-border-subtle bg-bg-elevated p-4">
+                  <div className="font-semibold text-text-strong">{r.stage}</div>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <Badge variant="outline">{r.providerRoute ?? r.provider ?? "route не задан"}</Badge>
+                    <Badge variant={r.isActive === false ? "warning" : "success"}>{r.isActive === false ? "неактивен" : "активен"}</Badge>
+                  </div>
+                  <div className="mt-3 font-mono-value text-xs text-text-muted">{r.modelName ?? r.model ?? "model не задан"}</div>
+                  {(r.fallbackModel ?? r.fallback) ? <div className="mt-1 text-xs text-text-weak">fallback: {r.fallbackModel ?? r.fallback}</div> : null}
+                </div>
+              ))}
+              {(routeMappingQuery.data?.routes ?? []).length === 0 && <div className="rounded-2xl bg-bg-elevated p-4 text-sm text-text-muted">Нет маршрутов</div>}
+            </CardContent>
+          </Card>
+
+          {/* E: Class distribution */}
+          <Card>
+            <CardHeader><CardTitle>Распределение классов</CardTitle></CardHeader>
+            <CardContent>
+              <div className="grid gap-2">
+                {Object.entries(distributionQuery.data ?? {}).slice(0, 12).map(([label, count]) => (
+                  <div key={label} className="flex items-center justify-between rounded-xl bg-bg-elevated px-3 py-2 text-sm">
+                    <span>{label}</span>
+                    <span className="font-mono-value text-text-strong">{count}</span>
+                  </div>
+                ))}
+                {(!distributionQuery.data || Object.keys(distributionQuery.data).length === 0) && (
+                  <div className="rounded-xl bg-bg-elevated p-3 text-sm text-text-muted">Нет данных классификации</div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* C: Rule cards */}
+        <TabsContent value="rules" className="flex flex-col gap-4">
+          <div className="flex justify-end">
+            <Button size="sm" onClick={() => setEditingRule({} as Rule)}><Plus weight="bold" />Новое правило</Button>
           </div>
-        </DialogContent>
-      </Dialog>
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {rules.map((rule) => (
+              <Card key={rule.id} className={rule.isActive ? "" : "opacity-60"}>
+                <CardContent className="p-4 flex flex-col gap-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold text-text-strong">{rule.name}</span>
+                    <div className="flex gap-1">
+                      <Badge variant={decisionBadgeVariant[rule.decision] ?? "outline"}>{rule.decision}</Badge>
+                      <Badge variant="outline">P{rule.priority}</Badge>
+                    </div>
+                  </div>
+                  <p className="text-sm text-text-muted">{rule.description}</p>
+                  <div className="flex flex-wrap gap-1">
+                    {rule.keywordsJson?.slice(0, 3).map((kw) => <Badge key={kw} variant="outline" className="text-xs">{kw}</Badge>)}
+                    {rule.requiresLink && <Badge variant="outline" className="text-xs">🔗</Badge>}
+                    {rule.requiresCodeBlock && <Badge variant="outline" className="text-xs">&lt;/&gt;</Badge>}
+                  </div>
+                  <div className="flex items-center justify-between mt-1">
+                    <div className="flex items-center gap-2">
+                      <Switch checked={rule.enabled} onCheckedChange={(v) => toggleRuleMutation.mutate({ id: rule.id, enabled: v })} />
+                      <span className="text-xs text-text-muted">v{rule.version}</span>
+                    </div>
+                    <div className="flex gap-1">
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditingRule(rule)}><PencilSimple /></Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Rule editor drawer */}
+          <Sheet open={!!editingRule} onOpenChange={(o) => { if (!o) setEditingRule(null); }}>
+            <SheetContent className="w-[500px] sm:max-w-lg overflow-y-auto">
+              <SheetHeader><SheetTitle>{editingRule?.id ? "Редактировать" : "Создать"} правило</SheetTitle></SheetHeader>
+              {editingRule && <RuleEditor rule={editingRule} onClose={() => { setEditingRule(null); queryClient.invalidateQueries({ queryKey: ["classifier-rules"] }); }} />}
+            </SheetContent>
+          </Sheet>
+        </TabsContent>
+
+        {/* H: Thresholds */}
+        <TabsContent value="thresholds" className="flex flex-col gap-4">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2"><Sliders weight="bold" />Пороги по группам</CardTitle>
+                <Button variant="outline" size="sm" onClick={() => settingsQuery.refetch()}><ArrowClockwise weight="bold" /> Обновить</Button>
+              </div>
+            </CardHeader>
+            <CardContent className="grid gap-4 xl:grid-cols-2">
+              {Object.entries((settingsQuery.data ?? []).reduce<Record<string, PipelineSetting[]>>((groups, setting) => {
+                const category = settingCategory(setting);
+                groups[category] = [...(groups[category] ?? []), setting];
+                return groups;
+              }, {})).map(([category, settings]) => (
+                <div key={category} className="rounded-2xl border border-border-subtle bg-bg-elevated p-4">
+                  <div className="mb-3 flex items-center justify-between gap-2">
+                    <h3 className="font-semibold text-text-strong">{category}</h3>
+                    <Badge variant="outline">{settings.length}</Badge>
+                  </div>
+                  <div className="space-y-3">
+                    {settings.map((s) => (
+                      <div key={s.key ?? s.settingKey} className="rounded-xl bg-bg-card p-3">
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div className="min-w-0 flex-1">
+                            <div className="font-mono-value text-xs text-text-strong">{s.key ?? s.settingKey}</div>
+                            <p className="mt-1 text-xs text-text-muted">{s.description}</p>
+                          </div>
+                          <Badge variant="outline">{s.type ?? s.settingType}</Badge>
+                        </div>
+                        <div className="mt-3 flex items-center gap-2">
+                          <ThresholdCell
+                            setting={s}
+                            onSave={(value) => updateSettingMutation.mutate({ key: s.key ?? s.settingKey ?? "", value })}
+                            onReset={() => resetSettingMutation.mutate(s.key ?? s.settingKey ?? "")}
+                            pending={updateSettingMutation.isPending}
+                          />
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => resetSettingMutation.mutate(s.key ?? s.settingKey ?? "")} title="Сбросить на значение по умолчанию"><ArrowCounterClockwise weight="bold" /></Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+              {(settingsQuery.data ?? []).length === 0 && <div className="rounded-2xl bg-bg-elevated p-4 text-sm text-text-muted">Нет порогов</div>}
+            </CardContent>
+          </Card>
+
+          {/* Route mapping */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2"><Link weight="bold" />Маршрутизация AI-провайдеров</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-auto">
+                <table className="min-w-full text-left text-sm">
+                  <thead className="bg-bg-app text-text-muted">
+                    <tr>
+                      <th className="px-3 py-2">Промпт</th>
+                      <th className="px-3 py-2">Route</th>
+                      <th className="px-3 py-2">Model</th>
+                      <th className="px-3 py-2">Fallback</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(routeMappingQuery.data?.routes ?? []).map((r) => (
+                      <tr key={r.stage} className="border-t border-border-subtle">
+                        <td className="px-3 py-2">
+                          <span className="font-medium text-text-strong">{r.stage}</span>
+                        </td>
+                        <td className="px-3 py-2"><Badge variant="outline">{r.providerRoute ?? r.provider ?? "—"}</Badge></td>
+                        <td className="px-3 py-2 font-mono-value text-xs">{r.modelName ?? r.model ?? "—"}</td>
+                        <td className="px-3 py-2 font-mono-value text-xs text-text-muted">{r.fallbackModel ?? r.fallback ?? "—"}</td>
+                      </tr>
+                    ))}
+                    {(routeMappingQuery.data?.routes ?? []).length === 0 && (
+                      <tr><td colSpan={4} className="px-3 py-4 text-center text-text-muted">Нет маршрутов</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* LLM flow explanation */}
+          <Card>
+            <CardHeader><CardTitle className="flex items-center gap-2"><GitFork weight="bold" />Пути входа в LLM</CardTitle></CardHeader>
+            <CardContent className="flex flex-col gap-3 text-sm">
+              <div className="rounded-xl bg-bg-elevated p-4 border border-border-subtle">
+                <h4 className="font-semibold text-text-strong flex items-center gap-2"><ArrowRight weight="bold" />Path A: Cluster-based</h4>
+                <p className="text-text-muted mt-1">Сообщения группируются в кластеры → кластер проходит порог <code className="bg-bg-app px-1 rounded">minClusterScoreForJudge</code> → LLM Judge (LLM_CLUSTER_JUDGE_AND_ROUTING mode=CLUSTER) → confidence ≥ <code className="bg-bg-app px-1 rounded">minJudgeConfidenceForGeneration</code> → LLM Generation (KNOWLEDGE_GENERATION mode=CLUSTER)</p>
+              </div>
+              <div className="rounded-xl bg-bg-elevated p-4 border border-border-subtle">
+                <h4 className="font-semibold text-text-strong flex items-center gap-2"><ArrowRight weight="bold" />Path B: Single-message</h4>
+                <p className="text-text-muted mt-1">Сообщение проходит порог <code className="bg-bg-app px-1 rounded">singleMessageCandidateThreshold</code> → если ≥ <code className="bg-bg-app px-1 rounded">directMaterialReadyThreshold</code>, то DIRECT_MATERIAL_READY, иначе SINGLE_MESSAGE_MATERIAL_CANDIDATE → LLM Judge (LLM_CLUSTER_JUDGE_AND_ROUTING mode=SINGLE_MESSAGE) → confidence ≥ <code className="bg-bg-app px-1 rounded">minJudgeConfidenceForGeneration</code> → LLM Generation (KNOWLEDGE_GENERATION mode=SINGLE_MESSAGE)</p>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* D: Interactive test */}
+        <TabsContent value="test" className="flex flex-col gap-4">
+          <Card>
+            <CardHeader><CardTitle>Проверить сообщение</CardTitle></CardHeader>
+            <CardContent className="flex flex-col gap-3">
+              <Textarea
+                placeholder="Вставьте текст сообщения для проверки..."
+                value={testText}
+                onChange={(e) => setTestText(e.target.value)}
+                rows={5}
+              />
+              <div className="flex gap-2">
+                <Button onClick={() => testMutation.mutate(testText)} disabled={!testText.trim() || testMutation.isPending}>
+                  <Flask weight="bold" /> Проверить
+                </Button>
+                <Button variant="outline" onClick={() => { setTestText(""); setTestResult(null); }}>Очистить</Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {testResult && (
+            <>
+              <Card>
+                <CardHeader><CardTitle>Результат</CardTitle></CardHeader>
+                <CardContent className="flex flex-col gap-3">
+                  <div className="flex items-center gap-3">
+                    <Badge variant={decisionBadgeVariant[testResult.finalDecision] ?? "outline"} className="text-base px-3 py-1">
+                      {testResult.finalDecision}
+                    </Badge>
+                    <span className="text-sm text-text-muted">{pipelineActionLabel[testResult.pipelineAction] ?? testResult.pipelineAction}</span>
+                  </div>
+                  <p className="text-sm text-text-muted">{testResult.explanation}</p>
+
+                  {testResult.llmNextRoute && (
+                    <>
+                      <Separator />
+                      <h3 className="font-semibold text-text-strong">LLM next step</h3>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Badge variant="outline">{testResult.llmNextRoute.stage}</Badge>
+                        <Badge variant="secondary">{testResult.llmNextRoute.promptCode}</Badge>
+                        <Badge variant="warning">{testResult.llmNextRoute.mode}</Badge>
+                      </div>
+                    </>
+                  )}
+
+                  <Separator />
+                  <h3 className="font-semibold text-text-strong">Single-message score</h3>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <ScoreItem label="Score" value={testResult.singleMessage?.score} />
+                    <ScoreItem label="Decision" value={testResult.singleMessage?.decision} />
+                    <ScoreItem label="Text length" value={testResult.singleMessage?.textLengthScore} />
+                    <ScoreItem label="Structure" value={testResult.singleMessage?.structureScore} />
+                    <ScoreItem label="Guide/HowTo" value={testResult.singleMessage?.guideHowToScore} />
+                    <ScoreItem label="Troubleshooting" value={testResult.singleMessage?.troubleshootingScore} />
+                    <ScoreItem label="Error signal" value={testResult.singleMessage?.errorSignalScore} />
+                    <ScoreItem label="Solution signal" value={testResult.singleMessage?.solutionSignalScore} />
+                    <ScoreItem label="Code/Command" value={testResult.singleMessage?.codeOrCommandScore} />
+                    <ScoreItem label="Question/Answer" value={testResult.singleMessage?.questionAnswerScore} />
+                    <ScoreItem label="Noise penalty" value={testResult.singleMessage?.noisePenalty} />
+                  </div>
+                  {testResult.singleMessage?.signals?.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {testResult.singleMessage.signals.map((s) => <Badge key={s} variant="warning">{s}</Badge>)}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {testResult.ruleMatches?.length > 0 && (
+                <Card>
+                  <CardHeader><CardTitle>Rule matches</CardTitle></CardHeader>
+                  <CardContent className="flex flex-col gap-2">
+                    {testResult.ruleMatches.map((m) => (
+                      <div key={m.ruleId} className="rounded-xl bg-bg-elevated p-3">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-text-strong">{m.ruleName}</span>
+                          <Badge variant={decisionBadgeVariant[m.decision] ?? "outline"}>{m.decision}</Badge>
+                        </div>
+                        {m.keywordMatches.length > 0 && <p className="text-xs text-text-muted mt-1">Keywords: {m.keywordMatches.join(", ")}</p>}
+                        {m.regexMatches.length > 0 && <p className="text-xs text-text-muted">Regex: {m.regexMatches.join(", ")}</p>}
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              )}
+
+              <Card>
+                <CardHeader><CardTitle>Classifier</CardTitle></CardHeader>
+                <CardContent>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={variant(testResult.classifier?.label === "NOISE_OR_CHAT" ? "outline" : "warning")}>
+                      {testResult.classifier?.label ?? "N/A"}
+                    </Badge>
+                    <span className="text-sm text-text-muted">
+                      confidence: {(testResult.classifier?.confidence * 100).toFixed(0)}%
+                    </span>
+                    <span className="text-xs text-text-muted">model: {testResult.classifier?.model}</span>
+                  </div>
+                </CardContent>
+              </Card>
+            </>
+          )}
+        </TabsContent>
+
+        {/* F: Recent decisions */}
+        <TabsContent value="decisions">
+          <Card>
+            <CardHeader><CardTitle>Последние решения классификации</CardTitle></CardHeader>
+            <CardContent>
+              <div className="overflow-auto">
+                <table className="min-w-full text-left text-sm">
+                  <thead className="bg-bg-app text-text-muted">
+                    <tr>
+                      <th className="px-3 py-2">Сообщение</th>
+                      <th className="px-3 py-2">Rule decision</th>
+                      <th className="px-3 py-2">Classifier label</th>
+                      <th className="px-3 py-2">Confidence</th>
+                      <th className="px-3 py-2">Final decision</th>
+                      <th className="px-3 py-2">Pipeline action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(recentDecisionsQuery.data ?? []).map((d: any, i: number) => (
+                      <tr key={i} className="border-t border-border-subtle">
+                        <td className="px-3 py-2 max-w-xs truncate text-text-muted">{d.text_preview}</td>
+                        <td className="px-3 py-2"><Badge variant={decisionBadgeVariant[d.rule_decision] ?? "outline"}>{d.rule_decision}</Badge></td>
+                        <td className="px-3 py-2">{d.classifier_label}</td>
+                        <td className="px-3 py-2">{(d.classifier_confidence * 100).toFixed(0)}%</td>
+                        <td className="px-3 py-2"><Badge variant={decisionBadgeVariant[d.final_decision] ?? "outline"}>{d.final_decision}</Badge></td>
+                        <td className="px-3 py-2 text-text-muted">{d.pipeline_action}</td>
+                      </tr>
+                    ))}
+                    {(recentDecisionsQuery.data ?? []).length === 0 && (
+                      <tr><td colSpan={6} className="px-3 py-4 text-center text-text-muted">Нет данных</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* G: Single-message candidates */}
+        <TabsContent value="candidates">
+          <Card>
+            <CardHeader><CardTitle>Single-message кандидаты</CardTitle></CardHeader>
+            <CardContent>
+              <div className="overflow-auto">
+                <table className="min-w-full text-left text-sm">
+                  <thead className="bg-bg-app text-text-muted">
+                    <tr>
+                      <th className="px-3 py-2">Сообщение</th>
+                      <th className="px-3 py-2">Rule decision</th>
+                      <th className="px-3 py-2">Final decision</th>
+                      <th className="px-3 py-2">Classifier</th>
+                      <th className="px-3 py-2">Material</th>
+                      <th className="px-3 py-2">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(candidatesQuery.data ?? []).map((c: any, i: number) => (
+                      <tr key={i} className="border-t border-border-subtle">
+                        <td className="px-3 py-2 max-w-xs truncate text-text-muted">{c.text_preview}</td>
+                        <td className="px-3 py-2"><Badge variant={decisionBadgeVariant[c.rule_decision] ?? "outline"}>{c.rule_decision}</Badge></td>
+                        <td className="px-3 py-2"><Badge variant={decisionBadgeVariant[c.final_decision] ?? "outline"}>{c.final_decision}</Badge></td>
+                        <td className="px-3 py-2">{c.classifier_label ?? "—"}</td>
+                        <td className="px-3 py-2">
+                          {c.knowledge_item_id ? (
+                            <a href={`/materials/${c.knowledge_item_id}`} className="text-accent underline">{c.knowledge_item_title}</a>
+                          ) : "—"}
+                        </td>
+                        <td className="px-3 py-2">
+                          <Button variant="ghost" size="sm" className="text-xs">Open trace</Button>
+                        </td>
+                      </tr>
+                    ))}
+                    {(candidatesQuery.data ?? []).length === 0 && (
+                      <tr><td colSpan={6} className="px-3 py-4 text-center text-text-muted">Нет single-message кандидатов</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}
+
+function StatusCard({ label, value, variant, sub }: { label: string; value: string; variant: "success" | "danger" | "warning" | "outline"; sub?: string }) {
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Card className="cursor-help"><CardContent className="p-4">
+            <div className="text-xs text-text-muted">{label}</div>
+            <Badge className="mt-2" variant={variant}>{value}</Badge>
+            {sub && <div className="mt-1 text-xs text-text-muted">{sub}</div>}
+          </CardContent></Card>
+        </TooltipTrigger>
+        <TooltipContent side="bottom">
+          <p className="text-xs">{label}: {value} ({variant})</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+}
+
+function ThresholdCell({ setting, onSave, onReset, pending }: {
+  setting: PipelineSetting; onSave: (value: string) => void; onReset: () => void; pending: boolean;
+}) {
+  const [editing, setEditing] = useState(false);
+  const currentValue = setting.value ?? setting.settingValue ?? "";
+  const currentType = setting.type ?? setting.settingType ?? "STRING";
+  const [value, setValue] = useState(currentValue);
+  const isNum = currentType === "DOUBLE" || currentType === "INTEGER";
+
+  return editing ? (
+    <div className="flex items-center gap-1">
+      <Input
+        type={isNum ? "number" : "text"}
+        className="h-8 w-32 text-xs"
+        step={currentType === "DOUBLE" ? "0.01" : "1"}
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        onKeyDown={(e) => { if (e.key === "Enter") { onSave(value); setEditing(false); } }}
+      />
+      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { onSave(value); setEditing(false); }} disabled={pending}>
+        <CheckCircle weight="bold" />
+      </Button>
+      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setValue(currentValue); setEditing(false); }}>
+        <XCircle weight="bold" />
+      </Button>
+    </div>
+  ) : (
+    <div className="flex items-center gap-1 cursor-pointer" onClick={() => { setValue(currentValue); setEditing(true); }}>
+      <span className="font-mono-value text-sm">{currentValue}</span>
+      {setting.safeMin && setting.safeMax && (
+        <span className="text-[10px] text-text-muted">[{setting.safeMin}–{setting.safeMax}]</span>
+      )}
+      <PencilSimple size={12} className="text-text-muted opacity-50 hover:opacity-100" />
+    </div>
+  );
+}
+
+function ScoreItem({ label, value }: { label: string; value?: number | string }) {
+  return (
+    <div className="rounded-xl bg-bg-elevated px-3 py-2 flex items-center justify-between">
+      <span className="text-text-muted text-xs">{label}</span>
+      <span className="font-mono-value text-text-strong">{value != null ? (typeof value === "number" ? value.toFixed(2) : value) : "—"}</span>
+    </div>
+  );
+}
+
+function RuleEditor({ rule, onClose }: { rule: Rule; onClose: () => void }) {
+  const queryClient = useQueryClient();
+  const [name, setName] = useState(rule.name ?? "");
+  const [description, setDescription] = useState(rule.description ?? "");
+  const [decision, setDecision] = useState(rule.decision ?? "ACCUMULATE");
+  const [priority, setPriority] = useState(rule.priority ?? 50);
+  const [keywords, setKeywords] = useState((rule.keywordsJson ?? []).join(", "));
+  const [regex, setRegex] = useState((rule.regexJson ?? []).join("\n"));
+  const [minLen, setMinLen] = useState(rule.minTextLength?.toString() ?? "");
+  const [maxLen, setMaxLen] = useState(rule.maxTextLength?.toString() ?? "");
+  const [reqLink, setReqLink] = useState(rule.requiresLink ?? false);
+  const [reqCode, setReqCode] = useState(rule.requiresCodeBlock ?? false);
+  const [reqError, setReqError] = useState(rule.requiresErrorPattern ?? false);
+  const [reqPrice, setReqPrice] = useState(rule.requiresPricePattern ?? false);
+  const [reqQuestion, setReqQuestion] = useState(rule.requiresQuestionPattern ?? false);
+  const [reqSolution, setReqSolution] = useState(rule.requiresSolutionPattern ?? false);
+  const [changeReason, setChangeReason] = useState("");
+
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      const body = {
+        name, description, decision, priority,
+        keywordsJson: JSON.parse(JSON.stringify(keywords.split(",").map((k: string) => k.trim()).filter(Boolean))),
+        regexJson: JSON.parse(JSON.stringify(regex.split("\n").map((r: string) => r.trim()).filter(Boolean))),
+        minTextLength: minLen ? parseInt(minLen) : null,
+        maxTextLength: maxLen ? parseInt(maxLen) : null,
+        requiresLink: reqLink, requiresCodeBlock: reqCode,
+        requiresErrorPattern: reqError, requiresPricePattern: reqPrice,
+        requiresQuestionPattern: reqQuestion, requiresSolutionPattern: reqSolution,
+        changeReason, updatedBy: "ui",
+      };
+      if (rule.id) {
+        return putJsonAuth<Rule>(`${API}/rules/${rule.id}`, body);
+      } else {
+        return postJsonAuth<Rule>(`${API}/rules`, { ...body, code: name.toLowerCase().replace(/\s+/g, "_") });
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["classifier-rules"] });
+      onClose();
+    },
+  });
+
+  return (
+    <div className="flex flex-col gap-3 mt-4">
+      <Input placeholder="Название" value={name} onChange={(e) => setName(e.target.value)} />
+      <Input placeholder="Описание" value={description} onChange={(e) => setDescription(e.target.value)} />
+      <div className="flex gap-2">
+        <Select value={decision} onValueChange={setDecision}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="SUPPRESS">SUPPRESS</SelectItem>
+            <SelectItem value="ACCUMULATE">ACCUMULATE</SelectItem>
+            <SelectItem value="CANDIDATE">CANDIDATE</SelectItem>
+            <SelectItem value="SINGLE_MESSAGE_MATERIAL_CANDIDATE">SINGLE_MESSAGE_MATERIAL_CANDIDATE</SelectItem>
+            <SelectItem value="DIRECT_MATERIAL_READY">DIRECT_MATERIAL_READY</SelectItem>
+          </SelectContent>
+        </Select>
+        <Input type="number" placeholder="Priority" value={priority} onChange={(e) => setPriority(parseInt(e.target.value) || 0)} className="w-20" />
+      </div>
+      <Separator />
+      <p className="text-xs text-text-muted font-medium">Keywords (через запятую)</p>
+      <Input placeholder="keyword1, keyword2" value={keywords} onChange={(e) => setKeywords(e.target.value)} />
+      <p className="text-xs text-text-muted font-medium">Regex (по одной на строку)</p>
+      <Textarea placeholder="[Rr]egex pattern" value={regex} onChange={(e) => setRegex(e.target.value)} rows={3} />
+      <div className="flex gap-2">
+        <Input type="number" placeholder="Min text len" value={minLen} onChange={(e) => setMinLen(e.target.value)} className="w-28" />
+        <Input type="number" placeholder="Max text len" value={maxLen} onChange={(e) => setMaxLen(e.target.value)} className="w-28" />
+      </div>
+      <Separator />
+      <p className="text-xs text-text-muted font-medium">Requirements</p>
+      <div className="grid grid-cols-2 gap-2 text-sm">
+        <label className="flex items-center gap-2"><Switch checked={reqLink} onCheckedChange={setReqLink} />Link</label>
+        <label className="flex items-center gap-2"><Switch checked={reqCode} onCheckedChange={setReqCode} />Code block</label>
+        <label className="flex items-center gap-2"><Switch checked={reqError} onCheckedChange={setReqError} />Error pattern</label>
+        <label className="flex items-center gap-2"><Switch checked={reqPrice} onCheckedChange={setReqPrice} />Price pattern</label>
+        <label className="flex items-center gap-2"><Switch checked={reqQuestion} onCheckedChange={setReqQuestion} />Question pattern</label>
+        <label className="flex items-center gap-2"><Switch checked={reqSolution} onCheckedChange={setReqSolution} />Solution pattern</label>
+      </div>
+      <Separator />
+      <Input placeholder="Причина изменения" value={changeReason} onChange={(e) => setChangeReason(e.target.value)} />
+      <div className="flex gap-2 mt-2">
+        <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending || !name}>
+          {rule.id ? "Сохранить версию" : "Создать"}
+        </Button>
+        <Button variant="outline" onClick={onClose}>Отмена</Button>
+      </div>
     </div>
   );
 }

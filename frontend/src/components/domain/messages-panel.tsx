@@ -1,5 +1,16 @@
 import { useEffect, useRef } from "react";
-import { SpinnerGap, ArrowClockwise } from "@phosphor-icons/react";
+import {
+  ArrowBendUpLeft,
+  ArrowClockwise,
+  File,
+  Gif,
+  Image,
+  LinkSimple,
+  Microphone,
+  SpinnerGap,
+  Sticker,
+  Video,
+} from "@phosphor-icons/react";
 import { RichMessageText } from "@/components/domain/rich-message-text";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -44,6 +55,23 @@ interface MessagesPanelProps {
   onTabChange?: (tabId: string | null) => void;
   onSync?: () => void;
   isSyncing?: boolean;
+  syncStatus?: string | null;
+  contentFilter?: string;
+  onContentFilterChange?: (value: string) => void;
+}
+
+function mediaBadges(message: Message) {
+  const badges = [];
+  if (message.hasLinks) badges.push({ key: "link", label: "ссылка", icon: LinkSimple });
+  if (message.hasPhoto) badges.push({ key: "photo", label: "фото", icon: Image });
+  if (message.hasVideo) badges.push({ key: "video", label: "видео", icon: Video });
+  if (message.hasGif) badges.push({ key: "gif", label: "GIF", icon: Gif });
+  if (message.hasVoice) badges.push({ key: "voice", label: "голос", icon: Microphone });
+  if (message.hasDocument) badges.push({ key: "document", label: message.fileName ?? "файл", icon: File });
+  if ((message.mediaType ?? "").toLowerCase().includes("sticker")) badges.push({ key: "sticker", label: "стикер", icon: Sticker });
+  if (message.replyToMessageId) badges.push({ key: "reply", label: "ответ", icon: ArrowBendUpLeft });
+  if (message.hasMedia && badges.length === 0) badges.push({ key: "media", label: message.mediaType ?? "медиа", icon: File });
+  return badges;
 }
 
 function sameDay(a: string, b: string): boolean {
@@ -69,11 +97,23 @@ export function MessagesPanel({
   onTabChange,
   onSync,
   isSyncing,
+  syncStatus,
+  contentFilter = "all",
+  onContentFilterChange,
 }: MessagesPanelProps) {
   const messageRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const lastScrolledIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!selectedMessageId) {
+      lastScrolledIdRef.current = null;
+      return;
+    }
+
+    // Only scroll when the user actually changes the selected message.
+    // Without this guard the pane re-scrolls on every background refetch
+    // (each poll returns a new `messages` array), making the chat "jump".
+    if (lastScrolledIdRef.current === selectedMessageId) {
       return;
     }
 
@@ -82,13 +122,14 @@ export function MessagesPanel({
       return;
     }
 
+    lastScrolledIdRef.current = selectedMessageId;
     window.requestAnimationFrame(() => {
       target.scrollIntoView({
         behavior: "smooth",
         block: "center",
       });
     });
-  }, [selectedMessageId, messages]);
+  }, [selectedMessageId]);
 
   return (
     <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-border-subtle bg-bg-app">
@@ -107,17 +148,18 @@ export function MessagesPanel({
           {onSync && (
             <Button
               variant="outline"
-              size="sm"
-              className="h-7 gap-1.5 text-xs"
+              size="icon"
+              className="h-7 w-7"
               onClick={onSync}
               disabled={isSyncing}
+              title="Синхронизировать сейчас"
+              aria-label="Синхронизировать сейчас"
             >
               {isSyncing ? (
                 <SpinnerGap size={12} weight="regular" className="animate-spin" />
               ) : (
                 <ArrowClockwise size={12} weight="regular" />
               )}
-              Загрузить
             </Button>
           )}
           {isLoading && (
@@ -151,6 +193,36 @@ export function MessagesPanel({
         </div>
       )}
 
+      {syncStatus && (
+        <div className="border-b border-border-subtle bg-bg-card px-4 py-1.5 text-xs text-text-muted">
+          {syncStatus}
+        </div>
+      )}
+
+      <div className="flex flex-wrap items-center gap-1.5 border-b border-border-subtle bg-bg-card px-3 py-1.5">
+        {[
+          ["all", "Все"],
+          ["text", "Текст"],
+          ["media", "Медиа"],
+          ["links", "Ссылки"],
+          ["voice", "Голосовые"],
+          ["documents", "Документы"],
+        ].map(([value, label]) => (
+          <button
+            key={value}
+            type="button"
+            onClick={() => onContentFilterChange?.(value)}
+            className={`rounded-lg px-2.5 py-1 text-[11px] font-medium transition-colors ${
+              contentFilter === value
+                ? "bg-brand-blue-soft text-brand-blue"
+                : "text-text-muted hover:bg-bg-elevated hover:text-text-default"
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
       {messages.length === 0 && !isLoading ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-3 py-10 text-sm text-text-weak">
           Сообщений нет
@@ -164,6 +236,7 @@ export function MessagesPanel({
               const sameAuthor = previous && previous.author === message.author && !showDateSep;
               const isSelected = selectedMessageId === message.id;
               const isBot = message.isBot;
+              const badges = mediaBadges(message);
 
               return (
                 <div
@@ -213,6 +286,23 @@ export function MessagesPanel({
                     <div className="whitespace-pre-wrap break-words text-[13.5px] leading-relaxed text-text-default">
                       <RichMessageText text={message.text} />
                     </div>
+
+                    {message.caption && message.caption !== message.text && (
+                      <div className="mt-1 rounded-lg bg-bg-elevated px-2 py-1 text-[12px] text-text-muted">
+                        Подпись: <RichMessageText text={message.caption} />
+                      </div>
+                    )}
+
+                    {badges.length > 0 && (
+                      <div className="mt-1.5 flex flex-wrap gap-1">
+                        {badges.map(({ key, label, icon: Icon }) => (
+                          <span key={key} className="inline-flex items-center gap-1 rounded-full bg-bg-elevated px-2 py-0.5 text-[10px] text-text-muted">
+                            <Icon size={11} weight="regular" />
+                            {label}
+                          </span>
+                        ))}
+                      </div>
+                    )}
 
                     <div className="mt-0.5 flex items-center justify-end gap-1.5">
                       {message.processingStatus !== "UNPROCESSED" && (

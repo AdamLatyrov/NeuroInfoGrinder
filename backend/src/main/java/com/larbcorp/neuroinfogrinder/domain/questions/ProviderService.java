@@ -9,7 +9,9 @@ import com.larbcorp.neuroinfogrinder.infrastructure.client.ai.AiCompletionRespon
 import com.larbcorp.neuroinfogrinder.infrastructure.client.ai.AiMessage;
 import com.larbcorp.neuroinfogrinder.infrastructure.client.ai.AiModelsService;
 import com.larbcorp.neuroinfogrinder.infrastructure.persistence.entity.AiProviderEntity;
+import com.larbcorp.neuroinfogrinder.infrastructure.persistence.entity.SettingsEntity;
 import com.larbcorp.neuroinfogrinder.infrastructure.persistence.repository.AiProviderRepository;
+import com.larbcorp.neuroinfogrinder.infrastructure.persistence.repository.SettingsRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -24,6 +26,7 @@ import java.util.List;
 public class ProviderService {
 
     private final AiProviderRepository aiProviderRepository;
+    private final SettingsRepository settingsRepository;
     private final AiClientService aiClientService;
     private final AiModelsService aiModelsService;
 
@@ -54,12 +57,48 @@ public class ProviderService {
     @Transactional
     public AiProviderEntity update(Long id, UpdateProviderRequest request) {
         AiProviderEntity entity = getById(id);
+        boolean connectionConfigChanged = false;
         if (request.name() != null) entity.setName(request.name());
-        if (request.protocol() != null) entity.setProtocol(request.protocol());
-        if (request.endpointUrl() != null) entity.setEndpointUrl(request.endpointUrl());
-        if (request.apiKey() != null) entity.setApiKeyEncrypted(request.apiKey());
-        if (request.model() != null) entity.setModel(request.model());
+
+        if (request.protocol() != null && !request.protocol().equals(entity.getProtocol())) {
+            entity.setProtocol(request.protocol());
+            connectionConfigChanged = true;
+        }
+        if (request.endpointUrl() != null && !request.endpointUrl().equals(entity.getEndpointUrl())) {
+            entity.setEndpointUrl(request.endpointUrl());
+            connectionConfigChanged = true;
+        }
+        if (request.apiKey() != null && !request.apiKey().isBlank()
+            && !request.apiKey().equals(entity.getApiKeyEncrypted())) {
+            entity.setApiKeyEncrypted(request.apiKey());
+            connectionConfigChanged = true;
+        }
+        if (request.model() != null && !request.model().equals(entity.getModel())) {
+            entity.setModel(request.model());
+            connectionConfigChanged = true;
+        }
+
+        if (connectionConfigChanged) {
+            entity.setLastTestResult(null);
+            entity.setLastError(null);
+        }
         return aiProviderRepository.save(entity);
+    }
+
+    @Transactional
+    public AiProviderEntity activate(Long id) {
+        AiProviderEntity entity = getById(id);
+        if (!isUsableStatus(entity.getStatus())) {
+            throw new IllegalStateException(
+                "Provider must be tested and healthy before activation. Current status: " + entity.getStatus()
+            );
+        }
+
+        SettingsEntity settings = settingsRepository.findFirstByOrderByIdAsc()
+            .orElseThrow(() -> new IllegalStateException("Settings not found"));
+        settings.setActiveProviderId(entity.getId());
+        settingsRepository.save(settings);
+        return entity;
     }
 
     @Transactional
@@ -112,5 +151,20 @@ public class ProviderService {
         aiProviderRepository.save(entity);
 
         return new TestProviderResponse(success, latencyMs, error);
+    }
+
+    public boolean isActive(Long providerId) {
+        if (providerId == null) {
+            return false;
+        }
+        return settingsRepository.findFirstByOrderByIdAsc()
+            .map(settings -> providerId.equals(settings.getActiveProviderId()))
+            .orElse(false);
+    }
+
+    public static boolean isUsableStatus(String status) {
+        return "ACTIVE".equalsIgnoreCase(status)
+            || "HEALTHY".equalsIgnoreCase(status)
+            || "WARNING".equalsIgnoreCase(status);
     }
 }

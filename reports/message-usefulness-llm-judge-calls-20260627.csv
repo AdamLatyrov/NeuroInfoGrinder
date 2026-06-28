@@ -1,0 +1,7 @@
+raw_id,provider_call_id,run_id,stage,status,http_status,error_code,input_tokens,output_tokens,latency_ms,judge_decision,judge_type,confidence,rejection_reason,grounded,hallucination_risk,reason
+11142,209,6601,LLM_CLUSTER_JUDGE_AND_ROUTING,SUCCESS,200,,513,440,36825,NEWS_REFERENCE_MATERIAL_CANDIDATE,REFERENCE,0.78,,true,medium,"The source contains a named vendor/model release signal, a source link, and specific comparative claims. It has reference value but limited actionable depth, so it should be treated as a news/reference candidate rather than instructional material."
+11484,210,6601,LLM_CLUSTER_JUDGE_AND_ROUTING,SUCCESS,200,,487,629,26074,RESOURCE_REFERENCE_MATERIAL_CANDIDATE,REFERENCE,0.74,,true,MEDIUM,"Материал выглядит как ресурсная ссылка с контекстом и перечнем возможностей. Подходит для справочного формата, а не для пошагового гайда. Существенное ограничение: в нормализованном тексте не виден URL, а заявленные характеристики репозитория и интеграции требуют проверки."
+10172,211,6601,LLM_CLUSTER_JUDGE_AND_ROUTING,FAILED,502,HTTP_502,515,1,222,,,,,,,
+12038,212,6601,LLM_CLUSTER_JUDGE_AND_ROUTING,FAILED,502,HTTP_502,479,1,188,,,,,,,
+11434,213,6601,LLM_CLUSTER_JUDGE_AND_ROUTING,FAILED,502,HTTP_502,459,1,200,,,,,,,
+8447,214,6601,LLM_CLUSTER_JUDGE_AND_ROUTING,FAILED,502,HTTP_502,490,1,177,,,,,,,

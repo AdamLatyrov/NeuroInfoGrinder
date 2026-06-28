@@ -21,6 +21,8 @@ public class PipelineTraceEntity extends BaseEntity {
 
     private Long groupId;
 
+    private Long ownerUserId;
+
     @Column(nullable = false, length = 64)
     private String stage;
 
@@ -66,4 +68,19 @@ public class PipelineTraceEntity extends BaseEntity {
 
     @Column(columnDefinition = "TEXT")
     private String reason;
+
+    @Column(length = 32)
+    private String entityType;
+
+    @Column(length = 256)
+    private String entityName;
+
+    @Column(length = 32)
+    private String entityVersion;
+
+    @Column(columnDefinition = "TEXT")
+    private String configSnapshotJson;
+
+    @Column(columnDefinition = "TEXT")
+    private String tuningHint;
 }

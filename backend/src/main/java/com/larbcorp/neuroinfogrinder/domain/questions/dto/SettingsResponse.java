@@ -2,6 +2,7 @@ package com.larbcorp.neuroinfogrinder.domain.questions.dto;
 
 public record SettingsResponse(
     Publication publication,
+    Long activeProviderId,
     Processing processing,
     Filters filters,
     Limits limits,

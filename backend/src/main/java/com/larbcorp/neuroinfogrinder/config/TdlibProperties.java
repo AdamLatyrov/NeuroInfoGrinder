@@ -24,6 +24,7 @@ public class TdlibProperties {
     private String applicationVersion = "0.1.0";
     private int chatLimit = 100;
     private int topicLimit = 100;
+    private Proxy proxy = new Proxy();
 
     public boolean isEnabled() {
         return enabled;
@@ -175,5 +176,79 @@ public class TdlibProperties {
 
     public void setTopicLimit(int topicLimit) {
         this.topicLimit = topicLimit;
+    }
+
+    public Proxy getProxy() {
+        return proxy;
+    }
+
+    public void setProxy(Proxy proxy) {
+        this.proxy = proxy;
+    }
+
+    public static class Proxy {
+        private boolean enabled = false;
+        private String type = "socks5";
+        private String host = "";
+        private int port;
+        private String username = "";
+        private String password = "";
+        private String secret = "";
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
+
+        public String getType() {
+            return type;
+        }
+
+        public void setType(String type) {
+            this.type = type;
+        }
+
+        public String getHost() {
+            return host;
+        }
+
+        public void setHost(String host) {
+            this.host = host;
+        }
+
+        public int getPort() {
+            return port;
+        }
+
+        public void setPort(int port) {
+            this.port = port;
+        }
+
+        public String getUsername() {
+            return username;
+        }
+
+        public void setUsername(String username) {
+            this.username = username;
+        }
+
+        public String getPassword() {
+            return password;
+        }
+
+        public void setPassword(String password) {
+            this.password = password;
+        }
+
+        public String getSecret() {
+            return secret;
+        }
+
+        public void setSecret(String secret) {
+            this.secret = secret;
+        }
     }
 }

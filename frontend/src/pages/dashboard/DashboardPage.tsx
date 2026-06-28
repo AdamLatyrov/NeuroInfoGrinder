@@ -1,4 +1,5 @@
 import { PageHeaderCard } from "@/components/domain/page-header-card";
+import { useNavigate } from "react-router-dom";
 import { KpiRibbon } from "@/components/domain/kpi-ribbon";
 import { EmptyState } from "@/components/domain/empty-state";
 import { StatusBadge } from "@/components/domain/status-badge";
@@ -47,7 +48,7 @@ function ChartPlaceholder({ title }: { title: string }) {
       </CardHeader>
       <CardContent>
         <div className="h-[200px] flex items-center justify-center text-xs text-text-weak">
-          Data will appear when processing starts
+          Данные появятся после запуска обработки
         </div>
       </CardContent>
     </Card>
@@ -55,6 +56,7 @@ function ChartPlaceholder({ title }: { title: string }) {
 }
 
 export function DashboardPage() {
+  const navigate = useNavigate();
   const accountsQuery = useAccountsQuery();
   const guidesQuery = useGuidesQuery({ page: 0, size: 10 });
   const tokenSummaryQuery = useTokenSummaryQuery();
@@ -99,13 +101,13 @@ export function DashboardPage() {
       trend: "flat" as const,
     },
     {
-      label: "Running jobs",
+      label: "Задачи в работе",
       value: queueStatus ? queueStatus.running : 0,
       change: "+0",
       trend: "flat" as const,
     },
     {
-      label: "Stuck jobs",
+      label: "Зависшие задачи",
       value: queueStatus ? queueStatus.stuck : 0,
       change: "+0",
       trend: "flat" as const,
@@ -119,6 +121,20 @@ export function DashboardPage() {
     })) ?? [];
 
   const isLoading = accountsQuery.isLoading && guidesQuery.isLoading;
+  const isRefreshing =
+    accountsQuery.isFetching ||
+    guidesQuery.isFetching ||
+    tokenSummaryQuery.isFetching ||
+    queueStatusQuery.isFetching ||
+    tokenDailyQuery.isFetching;
+
+  const refreshDashboard = () => {
+    accountsQuery.refetch();
+    guidesQuery.refetch();
+    tokenSummaryQuery.refetch();
+    queueStatusQuery.refetch();
+    tokenDailyQuery.refetch();
+  };
 
   return (
     <div className="flex flex-col gap-5">
@@ -130,14 +146,14 @@ export function DashboardPage() {
           primary: {
             label: "Добавить",
             items: [
-              { label: "Аккаунт" },
-              { label: "Группу" },
-              { label: "Правило" },
-              { label: "Промпт" },
+              { label: "Аккаунт", onClick: () => navigate("/accounts") },
+              { label: "Группу", onClick: () => navigate("/groups") },
+              { label: "Классификатор", onClick: () => navigate("/classifiers") },
+              { label: "Промпт", onClick: () => navigate("/prompts") },
             ],
           },
-          onRefresh: () => {},
-          onExport: () => {},
+          onRefresh: refreshDashboard,
+          refreshPending: isRefreshing,
         }}
       >
         <div className="mt-4">
@@ -161,7 +177,7 @@ export function DashboardPage() {
           Pipeline
         </h2>
         <div className="rounded-2xl border border-border-subtle bg-bg-card p-6 text-center text-xs text-text-weak">
-          Pipeline status will appear when processing starts
+          Состояние конвейера появится после запуска обработки
         </div>
       </section>
 
@@ -298,32 +314,36 @@ export function DashboardPage() {
                     <div className="flex flex-wrap gap-1.5 mb-2">
                       <Badge variant="outline" className="text-[10px]">
                         {guide.sourceGroupId
-                          ? `Group #${guide.sourceGroupId}`
+                          ? `Группа #${guide.sourceGroupId}`
                           : "\u2014"}
                       </Badge>
                       <Badge variant="outline" className="text-[10px]">
                         {guide.providerId
-                          ? `Prov #${guide.providerId}`
+                          ? `Провайдер #${guide.providerId}`
                           : "\u2014"}
                         {guide.model ? ` / ${guide.model}` : ""}
                       </Badge>
                     </div>
                     <div className="flex items-center gap-3 text-xs text-text-muted">
                       <span className="font-mono-value">
-                        {guide.totalTokens.toLocaleString()} tok
+                        {guide.totalTokens.toLocaleString()} ток.
                       </span>
                       <span>${guide.estimatedCost.toFixed(3)}</span>
-                      <span
-                        className={
-                          guide.confidence >= 0.85
-                            ? "text-success"
-                            : guide.confidence >= 0.75
-                            ? "text-warning"
-                            : "text-danger"
-                        }
-                      >
-                        conf {guide.confidence}
-                      </span>
+                      {guide.confidence != null ? (
+                        <span
+                          className={
+                            guide.confidence >= 0.85
+                              ? "text-success"
+                              : guide.confidence >= 0.75
+                              ? "text-warning"
+                              : "text-danger"
+                          }
+                        >
+                          уверенность {guide.confidence}
+                        </span>
+                      ) : (
+                        <span>уверенность —</span>
+                      )}
                     </div>
                   </CardContent>
                 </Card>

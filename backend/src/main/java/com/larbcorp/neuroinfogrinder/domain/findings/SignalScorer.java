@@ -79,6 +79,10 @@ public class SignalScorer {
         total += add(breakdown, "accessDemand", leadSignals.labels().contains("AI_ACCESS_DEMAND") ? 0.28 : 0.0);
         total += add(breakdown, "paymentWorkaround", leadSignals.labels().contains("PAYMENT_WORKAROUND") ? 0.22 : 0.0);
         total += add(breakdown, "painLimits", leadSignals.labels().contains("PAIN_LIMITS") ? 0.24 : 0.0);
+        total += add(breakdown, "practicalProblem", leadSignals.labels().contains(ClassificationLabels.PRACTICAL_PROBLEM) ? 0.24 : 0.0);
+        total += add(breakdown, "workflowLifehack", leadSignals.labels().contains(ClassificationLabels.WORKFLOW_LIFEHACK) ? 0.18 : 0.0);
+        total += add(breakdown, "businessProcess", leadSignals.labels().contains(ClassificationLabels.BUSINESS_PROCESS) ? 0.12 : 0.0);
+        total += add(breakdown, "productFeedback", leadSignals.labels().contains(ClassificationLabels.PRODUCT_FEEDBACK) ? 0.14 : 0.0);
         total += add(breakdown, "offerOrSpam", leadSignals.labels().contains("OFFER_OR_SPAM") ? 0.10 : 0.0);
         total += add(
             breakdown,
@@ -86,6 +90,16 @@ public class SignalScorer {
             leadSignals.labels().contains("AI_ACCESS_DEMAND")
                 && (leadSignals.labels().contains("PROVIDER_MENTION") || leadSignals.labels().contains("PAYMENT_WORKAROUND"))
                 ? 0.12
+                : 0.0
+        );
+        total += add(
+            breakdown,
+            "practicalSynergy",
+            leadSignals.labels().contains(ClassificationLabels.PRACTICAL_PROBLEM)
+                && (leadSignals.labels().contains(ClassificationLabels.WORKFLOW_LIFEHACK)
+                    || leadSignals.labels().contains(ClassificationLabels.BUSINESS_PROCESS)
+                    || hasQuestionMarkers)
+                ? 0.08
                 : 0.0
         );
 

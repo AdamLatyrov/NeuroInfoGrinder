@@ -1,0 +1,6 @@
+$ErrorActionPreference = "Stop"
+& "$PSScriptRoot\status-all.ps1"
+& "$PSScriptRoot\start-backend.ps1"
+& "$PSScriptRoot\start-worker.ps1"
+& "$PSScriptRoot\start-frontend.ps1"
+& "$PSScriptRoot\status-all.ps1"

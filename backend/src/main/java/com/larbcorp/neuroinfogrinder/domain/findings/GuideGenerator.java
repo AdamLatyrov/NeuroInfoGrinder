@@ -2,12 +2,10 @@ package com.larbcorp.neuroinfogrinder.domain.findings;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.larbcorp.neuroinfogrinder.infrastructure.client.ai.AiClientService;
+import com.larbcorp.neuroinfogrinder.domain.messages.MessageTextFormatter;
 import com.larbcorp.neuroinfogrinder.infrastructure.client.ai.AiCompletionResponse;
-import com.larbcorp.neuroinfogrinder.infrastructure.persistence.entity.AiProviderEntity;
 import com.larbcorp.neuroinfogrinder.infrastructure.persistence.entity.MessageEntity;
 import com.larbcorp.neuroinfogrinder.infrastructure.persistence.entity.PromptEntity;
-import com.larbcorp.neuroinfogrinder.infrastructure.persistence.repository.AiProviderRepository;
 import com.larbcorp.neuroinfogrinder.infrastructure.persistence.repository.PromptRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,6 +24,13 @@ import java.util.regex.Pattern;
 @RequiredArgsConstructor
 public class GuideGenerator {
 
+    static final String INVALID_JSON_ERROR = "Модель вернула невалидный JSON при генерации гайда";
+    static final int GUIDE_MAX_TOKENS = 8192;
+    static final String READABLE_INVALID_JSON_ERROR =
+        "Guide generation returned invalid or truncated JSON after one retry";
+    private static final String RETRY_JSON_PROMPT = """
+        Предыдущий ответ был невалидным JSON. Верни только валидный JSON по схеме. Без markdown, без пояснений, без текста до или после JSON.
+        """;
     private static final Pattern PRODUCT_TAG_PATTERN = Pattern.compile(
         "\\b(Telegram|Google Play|App Store|Android|iOS|OpenAI|Anthropic|Claude|Gemini|DeepSeek|Cursor|Codex|GPT-[\\w.-]+)\\b"
     );
@@ -33,33 +38,27 @@ public class GuideGenerator {
         "(?<!\\p{L})([A-ZА-Я][\\p{L}\\d.+-]{2,}(?:\\s+[A-ZА-Я][\\p{L}\\d.+-]{2,}){0,2})"
     );
 
-    private final AiClientService aiClientService;
-    private final AiProviderRepository aiProviderRepository;
+    private final ModelCallService modelCallService;
     private final PromptRepository promptRepository;
     private final ObjectMapper objectMapper;
 
     public GuideContent generate(
         List<MessageEntity> chain,
         ClassifierResult classifierResult,
-        Long providerId,
         Long promptId,
         Long rootMessageId
     ) {
-        AiProviderEntity provider = aiProviderRepository.findById(providerId)
-            .orElseThrow(() -> new IllegalArgumentException("Provider not found: " + providerId));
-
         String systemPrompt = buildGuideSystemPrompt(promptId);
         String userPrompt = buildGuideUserPrompt(chain, classifierResult, rootMessageId);
 
-        AiCompletionResponse response = aiClientService.complete(
-            provider.getEndpointUrl(),
-            provider.getApiKeyEncrypted(),
-            provider.getModel() != null ? provider.getModel() : "gpt-4o-mini",
+        ModelCallService.ModelCallResult modelCall = modelCallService.complete(
+            ModelCallPurpose.GUIDE_GENERATION,
             systemPrompt,
             userPrompt,
             0.4,
-            4096
+            GUIDE_MAX_TOKENS
         );
+        AiCompletionResponse response = modelCall.response();
 
         if (!response.success()) {
             log.error("Guide generation AI request failed: {}", response.error());
@@ -71,11 +70,38 @@ public class GuideGenerator {
                 0.0,
                 extractFallbackTags(userPrompt),
                 error,
-                response.content()
+                response.content(),
+                modelCall.providerId(),
+                modelCall.model()
             );
         }
 
-        return parseGuideResponse(response.content(), userPrompt);
+        try {
+            return parseGuideResponse(response.content(), userPrompt, modelCall);
+        } catch (Exception firstParseError) {
+            logInvalidGuideJson(firstParseError, response.content());
+        }
+
+        ModelCallService.ModelCallResult retryModelCall = modelCallService.complete(
+            ModelCallPurpose.GUIDE_GENERATION,
+            systemPrompt,
+            buildRetryUserPrompt(userPrompt),
+            0.2,
+            GUIDE_MAX_TOKENS
+        );
+        AiCompletionResponse retryResponse = retryModelCall.response();
+
+        if (!retryResponse.success()) {
+            log.error("Guide generation retry AI request failed: {}", retryResponse.error());
+            return invalidJsonGuide(response.content(), userPrompt, modelCall);
+        }
+
+        try {
+            return parseGuideResponse(retryResponse.content(), userPrompt, retryModelCall);
+        } catch (Exception retryParseError) {
+            logInvalidGuideJson(retryParseError, retryResponse.content());
+            return invalidJsonGuide(retryResponse.content(), userPrompt, retryModelCall);
+        }
     }
 
     private String buildGuideSystemPrompt(Long promptId) {
@@ -105,12 +131,20 @@ public class GuideGenerator {
             - Сохраняй исходные ссылки, встроенные гиперссылки, команды, версии, цены и дедлайны без искажений.
             - Сообщения с метками ROOT, PARENT_REPLY, DIRECT_REPLY и THREAD_REPLY считай основным контекстом.
             - Сообщения с метками SAME_TOPIC_NEARBY, SAME_AUTHOR_NEARBY и TIMELINE_NEARBY используй только если они реально уточняют основную мысль.
+            - Treat the input as one discussion cluster with source messages/evidence, not as separate neighboring anchors for several duplicate guides.
+            - The candidate layer may choose 0..N guide angles from a cluster; this generation request is one selected cluster angle.
+            - Do not create a duplicate guide when neighboring anchors repeat the same discussion. Write one coherent guide for the supplied cluster evidence.
             - Если соседние сообщения выглядят шумом, игнорируй их.
             - Если это how-to, оформи как пошаговую инструкцию.
             - Если это полезный фидбек по продукту, сгруппируй его по темам и явно выдели проблемы и предложения.
             - Для workaround, reseller, VPN, gray-market или payment bypass сценариев добавляй короткую заметку о рисках.
+            - Для abuse/абуз/free-trial/trial-limit/loophole сценариев делай гайд по проверке сигнала, оценке рисков, устойчивости схемы и мониторингу изменений; не раскрывай операционные шаги злоупотребления.
+            - For cracking, backdoor, account resale, payment/card data, bypass instructions, abuse/free-trial loopholes, or API-key/token material, provide only defensive/risk/compliance guidance and never expose sensitive data or operational abuse steps.
             - Верни от 3 до 6 коротких тегов. Среди них должен быть хотя бы один тег про предмет обсуждения и, если возможно, один тег с названием продукта или платформы.
             - Если полезного гайда из контекста не получается, поставь confidence ниже 0.5.
+            - Верни только валидный JSON без markdown fences, без пояснений и без текста до или после JSON.
+            - Все переносы строк и кавычки внутри content/contentMarkdown должны быть корректно экранированы как JSON string.
+            - Markdown разрешён только внутри JSON string. Не используй неэкранированные кавычки внутри строк.
             """;
     }
 
@@ -127,10 +161,21 @@ public class GuideGenerator {
             - Preserve original URLs and embedded hyperlinks exactly. Do not drop hidden or inline links.
             - Treat ROOT, PARENT_REPLY, DIRECT_REPLY, and THREAD_REPLY as the primary context.
             - Use SAME_TOPIC_NEARBY, SAME_AUTHOR_NEARBY, and TIMELINE_NEARBY only as optional supporting context.
+            - Treat the input as one discussion cluster with source messages/evidence, not as separate neighboring anchors for several duplicate guides.
+            - The candidate layer may choose 0..N guide angles from a cluster; this generation request is one selected cluster angle.
+            - Do not create a duplicate guide when neighboring anchors repeat the same discussion. Write one coherent guide for the supplied cluster evidence.
             - Ignore nearby messages if they look off-topic.
             - If the source includes workaround, reseller, VPN, or regional-payment steps, add a short risk note.
+            - For abuse/free-trial/trial-limit/loophole material, write a guide for verifying the signal, assessing risk, checking sustainability, and monitoring changes; do not reveal operational abuse steps.
+            - For cracking, backdoor, account resale, payment/card data, bypass instructions, abuse/free-trial loopholes, or API-key/token material, provide only defensive/risk/compliance guidance and never expose sensitive data or operational abuse steps.
             - Return 3 to 6 concise tags.
+            - Return only valid JSON. No markdown fences, no explanations, no text before or after JSON.
+            - Escape all quotes and line breaks inside JSON strings.
             """;
+    }
+
+    private String buildRetryUserPrompt(String originalUserPrompt) {
+        return RETRY_JSON_PROMPT + "\nSchema fields: title, content, contentMarkdown, confidence, tags.\n\nSource context:\n" + originalUserPrompt;
     }
 
     private String buildGuideUserPrompt(
@@ -143,6 +188,13 @@ public class GuideGenerator {
             .filter(message -> message.getId().equals(rootMessageId))
             .findFirst()
             .orElseGet(() -> chain.isEmpty() ? null : chain.get(chain.size() - 1));
+
+        sb.append("Единица генерации: один discussion cluster.\n");
+        sb.append("Все сообщения ниже являются source messages/evidence внутри одного cluster, а не отдельными anchors для нескольких дублей.\n");
+        sb.append("Candidate layer может выбрать 0..N guide angles из cluster; этот запрос — один выбранный angle.\n");
+        sb.append("Если соседние anchors повторяют ту же discussion, не создавай новый дублирующий guide, а синтезируй один coherent guide из evidence.\n");
+        sb.append("Для abuse/абуз/free-trial/trial-limit/loophole материала делай guide по проверке сигнала, рискам, устойчивости и мониторингу; не раскрывай operational abuse steps.\n");
+        sb.append("Для cracking/backdoor/account resale/payment/card/API-key/token материала давай только defensive/risk/compliance guidance и не раскрывай чувствительные данные.\n\n");
 
         sb.append("Классификация сообщения:\n");
         sb.append("- score: ").append(String.format(Locale.US, "%.3f", classifierResult.score())).append("\n");
@@ -174,7 +226,7 @@ public class GuideGenerator {
             sb.append("  replyToTelegramMessageId: ").append(msg.getReplyToMessageId()).append("\n");
             sb.append("  topicId: ").append(msg.getTopicId()).append("\n");
             sb.append("  topicName: ").append(msg.getTopicName()).append("\n");
-            sb.append("  text: ").append(msg.getText() != null ? msg.getText() : "").append("\n\n");
+            sb.append("  text: ").append(MessageTextFormatter.promptText(msg)).append("\n\n");
         }
 
         return sb.toString();
@@ -206,34 +258,66 @@ public class GuideGenerator {
         return "TIMELINE_NEARBY";
     }
 
-    private GuideContent parseGuideResponse(String content, String fallbackSource) {
-        try {
-            String json = extractJson(content);
-            JsonNode node = objectMapper.readTree(json);
+    private GuideContent parseGuideResponse(
+        String content,
+        String fallbackSource,
+        ModelCallService.ModelCallResult modelCall
+    ) throws Exception {
+        String json = extractJson(content);
+        JsonNode node = objectMapper.readTree(json);
 
-            String guideContent = node.path("content").asText("");
-            String contentMarkdown = node.path("contentMarkdown").asText("");
-            double confidence = node.path("confidence").asDouble(0.5);
-            List<String> tags = normalizeTags(parseTags(node), fallbackSource);
-            String title = sanitizeGuideTitle(node.path("title").asText(null), guideContent, contentMarkdown);
+        String guideContent = node.path("content").asText("");
+        String contentMarkdown = node.path("contentMarkdown").asText("");
+        double confidence = node.path("confidence").asDouble(0.5);
+        List<String> tags = normalizeTags(parseTags(node), fallbackSource);
+        String title = sanitizeGuideTitle(node.path("title").asText(null), guideContent, contentMarkdown);
 
-            if ((contentMarkdown == null || contentMarkdown.isBlank()) && guideContent != null) {
-                contentMarkdown = guideContent;
-            }
-
-            return new GuideContent(title, guideContent, contentMarkdown, confidence, tags, null, content);
-        } catch (Exception e) {
-            log.warn("Failed to parse guide response as JSON: {}", e.getMessage());
-            return new GuideContent(
-                "Untitled Guide",
-                null,
-                null,
-                0.0,
-                extractFallbackTags(fallbackSource),
-                "Failed to parse model response as guide JSON: " + e.getMessage(),
-                content
-            );
+        if ((contentMarkdown == null || contentMarkdown.isBlank()) && guideContent != null) {
+            contentMarkdown = guideContent;
         }
+
+        return new GuideContent(
+            title,
+            guideContent,
+            contentMarkdown,
+            confidence,
+            tags,
+            null,
+            content,
+            modelCall.providerId(),
+            modelCall.response().model() != null ? modelCall.response().model() : modelCall.model()
+        );
+    }
+
+    private GuideContent invalidJsonGuide(
+        String content,
+        String fallbackSource,
+        ModelCallService.ModelCallResult modelCall
+    ) {
+        return new GuideContent(
+            "Ошибка генерации гайда",
+            null,
+            null,
+            0.0,
+            extractFallbackTags(fallbackSource),
+            READABLE_INVALID_JSON_ERROR,
+            content,
+            modelCall.providerId(),
+            modelCall.model()
+        );
+    }
+
+    private void logInvalidGuideJson(Exception e, String rawContent) {
+        log.warn("Failed to parse guide response as JSON: {}; rawPreview={}", e.getMessage(), rawPreview(rawContent));
+    }
+
+    private String rawPreview(String rawContent) {
+        if (rawContent == null) {
+            return "";
+        }
+        String preview = rawContent.replaceAll("(?i)(api[_-]?key|authorization|token|secret)\\s*[:=]\\s*[^\\s,}]+", "$1=<redacted>");
+        preview = preview.replaceAll("\\s+", " ").trim();
+        return preview.length() <= 400 ? preview : preview.substring(0, 400) + "...";
     }
 
     private List<String> parseTags(JsonNode node) {
@@ -254,30 +338,19 @@ public class GuideGenerator {
 
     private String extractJson(String content) {
         if (content == null || content.isBlank()) {
-            return "{}";
+            throw new IllegalArgumentException("Guide response is empty");
         }
-        if (content.contains("```json")) {
-            int start = content.indexOf("```json") + 7;
-            int end = content.indexOf("```", start);
-            if (end > start) {
-                return content.substring(start, end).trim();
-            }
+        String trimmed = content.trim();
+        int braceStart = trimmed.indexOf('{');
+        int braceEnd = trimmed.lastIndexOf('}');
+        if (braceStart < 0) {
+            throw new IllegalArgumentException("Guide response does not contain a JSON object");
         }
-        if (content.contains("```")) {
-            int start = content.indexOf("```") + 3;
-            int end = content.indexOf("```", start);
-            if (end > start) {
-                return content.substring(start, end).trim();
-            }
+        if (braceEnd <= braceStart) {
+            throw new IllegalArgumentException("Guide response contains a truncated JSON object");
         }
 
-        int braceStart = content.indexOf('{');
-        int braceEnd = content.lastIndexOf('}');
-        if (braceStart >= 0 && braceEnd > braceStart) {
-            return content.substring(braceStart, braceEnd + 1);
-        }
-
-        return content;
+        return trimmed.substring(braceStart, braceEnd + 1);
     }
 
     private String extractTitle(String content) {

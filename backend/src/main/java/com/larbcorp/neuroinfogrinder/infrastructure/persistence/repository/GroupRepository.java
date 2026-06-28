@@ -18,11 +18,23 @@ public interface GroupRepository extends JpaRepository<GroupEntity, Long>, JpaSp
 
     List<GroupEntity> findByEnabledTrue();
 
+    List<GroupEntity> findByOwnerUserIdAndEnabledTrue(Long ownerUserId);
+
     long countByAccountId(Long accountId);
+
+    long countByAccountIdAndOwnerUserId(Long accountId, Long ownerUserId);
 
     Page<GroupEntity> findByEnabledAndAccountId(Boolean enabled, Long accountId, Pageable pageable);
 
     Optional<GroupEntity> findByTelegramChatId(Long telegramChatId);
 
+    Optional<GroupEntity> findByTelegramChatIdAndOwnerUserId(Long telegramChatId, Long ownerUserId);
+
+    Optional<GroupEntity> findByAccountIdAndTelegramChatId(Long accountId, Long telegramChatId);
+
+    Optional<GroupEntity> findByIdAndOwnerUserId(Long id, Long ownerUserId);
+
     List<GroupEntity> findByTelegramChatIdIn(Collection<Long> telegramChatIds);
+
+    List<GroupEntity> findByTelegramChatIdInAndOwnerUserId(Collection<Long> telegramChatIds, Long ownerUserId);
 }

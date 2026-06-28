@@ -1,0 +1,8 @@
+raw_id,content_class,proposed_type,judge_decision,judge_type,confidence,accepted,rejection_reason,grounded,hallucination_risk,should_materialize_later,notes
+11142,NEWS_UPDATE,REFERENCE,NEWS_REFERENCE_MATERIAL_CANDIDATE,REFERENCE,0.78,true,,true,medium,YES_CONTROLLED,"Accepted as reference/news. Type is correct. Materialization later should be DRAFT-only and include provider/source caveat; source claims must not be treated as verified facts."
+11484,RESOURCE_REFERENCE,REFERENCE,RESOURCE_REFERENCE_MATERIAL_CANDIDATE,REFERENCE,0.74,true,,true,MEDIUM,YES_CONTROLLED_WITH_SOURCE_CAVEAT,"Accepted as resource reference. Type is correct. URL was not visible in normalized text, so later materialization should require explicit repo/source caveat and avoid expanding beyond source claims."
+10172,NEWS_UPDATE,REFERENCE,,,,false,PROVIDER_HTTP_502,,,RETRY_JUDGE_ONLY_IF_NEEDED,"Provider failed before parsed decision; classifier not assessed by judge. Do not materialize from this result."
+12038,RESOURCE_REFERENCE,REFERENCE,,,,false,PROVIDER_HTTP_502,,,RETRY_JUDGE_ONLY_IF_NEEDED,"Provider failed before parsed decision; classifier not assessed by judge. Do not materialize from this result."
+11434,RESOURCE_REFERENCE,REFERENCE,,,,false,PROVIDER_HTTP_502,,,RETRY_JUDGE_ONLY_IF_NEEDED,"Provider failed before parsed decision; classifier not assessed by judge. Do not materialize from this result."
+8447,LINK_WITH_CONTEXT,REFERENCE,,,,false,PROVIDER_HTTP_502,,,RETRY_JUDGE_ONLY_IF_NEEDED,"Provider failed before parsed decision. Referral/provider claims need caution; do not materialize from this result."
+11193,LINK_ONLY,,PRE_GATE_REJECTED,,0,false,NEEDS_LINK_ENRICHMENT,false,low,NO,"Negative control did not reach LLM judge; classifier rejection is correct."

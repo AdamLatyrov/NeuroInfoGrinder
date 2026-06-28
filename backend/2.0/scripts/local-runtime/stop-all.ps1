@@ -1,0 +1,5 @@
+$ErrorActionPreference = "Stop"
+& "$PSScriptRoot\stop-backend.ps1"
+& "$PSScriptRoot\stop-worker.ps1"
+& "$PSScriptRoot\stop-frontend.ps1"
+Write-Host "PostgreSQL was not touched. Production was not touched."

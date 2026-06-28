@@ -1,0 +1,58 @@
+{
+  "date": "2026-06-27",
+  "task": "Controlled LLM Judge dry-run for MessageUsefulnessClassifier candidates",
+  "runId": 6601,
+  "mode": "JUDGE_DRY_RUN_ONLY",
+  "precheck": {
+    "activeMaterials": 29,
+    "knowledgeItemsTotal": 33,
+    "discussionMaterialsActive": 3,
+    "providerCallsTotal": 197,
+    "knowledgeGenerationCallsTotal": 38,
+    "llmJudgeCallsTotal": 140,
+    "note": "Earlier known active material count was 30, but pre-check for this task observed 29 before judge dry-run. This task treats 29 as baseline and verified it remained unchanged."
+  },
+  "postcheck": {
+    "activeMaterials": 29,
+    "knowledgeItemsTotal": 33,
+    "discussionMaterialsActive": 3,
+    "providerCallsTotal": 203,
+    "dryRunJudgeCalls": 6,
+    "dryRunGenerationCalls": 0,
+    "dryRunKnowledgeItems": 0,
+    "publicUrlHttp": 200,
+    "backendLogsClean": true
+  },
+  "selectedCandidates": [
+    { "rawId": 11142, "class": "NEWS_UPDATE", "route": "SINGLE_MESSAGE", "proposedType": "REFERENCE", "expectedVerdict": "accept if source context enough", "reasonForSelection": "mandatory GPT-5.6 classifier positive" },
+    { "rawId": 11484, "class": "RESOURCE_REFERENCE", "route": "SINGLE_MESSAGE", "proposedType": "REFERENCE", "expectedVerdict": "likely accept if source text enough", "reasonForSelection": "mandatory OpenMontage/GitHub classifier positive" },
+    { "rawId": 10172, "class": "NEWS_UPDATE", "route": "SINGLE_MESSAGE", "proposedType": "REFERENCE", "expectedVerdict": "accept if source context enough", "reasonForSelection": "recent processable GPT-5.6 news candidate" },
+    { "rawId": 12038, "class": "RESOURCE_REFERENCE", "route": "SINGLE_MESSAGE", "proposedType": "REFERENCE", "expectedVerdict": "accept if context enough despite hidden URL", "reasonForSelection": "recent processable GitHub tool candidate" },
+    { "rawId": 11434, "class": "RESOURCE_REFERENCE", "route": "SINGLE_MESSAGE", "proposedType": "REFERENCE", "expectedVerdict": "likely accept", "reasonForSelection": "recent processable OpenCode Proxy repo candidate" },
+    { "rawId": 8447, "class": "LINK_WITH_CONTEXT", "route": "SINGLE_MESSAGE", "proposedType": "REFERENCE", "expectedVerdict": "accept cautiously or reject promo/referral", "reasonForSelection": "provider/API reference with referral/provider-claim caveat" },
+    { "rawId": 11193, "class": "LINK_ONLY", "route": "REJECT", "proposedType": null, "expectedVerdict": "pre-gate reject", "reasonForSelection": "negative control" }
+  ],
+  "judgeResults": [
+    { "rawId": 11142, "providerCallId": 209, "status": "SUCCESS", "decision": "NEWS_REFERENCE_MATERIAL_CANDIDATE", "judgeType": "REFERENCE", "confidence": 0.78, "accepted": true, "grounded": true, "hallucinationRisk": "medium", "shouldMaterializeLater": "YES_CONTROLLED" },
+    { "rawId": 11484, "providerCallId": 210, "status": "SUCCESS", "decision": "RESOURCE_REFERENCE_MATERIAL_CANDIDATE", "judgeType": "REFERENCE", "confidence": 0.74, "accepted": true, "grounded": true, "hallucinationRisk": "MEDIUM", "shouldMaterializeLater": "YES_CONTROLLED_WITH_SOURCE_CAVEAT" },
+    { "rawId": 10172, "providerCallId": 211, "status": "FAILED", "httpStatus": 502, "errorCode": "HTTP_502", "accepted": false, "shouldMaterializeLater": "NO_RESULT" },
+    { "rawId": 12038, "providerCallId": 212, "status": "FAILED", "httpStatus": 502, "errorCode": "HTTP_502", "accepted": false, "shouldMaterializeLater": "NO_RESULT" },
+    { "rawId": 11434, "providerCallId": 213, "status": "FAILED", "httpStatus": 502, "errorCode": "HTTP_502", "accepted": false, "shouldMaterializeLater": "NO_RESULT" },
+    { "rawId": 8447, "providerCallId": 214, "status": "FAILED", "httpStatus": 502, "errorCode": "HTTP_502", "accepted": false, "shouldMaterializeLater": "NO_RESULT" },
+    { "rawId": 11193, "status": "PRE_GATE_REJECTED", "decision": "REJECTED_LINK_ONLY", "accepted": false, "rejectionReason": "NEEDS_LINK_ENRICHMENT", "providerCallId": null }
+  ],
+  "noGenerationVerification": {
+    "knowledgeGenerationCallsForDryRun": 0,
+    "knowledgeItemsForDryRun": 0,
+    "materialsCreated": false,
+    "settingsChanged": false,
+    "capsChanged": false,
+    "thresholdsChanged": false,
+    "providerConfigChanged": false
+  },
+  "assessment": {
+    "falsePositiveAssessment": "No negative control reached judge; two accepted positives were plausible and reference-typed. Provider 502 rows are inconclusive, not false positives.",
+    "falseNegativeAssessment": "None proven in this dry-run; four candidates need judge-only retry only if provider stability is needed.",
+    "recommendation": "Allow controlled DRAFT-only materialization candidates for raw 11142 and raw 11484 only after explicit approval; do not materialize HTTP_502 cases or link-only raw 11193."
+  }
+}

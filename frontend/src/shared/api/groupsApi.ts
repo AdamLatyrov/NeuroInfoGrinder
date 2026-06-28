@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery } from "@tanstack/react-query";
 import { getJsonAuth, patchJsonAuth, postJsonAuth } from "./http";
 import { queryClient } from "./queryClient";
 import type { Group, PaginatedResponse } from "../types";
@@ -13,10 +13,19 @@ interface GroupDto {
   forum: boolean;
   enabled: boolean;
   accountId: number | null;
-  messagesPerDay: number;
+  messagesPerDay: number | null;
   guidesFound: number;
   lastReadAt: string | null;
   lastReadMessageId: number | null;
+  rawMessagesTotal: number | null;
+  rawMessagesLast24h: number | null;
+  latestRawMessageAt: string | null;
+  topicsCount: number | null;
+  autoPipelineEnabled: boolean | null;
+  activeDialog: boolean | null;
+  displayState: string | null;
+  processingState: string | null;
+  source: string | null;
 }
 
 function normalizeGroup(dto: GroupDto): Group {
@@ -30,10 +39,19 @@ function normalizeGroup(dto: GroupDto): Group {
     forum: dto.forum,
     enabled: dto.enabled,
     accountId: dto.accountId != null ? String(dto.accountId) : null,
-    messagesPerDay: dto.messagesPerDay,
+    messagesPerDay: dto.messagesPerDay ?? null,
     guidesFound: dto.guidesFound,
     lastReadAt: dto.lastReadAt,
     lastReadMessageId: dto.lastReadMessageId != null ? String(dto.lastReadMessageId) : null,
+    rawMessagesTotal: dto.rawMessagesTotal ?? null,
+    rawMessagesLast24h: dto.rawMessagesLast24h ?? null,
+    latestRawMessageAt: dto.latestRawMessageAt ?? null,
+    topicsCount: dto.topicsCount ?? null,
+    autoPipelineEnabled: Boolean(dto.autoPipelineEnabled),
+    activeDialog: Boolean(dto.activeDialog),
+    displayState: dto.displayState ?? null,
+    processingState: dto.processingState ?? null,
+    source: dto.source ?? null,
   };
 }
 
@@ -42,6 +60,7 @@ export interface GroupsFilters {
   size?: number;
   enabled?: boolean;
   search?: string;
+  accountId?: string;
 }
 
 export function useGroupsQuery(filters?: GroupsFilters) {
@@ -60,9 +79,12 @@ export function useGroupsQuery(filters?: GroupsFilters) {
   if (search) {
     params.set("search", search);
   }
+  if (filters?.accountId) {
+    params.set("accountId", filters.accountId);
+  }
 
   return useQuery({
-    queryKey: ["groups", { page, size, enabled: filters?.enabled, search }],
+    queryKey: ["groups", { page, size, enabled: filters?.enabled, search, accountId: filters?.accountId }],
     queryFn: async () => {
       const response = await getJsonAuth<PaginatedResponse<GroupDto>>(
         `/groups?${params.toString()}`
@@ -72,9 +94,14 @@ export function useGroupsQuery(filters?: GroupsFilters) {
         content: response.content.map(normalizeGroup),
       };
     },
+    // Keep the previous list visible while refetching so chats do not flicker
+    // or jump when background polling returns updated counters.
+    placeholderData: keepPreviousData,
+    staleTime: 15_000,
     refetchInterval: 30_000,
-    refetchIntervalInBackground: true,
-    refetchOnMount: "always",
+    refetchIntervalInBackground: false,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
     refetchOnReconnect: true,
   });
 }
@@ -166,9 +193,9 @@ export function useBulkAssignMutation() {
   });
 }
 
-export function useSyncGroupsMutation() {
+export function useSyncGroupsMutation(accountId?: string) {
   return useMutation({
-    mutationFn: () => postJsonAuth<void>("/groups/sync", {}),
+    mutationFn: () => postJsonAuth<void>(accountId ? `/groups/sync?accountId=${accountId}` : "/groups/sync", {}),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["groups"] });
     },

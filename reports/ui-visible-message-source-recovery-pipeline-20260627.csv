@@ -1,0 +1,5 @@
+raw_id,dataset_message_id,replay_run_message_id,run_id,embedded,embedding_count,replay_status,rule_decision,final_decision,single_message_score,single_message_rejection_reason,llm_used,llm_skip_reason,microcluster_id,macrocluster_id,discussion_segment_ids,discussion_rejection_reasons,provider_calls,material_ids,trace_stage_count,daily_cap_impact
+"11142","10121","7397","5055","true","1","CANDIDATE","CANDIDATE","REJECTED_SINGLE_MESSAGE","0.51","LOW_SINGLE_MESSAGE_SCORE","false","","","","","","","","13","NOT_APPLICABLE_NO_DISCUSSION_SEGMENT"
+"11142","10121","7397","5055","true","1","CANDIDATE","CANDIDATE","REJECTED_SINGLE_MESSAGE","0.51","LOW_SINGLE_MESSAGE_SCORE","false","","","","","","","","13","NOT_APPLICABLE_NO_DISCUSSION_SEGMENT"
+"11193","10168","7444","5092","true","1","CANDIDATE","CANDIDATE","REJECTED_SINGLE_MESSAGE","0","TOO_SHORT","false","","","","","","","","13","NOT_APPLICABLE_NO_DISCUSSION_SEGMENT"
+"11142","10121","7397","5055","true","1","CANDIDATE","CANDIDATE","REJECTED_SINGLE_MESSAGE","0.51","LOW_SINGLE_MESSAGE_SCORE","false","","","","","","","","13","NOT_APPLICABLE_NO_DISCUSSION_SEGMENT"

@@ -1,0 +1,89 @@
+{
+    "settings": {
+        "discussionSegmentDraftOnly": "1",
+        "discussionSegmentFreshOnly": "1",
+        "discussionSegmentGenerationMode": "CONTROLLED",
+        "discussionSegmentGenerationEnabled": "1",
+        "discussionSegmentSkipRiskSensitive": "1",
+        "discussionSegmentMaxMaterialsPerDay": "3",
+        "discussionSegmentRequireLlmAccepted": "1",
+        "discussionSegmentStopOnProviderError": "1",
+        "discussionSegmentControlledEnableTime": "2026-06-26T16:21:57Z",
+        "discussionSegmentStopOnGenerationError": "1",
+        "discussionSegmentMaxMaterialsPerChatTopicPerDay": "1"
+    },
+    "knowledgeItems": 24,
+    "last10Materials": [
+        {
+            "id": 25,
+            "title": "Сбор обратной связи о главных болях вайбкодеров",
+            "status": "DRAFT",
+            "createdAt": "2026-06-26T15:24:01.502605+00:00",
+            "sourceType": "DISCUSSION_SEGMENT"
+        },
+        {
+            "id": 24,
+            "title": "Как кеширование может влиять на расход лимитов в Claude Code",
+            "status": "DRAFT",
+            "createdAt": "2026-06-26T15:20:06.899126+00:00",
+            "sourceType": "DISCUSSION_SEGMENT"
+        },
+        {
+            "id": 23,
+            "title": "Fallback на другие модели и статус доступности при задержках API-провайдера",
+            "status": "DRAFT",
+            "createdAt": "2026-06-26T15:19:04.363769+00:00",
+            "sourceType": "DISCUSSION_SEGMENT"
+        },
+        {
+            "id": 22,
+            "title": "Правила чата для участников",
+            "status": "DRAFT",
+            "createdAt": "2026-06-26T13:01:09.638567+00:00",
+            "sourceType": "SINGLE_MESSAGE"
+        },
+        {
+            "id": 21,
+            "title": "Москва: гибридные вакансии в digital, контент-продакшене и B2B-продажах",
+            "status": "DRAFT",
+            "createdAt": "2026-06-26T12:42:26.826647+00:00",
+            "sourceType": "MACRO"
+        },
+        {
+            "id": 20,
+            "title": "Кеширование и оптимизация нагрузки в подписке и API Anthropic",
+            "status": "DRAFT",
+            "createdAt": "2026-06-26T12:42:26.826647+00:00",
+            "sourceType": "MACRO"
+        },
+        {
+            "id": 19,
+            "title": "Требование к указанию 30 наиболее частых навыков по специальности",
+            "status": "DRAFT",
+            "createdAt": "2026-06-26T12:39:10.767033+00:00",
+            "sourceType": "SINGLE_MESSAGE"
+        },
+        {
+            "id": 18,
+            "title": "Скепсис к «фишкам ради фишек»",
+            "status": "DRAFT",
+            "createdAt": "2026-06-25T19:14:09.259063+00:00",
+            "sourceType": "MACRO"
+        },
+        {
+            "id": 17,
+            "title": "Обсуждение проверки модели DeepSeek вместо Opus 4.8",
+            "status": "DRAFT",
+            "createdAt": "2026-06-25T19:03:13.624458+00:00",
+            "sourceType": "MACRO"
+        },
+        {
+            "id": 16,
+            "title": "Google DeepMind сталкивается с новой волной ухода исследователей к конкурентам",
+            "status": "DRAFT",
+            "createdAt": "2026-06-25T19:02:14.562836+00:00",
+            "sourceType": "MACRO"
+        }
+    ],
+    "discussionMaterials": 3
+}

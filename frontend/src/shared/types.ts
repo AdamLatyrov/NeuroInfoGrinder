@@ -1,12 +1,13 @@
-// Domain types for NeuroInfoGrinder
+﻿// Domain types for NeuroInfoGrinder
 // Matches actual backend API responses exactly
 
-// ── Accounts ──
+// в”Ђв”Ђ Accounts в”Ђв”Ђ
 
 export type AccountStatus =
   | "CONNECTED"
   | "WAITING_CODE"
   | "WAITING_PASSWORD"
+  | "PAUSED"
   | "ERROR"
   | "DISABLED"
   | "DISCONNECTED";
@@ -20,9 +21,10 @@ export interface TelegramAccount {
   languageCode: string | null;
   timezone: string | null;
   createdAt: string | null;
+  groupsCount?: number;
 }
 
-// ── Groups ──
+// в”Ђв”Ђ Groups в”Ђв”Ђ
 
 export interface Group {
   id: string;
@@ -34,13 +36,22 @@ export interface Group {
   forum: boolean;
   enabled: boolean;
   accountId: string | null;
-  messagesPerDay: number;
+  messagesPerDay: number | null;
   guidesFound: number;
   lastReadAt: string | null;
   lastReadMessageId: string | null;
+  rawMessagesTotal: number | null;
+  rawMessagesLast24h: number | null;
+  latestRawMessageAt: string | null;
+  topicsCount: number | null;
+  autoPipelineEnabled: boolean;
+  activeDialog: boolean;
+  displayState: string | null;
+  processingState: string | null;
+  source: string | null;
 }
 
-// ── Topics (from Telegram TDLib) ──
+// в”Ђв”Ђ Topics (from Telegram TDLib) в”Ђв”Ђ
 
 export interface Topic {
   chatId: string;
@@ -48,9 +59,11 @@ export interface Topic {
   messageThreadId: string;
   name: string;
   general: boolean;
+  titleSource?: string | null;
+  syncState?: string | null;
 }
 
-// ── Messages (no backend endpoint yet, kept for ChatViewer) ──
+// в”Ђв”Ђ Messages (no backend endpoint yet, kept for ChatViewer) в”Ђв”Ђ
 
 export type MessageStatus =
   | "UNPROCESSED"
@@ -64,15 +77,35 @@ export type MessageStatus =
   | "ERROR"
   | "REJECTED";
 
+export interface MessageLink {
+  id: string;
+  messageId: string;
+  url: string;
+  normalizedUrl: string | null;
+  domain: string | null;
+  anchorText: string | null;
+  source: "TEXT" | "CAPTION" | "WEB_PAGE" | "BUTTON" | "UNKNOWN" | string;
+  entityType: "TEXT_URL" | "URL" | "MENTION" | "TEXT_MENTION" | "EMAIL" | "PHONE" | "BOT_COMMAND" | "UNKNOWN" | string;
+  offsetStart: number | null;
+  offsetEnd: number | null;
+  hidden: boolean;
+  visibleUrl: boolean;
+  telegramLink: boolean;
+  referralLike: boolean;
+}
+
 export interface Message {
   id: string;
   groupId: string;
   groupTitle: string;
+  telegramChatId?: string | null;
   telegramMessageId: string;
   author: string;
   authorTelegramId: string;
   isBot: boolean;
   text: string;
+  caption?: string | null;
+  contentType?: string | null;
   replyToMessageId?: string;
   replyCount: number;
   timestamp: string;
@@ -82,7 +115,36 @@ export interface Message {
   topicId?: string;
   telegramMessageUrl?: string | null;
   hasMedia: boolean;
+  hasLinks?: boolean;
+  mediaType?: string | null;
+  hasVoice?: boolean;
+  hasGif?: boolean;
+  hasDocument?: boolean;
+  hasPhoto?: boolean;
+  hasVideo?: boolean;
+  fileName?: string | null;
+  mimeType?: string | null;
+  durationSeconds?: number | null;
+  mediaJson?: string | null;
+  links?: MessageLink[];
   signalScore?: number | null;
+  guidePotentialScore?: number | null;
+  problemSignalScore?: number | null;
+  painScore?: number | null;
+  urgencyScore?: number | null;
+  willingnessToPayScore?: number | null;
+  technicalDepthScore?: number | null;
+  spamScore?: number | null;
+  meaningSummary?: string | null;
+  problemStatement?: string | null;
+  solutionHint?: string | null;
+  mentionedToolsJson?: string | null;
+  mentionedPricesJson?: string | null;
+  mentionedErrorsJson?: string | null;
+  intelligenceReason?: string | null;
+  clusterCandidate?: boolean | null;
+  embeddingStatus?: "NONE" | "REQUIRED" | "EMBEDDED" | "FAILED" | string | null;
+  messageIntelligenceJson?: string | null;
   classifierScore?: number | null;
   classifierReason?: string | null;
   classifierResultJson?: string | null;
@@ -100,7 +162,7 @@ export interface MessageChain {
   usedInLlm: boolean;
 }
 
-// ── Guides ──
+// в”Ђв”Ђ Guides в”Ђв”Ђ
 
 export type GuideStatus =
   | "DRAFT"
@@ -110,16 +172,50 @@ export type GuideStatus =
   | "FAILED"
   | "REJECTED";
 
+export type ContentType =
+  | "GUIDE"
+  | "GENERATION"
+  | "ANSWER"
+  | "OTHER"
+  | "CLUSTER_SUMMARY"
+  | "TROUBLESHOOTING"
+  | "CHECKLIST"
+  | "RESOURCE_LIST"
+  | "SUMMARY"
+  | "PROMPT"
+  | "CODE_SNIPPET"
+  | "CASE_NOTE"
+  | "COMPARISON"
+  | "UNKNOWN"
+  | "NEWS"
+  | "USEFUL_INFO"
+  | "FAQ"
+  | "WARNING"
+  | "RISK_INSIGHT"
+  | "PRODUCT_UPDATE"
+  | "REFERENCE"
+  | "DISCUSSION_ONLY"
+  | "DEFERRED";
+
 export interface SourceMessage {
+  orderIndex?: number | null;
+  rawId: string | null;
+  datasetMessageId: string | null;
+  replayRunMessageId?: string | null;
   messageId: string;
   groupId: string | null;
   telegramChatId: string | null;
   telegramMessageId: string | null;
+  chatTitle: string | null;
+  messageDate: string | null;
   senderDisplayName: string | null;
   senderUsername: string | null;
+  author?: string | null;
   senderTelegramUserId: string | null;
   senderNameSource: string | null;
   text: string | null;
+  textUnavailableReason: string | null;
+  preview: string | null;
   textEntities: {
     type: string | null;
     offset: number | null;
@@ -128,11 +224,14 @@ export interface SourceMessage {
     text: string | null;
   }[];
   usedInPrompt: boolean;
+  role?: string | null;
   relation: string | null;
   replyToTelegramMessageId: string | null;
   topicId: string | null;
+  threadId?: string | null;
   topicName: string | null;
   internalMessageUrl: string | null;
+  appMessageUrl: string | null;
   telegramMessageUrl: string | null;
   telegramLinkAvailable: boolean;
   telegramLinkReason: string | null;
@@ -149,17 +248,95 @@ export interface GuideLlmRequest {
   estimatedCostUsd: number;
 }
 
+export interface MaterialProviderCall {
+  id: string;
+  stage: string | null;
+  providerId: string | null;
+  model: string | null;
+  status: string | null;
+  inputTokens: number;
+  outputTokens: number;
+  cachedTokens: number;
+  estimatedCostUsd: number;
+  latencyMs: number | null;
+  httpStatus: number | null;
+  errorCode: string | null;
+  errorMessage: string | null;
+  requestPreview?: string | null;
+  responsePreview?: string | null;
+  responseJson?: string | null;
+  createdAt: string | null;
+}
+
+export interface MaterialHowBuiltStep {
+  title: string;
+  status: string | null;
+  details: Record<string, unknown> | null;
+}
+
+export interface MaterialTraceStage {
+  id: string;
+  rawId: string | null;
+  runId: string | null;
+  stage: string;
+  stageName: string | null;
+  status: string;
+  reason: string | null;
+  errorCode: string | null;
+  errorMessage: string | null;
+  startedAt: string | null;
+  finishedAt: string | null;
+  createdAt: string | null;
+  updatedAt: string | null;
+  durationMs: number | null;
+  outputJson: string | null;
+}
+
+export interface MaterialRunInfo {
+  id: string;
+  status: string | null;
+  terminalReason: string | null;
+  totalMessages: number;
+  processedMessages: number;
+  providerCallsTotal: number;
+  createdAt: string | null;
+  finishedAt: string | null;
+}
+
 export interface Guide {
   id: string;
   title: string;
   sourceGroupId: string | null;
   sourceGroupTitle: string | null;
   rootMessageId: string | null;
+  contentType: ContentType;
+  type?: string | null;
+  candidateType?: string | null;
+  materialId?: string | null;
+  contentSubtype: string | null;
+  topicLabel: string | null;
+  topicSummary: string | null;
+  contentTitle: string | null;
+  contentSummary: string | null;
+  normalizedTopicKey: string | null;
+  contentQualityScore: number | null;
+  importanceScore: number | null;
+  actionabilityScore: number | null;
+  noveltyScore: number | null;
+  evidenceScore: number | null;
+  riskScore: number | null;
+  confidenceScore: number | null;
+  noiseScore: number | null;
+  routingReason: string | null;
+  safetyCategory: string | null;
+  publicationKind: string | null;
   content: string | null;
   contentMarkdown: string | null;
   rawResponse: string | null;
   regeneratedFromGuideId: string | null;
-  confidence: number;
+  confidence: number | null;
+  quality?: number | null;
+  usefulnessScore: number | null;
   status: GuideStatus;
   providerId: string | null;
   model: string | null;
@@ -170,17 +347,31 @@ export interface Guide {
   estimatedCost: number;
   createdAt: string | null;
   publishedAt: string | null;
+  publicationStatus: "NOT_SENT" | "QUEUED" | "SENT" | "FAILED" | "SKIPPED" | string;
   tags: string[];
   generationError: string | null;
+  sourceCount: number;
+  segmentId?: string | null;
+  clusterId?: string | null;
+  segmentScore?: number | null;
+  segmentDecision?: string | null;
+  segmentSignals?: unknown[] | null;
+  segmentSuppressionReasons?: unknown[] | null;
+  generationSkipReason?: string | null;
   duplicateScore: number | null;
   duplicateOfGuideId: string | null;
   sourceMessages: SourceMessage[];
   llmRequest: GuideLlmRequest | null;
+  providerCalls: MaterialProviderCall[];
+  traceStages: MaterialTraceStage[];
+  run: MaterialRunInfo | null;
+  candidate: { type: string | null } | null;
+  howBuiltSteps?: MaterialHowBuiltStep[];
   relatedGuideIds: string[];
   possibleDuplicateIds: string[];
 }
 
-// ── Classifiers ──
+// в”Ђв”Ђ Classifiers в”Ђв”Ђ
 
 export type ClassifierType = "LLM" | "KEYWORD" | "REGEX" | "LINEAR_MODEL";
 export type ClassifierStatus = "ACTIVE" | "DRAFT" | "DISABLED";
@@ -201,7 +392,7 @@ export interface Classifier {
   successRate: number;
 }
 
-// ── Rules ──
+// в”Ђв”Ђ Rules в”Ђв”Ђ
 
 export interface Rule {
   id: string;
@@ -215,7 +406,7 @@ export interface Rule {
   status: string;
 }
 
-// ── AI Providers ──
+// в”Ђв”Ђ AI Providers в”Ђв”Ђ
 
 export type ProviderProtocol =
   | "OPENAI_COMPATIBLE"
@@ -232,12 +423,13 @@ export interface AIProvider {
   hasApiKey: boolean;
   model: string | null;
   status: ProviderStatus;
+  active: boolean;
   lastTestedAt: string | null;
   lastTestResult: string | null;
   lastError: string | null;
 }
 
-// ── Prompts ──
+// в”Ђв”Ђ Prompts в”Ђв”Ђ
 
 export type PromptType = "CLASSIFIER" | "GUIDE_GENERATOR";
 export type PromptStatus = "ACTIVE" | "DRAFT" | "ARCHIVED";
@@ -245,17 +437,27 @@ export type PromptStatus = "ACTIVE" | "DRAFT" | "ARCHIVED";
 export interface Prompt {
   id: string;
   name: string;
+  code?: string;
+  description?: string;
+  stage?: string;
+  promptMode?: string;
   type: PromptType;
   content: string;
+  systemPrompt?: string;
+  outputSchema?: string;
+  providerRoute?: string;
+  modelName?: string;
+  fallbackModel?: string | null;
   variablesJson: string | null; // JSON string from API, not an array
   version: string;
+  versionNum?: number;
   status: PromptStatus;
   avgTokens: number;
   approveRate: number;
   lastEditedAt: string | null;
 }
 
-// ── Chain Config ──
+// в”Ђв”Ђ Chain Config в”Ђв”Ђ
 
 export interface ChainConfig {
   includeReplies: boolean;
@@ -264,7 +466,7 @@ export interface ChainConfig {
   maxMessagesPerChain: number;
 }
 
-// ── Monitor ──
+// в”Ђв”Ђ Monitor в”Ђв”Ђ
 
 export interface TokenSummary {
   totalTokensToday: number;
@@ -279,17 +481,23 @@ export interface QueueStatus {
   paused: boolean; // boolean, not number
 }
 
-// ── Pagination ──
+// в”Ђв”Ђ Pagination в”Ђв”Ђ
 
 export interface PaginatedResponse<T> {
   content: T[];
   page: number;
+  number?: number;
   size: number;
   totalElements: number;
   totalPages: number;
+  counts?: {
+    total: number;
+    byType: Record<string, number>;
+    byStatus: Record<string, number>;
+  };
 }
 
-// ── Pipeline / KPI (no backend yet, kept for Dashboard) ──
+// в”Ђв”Ђ Pipeline / KPI (no backend yet, kept for Dashboard) в”Ђв”Ђ
 
 export type PipelineStage =
   | "Ingest"
@@ -314,12 +522,13 @@ export interface KpiMetric {
   trend?: "up" | "down" | "flat";
 }
 
-// ── Settings ──
+// в”Ђв”Ђ Settings в”Ђв”Ђ
 
 export type PublicationMode = "Automatic" | "With moderation" | "Mixed";
 export type ProcessingMode = "New only" | "Full backfill";
 
 export interface AppSettings {
+  activeProviderId: string | null;
   publication: {
     targetGroupId: string | null;
     targetGroupTitle: string | null;
@@ -351,7 +560,7 @@ export interface AppSettings {
   };
 }
 
-// ── Incidents (no backend yet, kept for monitoring) ──
+// в”Ђв”Ђ Incidents (no backend yet, kept for monitoring) в”Ђв”Ђ
 
 export interface Incident {
   id: string;
@@ -362,7 +571,7 @@ export interface Incident {
   severity: "Error" | "Warning";
 }
 
-// ── Pipeline Traces ──
+// в”Ђв”Ђ Pipeline Traces в”Ђв”Ђ
 
 export type TraceStage =
   | "TELEGRAM_READ"
@@ -401,6 +610,57 @@ export interface PipelineTrace {
   score: number | null;
   confidence: number | null;
   reason: string | null;
+  entityType: string | null;
+  entityName: string | null;
+  entityVersion: string | null;
+  configSnapshotJson: string | null;
+  tuningHint: string | null;
+}
+
+export interface PipelineTuningCase {
+  traceRowId: number;
+  traceId: string;
+  traceCreatedAt: string;
+  stage: TraceStage;
+  status: TraceStatus;
+  entityType: string | null;
+  entityName: string | null;
+  entityVersion: string | null;
+  messageId: number | null;
+  groupId: number | null;
+  messageDate: string | null;
+  processingStatus: string | null;
+  guideId: number | null;
+  messagePreview: string | null;
+  messageText: string | null;
+  ruleId: number | null;
+  classifierId: number | null;
+  promptId: number | null;
+  providerId: number | null;
+  model: string | null;
+  inputTokens: number;
+  outputTokens: number;
+  costUsd: number;
+  score: number | null;
+  confidence: number | null;
+  guidePotentialScore: number | null;
+  problemSignalScore: number | null;
+  painScore: number | null;
+  urgencyScore: number | null;
+  willingnessToPayScore: number | null;
+  technicalDepthScore: number | null;
+  spamScore: number | null;
+  reason: string | null;
+  errorMessage: string | null;
+  tuningHint: string | null;
+  agentFocus: string[];
+  inputData: string | null;
+  outputData: string | null;
+  configSnapshotJson: string | null;
+  ruleResultJson: string | null;
+  signalBreakdown: string | null;
+  classifierResultJson: string | null;
+  messageIntelligenceJson: string | null;
 }
 
 export interface FlowMetrics {
@@ -418,32 +678,26 @@ export interface FlowMetrics {
   totalCostUsd: number;
 }
 
-// ── Status display helpers ──
+// в”Ђв”Ђ Status display helpers в”Ђв”Ђ
 
 /** Map backend API status values to StatusBadge-friendly display values */
 export function displayAccountStatus(status: string): string {
   const map: Record<string, string> = {
-    CONNECTED: "Online",
-    WAITING_CODE: "Waiting code",
-    WAITING_PASSWORD: "Waiting password",
-    ERROR: "Error",
-    DISABLED: "Disabled",
-    DISCONNECTED: "Disconnected",
+    CONNECTED: "Онлайн",
+    WAITING_CODE: "Ожидает код",
+    WAITING_PASSWORD: "Ожидает пароль",
+    ERROR: "Ошибка",
+    DISABLED: "Отключён",
+    DISCONNECTED: "Отключён",
   };
   return map[status] ?? status;
 }
-
 export function displayGuideStatus(status: string): string {
-  if (status === "DRAFT") return "Черновик";
-  if (status === "PROCESSING") return "В работе";
-  if (status === "APPROVED") return "Одобрен";
-  if (status === "PUBLISHED") return "Опубликован";
-  if (status === "FAILED") return "Ошибка";
-  if (status === "REJECTED") return "Отклонён";
   const map: Record<string, string> = {
+    DRAFT: "Черновик",
     NEW: "Новый",
     PROCESSING: "В работе",
-    NEEDS_REVIEW: "На проверке",
+    NEEDS_REVIEW: "Нужна проверка",
     APPROVED: "Одобрен",
     PUBLISHED: "Опубликован",
     FAILED: "Ошибка",
@@ -454,29 +708,29 @@ export function displayGuideStatus(status: string): string {
 
 export function displayProviderStatus(status: string): string {
   const map: Record<string, string> = {
-    ACTIVE: "Healthy",
-    HEALTHY: "Healthy",
-    WARNING: "Warning",
-    ERROR: "Error",
-    DISABLED: "Disabled",
+    ACTIVE: "Активен",
+    HEALTHY: "Исправен",
+    WARNING: "Предупреждение",
+    ERROR: "Ошибка",
+    DISABLED: "Отключён",
   };
   return map[status] ?? status;
 }
 
 export function displayClassifierStatus(status: string): string {
   const map: Record<string, string> = {
-    ACTIVE: "Healthy",
-    DRAFT: "Needs review",
-    DISABLED: "Disabled",
+    ACTIVE: "Исправен",
+    DRAFT: "Нужна проверка",
+    DISABLED: "Отключён",
   };
   return map[status] ?? status;
 }
 
 export function displayPromptStatus(status: string): string {
   const map: Record<string, string> = {
-    ACTIVE: "Healthy",
-    DRAFT: "Needs review",
-    ARCHIVED: "Disabled",
+    ACTIVE: "Исправен",
+    DRAFT: "Нужна проверка",
+    ARCHIVED: "Отключён",
   };
   return map[status] ?? status;
 }

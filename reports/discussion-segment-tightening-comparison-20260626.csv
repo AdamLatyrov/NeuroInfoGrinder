@@ -1,0 +1,2 @@
+previous_candidate_windows_built,candidate_windows_built,previous_accepted_segments,accepted_before_dedupe,accepted_segments,previous_persisted_sources,persisted_sources_if_inserted,overlap_duplicates_rejected,window_limit_rejected,low_value_adjacent_rejected,entity_only_rejected,needs_more_context
+"367","363","89","60","17","501","90","38","5","132","10","1"

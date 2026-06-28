@@ -1,4 +1,19 @@
 services:
+  tor:
+    build:
+      context: ./deploy/tor
+      dockerfile: Dockerfile
+    restart: unless-stopped
+
+  ssh-socks:
+    build:
+      context: ./deploy/ssh-socks
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    volumes:
+      - /srv/neuroinfogrinder/secrets/vpn_proxy_key:/run/secrets/vpn_proxy_key:ro
+      - /srv/neuroinfogrinder/secrets/vpn_known_hosts:/etc/ssh/ssh_known_hosts:ro
+
   postgres:
     image: postgres:16-alpine
     restart: unless-stopped
@@ -31,9 +46,13 @@ services:
       context: ./backend
       dockerfile: Dockerfile
       args:
-        TDLIB_RELEASE_URL: ${TDLIB_RELEASE_URL:-https://github.com/all4fun/build-tdlib/releases/download/v1.2.1/tdlib-v1.2.1-linux-amd64.tar.gz}
+        TDLIB_GIT_REPOSITORY: ${TDLIB_GIT_REPOSITORY:-https://github.com/tdlib/td.git}
+        TDLIB_GIT_COMMIT: ${TDLIB_GIT_COMMIT:-e0943d068ce90b5010f1aea946e6901e25b43bf6}
+        TDLIB_BUILD_JOBS: ${TDLIB_BUILD_JOBS:-4}
     restart: unless-stopped
     depends_on:
+      ssh-socks:
+        condition: service_healthy
       postgres:
         condition: service_healthy
       redis:
@@ -65,6 +84,20 @@ services:
       TDLIB_DATABASE_DIRECTORY: /app/tdlib-data/db
       TDLIB_FILES_DIRECTORY: /app/tdlib-data/files
       TDLIB_DATABASE_ENCRYPTION_KEY: ${TDLIB_DATABASE_ENCRYPTION_KEY:-change_me}
+      TDLIB_PROXY_ENABLED: ${TDLIB_PROXY_ENABLED:-false}
+      TDLIB_PROXY_TYPE: ${TDLIB_PROXY_TYPE:-socks5}
+      TDLIB_PROXY_HOST: ${TDLIB_PROXY_HOST:-}
+      TDLIB_PROXY_PORT: ${TDLIB_PROXY_PORT:-0}
+      TDLIB_PROXY_USERNAME: ${TDLIB_PROXY_USERNAME:-}
+      TDLIB_PROXY_PASSWORD: ${TDLIB_PROXY_PASSWORD:-}
+      TDLIB_PROXY_SECRET: ${TDLIB_PROXY_SECRET:-}
+      TELEGRAM_TDLIB_PROXY_ENABLED: ${TDLIB_PROXY_ENABLED:-false}
+      TELEGRAM_TDLIB_PROXY_TYPE: ${TDLIB_PROXY_TYPE:-socks5}
+      TELEGRAM_TDLIB_PROXY_HOST: ${TDLIB_PROXY_HOST:-}
+      TELEGRAM_TDLIB_PROXY_PORT: ${TDLIB_PROXY_PORT:-0}
+      TELEGRAM_TDLIB_PROXY_USERNAME: ${TDLIB_PROXY_USERNAME:-}
+      TELEGRAM_TDLIB_PROXY_PASSWORD: ${TDLIB_PROXY_PASSWORD:-}
+      MODELHUB_API_KEY: ${MODELHUB_API_KEY:-}
       CLASSIFICATION_CONTEXT_ENABLED: ${CLASSIFICATION_CONTEXT_ENABLED:-true}
       CLASSIFICATION_CONTEXT_WINDOW_MINUTES: ${CLASSIFICATION_CONTEXT_WINDOW_MINUTES:-10}
       CLASSIFICATION_CONTEXT_MAX_MESSAGES: ${CLASSIFICATION_CONTEXT_MAX_MESSAGES:-30}
@@ -72,6 +105,10 @@ services:
       CLASSIFICATION_CONTEXT_REPLY_DEPTH: ${CLASSIFICATION_CONTEXT_REPLY_DEPTH:-1}
       CLASSIFICATION_ANCHOR_MIN_SCORE: ${CLASSIFICATION_ANCHOR_MIN_SCORE:-3}
       CLASSIFICATION_CONTEXT_DEDUP_TTL_HOURS: ${CLASSIFICATION_CONTEXT_DEDUP_TTL_HOURS:-24}
+      PIPELINE_TRACE_RETENTION_DAYS: ${PIPELINE_TRACE_RETENTION_DAYS:-45}
+      PIPELINE_TRACE_RETENTION_CLEANUP_CRON: "${PIPELINE_TRACE_RETENTION_CLEANUP_CRON:-0 20 3 * * *}"
+      PHONE_ENCRYPTION_KEY: ${PHONE_ENCRYPTION_KEY:-}
+      PHONE_HASH_KEY: ${PHONE_HASH_KEY:-}
       SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: ${SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE:-5}
       SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: ${SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE:-1}
     ports:
@@ -95,7 +132,7 @@ services:
       backend:
         condition: service_healthy
     ports:
-      - "80:80"
+      - "${FRONTEND_PORT_BIND:-80:80}"
     healthcheck:
       test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/ || exit 1"]
       interval: 30s

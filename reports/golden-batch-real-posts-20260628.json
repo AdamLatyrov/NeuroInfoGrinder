@@ -1,0 +1,224 @@
+{
+  "batchVersion": "golden-real-posts-20260628-v1",
+  "generatedFrom": [
+    "reports/manual-expected-materials-20260626.csv",
+    "reports/message-usefulness-classifier-dry-run-20260627.csv",
+    "reports/message-usefulness-llm-judge-dry-run-20260627.md",
+    "reports/overnight-expected-materials-audit-20260627.json",
+    "reports/expected-message-source-recovery-20260627.json"
+  ],
+  "summary": {
+    "purpose": "Initial real-post golden batch for regression checks across single-message, discussion-segment, reference, and hard reject paths.",
+    "night_window_msk": "2026-06-27 03:40:00 - 2026-06-27 04:15:00",
+    "night_window_raw_messages": 28,
+    "night_window_discussion_segments": 0
+  },
+  "cases": [
+    {
+      "caseId": "GB01",
+      "kind": "single_message_reference",
+      "rawId": 11142,
+      "source": "message-usefulness judge dry-run",
+      "expected": "ACCEPT_AS_REFERENCE_NOT_GUIDE",
+      "current": "JUDGE_ACCEPTED_REFERENCE",
+      "evidence": {
+        "classifier": {
+          "sample_type": "TARGET",
+          "raw_id": "11142",
+          "content_class": "NEWS_UPDATE",
+          "candidate_route": "SINGLE_MESSAGE",
+          "proposed_material_type": "REFERENCE",
+          "reject_reason": "",
+          "llm_judge_eligible": "true",
+          "assessment": "Expected positive candidate; no LOW_SINGLE_MESSAGE_SCORE."
+        },
+        "judgeAccepted": true,
+        "sourceRecovery": null
+      }
+    },
+    {
+      "caseId": "GB02",
+      "kind": "single_message_reference",
+      "rawId": 11484,
+      "source": "message-usefulness judge dry-run",
+      "expected": "ACCEPT_AS_REFERENCE_NOT_GUIDE",
+      "current": "JUDGE_ACCEPTED_REFERENCE",
+      "evidence": {
+        "classifier": {
+          "sample_type": "TARGET",
+          "raw_id": "11484",
+          "content_class": "RESOURCE_REFERENCE",
+          "candidate_route": "SINGLE_MESSAGE",
+          "proposed_material_type": "REFERENCE",
+          "reject_reason": "",
+          "llm_judge_eligible": "true",
+          "assessment": "Expected GitHub/resource candidate including hidden-link-style context."
+        },
+        "judgeAccepted": true,
+        "overnight": {
+          "manual_id": "M09",
+          "expected_name": "OpenMontage GitHub video-agent system",
+          "expected_verdict": "SHOULD_BECOME_MATERIAL",
+          "specified_window_status": "EXPECTED_CONTENT_NOT_FOUND_IN_SPECIFIED_WINDOW",
+          "raw_id": null,
+          "nearest_raw_id": 11266,
+          "nearest_dataset_message_id": 10179,
+          "nearest_replay_run_message_id": 7455,
+          "nearest_run_id": 5103,
+          "nearest_message_date": "2026-06-27T00:55:02+00:00",
+          "nearest_chat_id": -1003922856266,
+          "nearest_chat_title": null,
+          "processable": true,
+          "active_dialog": true,
+          "auto_pipeline_enabled": null,
+          "pipeline_status": "PROCESSED",
+          "intake_reason": "NO_MATERIAL_CANDIDATES",
+          "queue_status": "PROCESSED",
+          "queue_reason": "NO_MATERIAL_CANDIDATES",
+          "single_message_score": null,
+          "final_decision": "REJECTED_SINGLE_MESSAGE",
+          "single_message_rejection_reason": "SUPPRESSED_BY_CLASSIFIER",
+          "discussion_segment_ids": [],
+          "cluster_membership": "",
+          "llm_judge_calls": 0,
+          "generation_calls": 0,
+          "material_id": null,
+          "skip_or_reject_reason": "nearest timestamp raw does not match expected content; nearest_delta_seconds=2",
+          "correct": "NO_DECISION_ON_EXPECTED_CONTENT_IN_WINDOW",
+          "notes": "broader_day_candidate_raw=11484; broader_day_message_date=2026-06-27T06:01:19+00:00; hit_count=5",
+          "nearest_text_preview": "",
+          "broader_day_candidate_raw_id": 11484,
+          "broader_day_candidate_message_date": "2026-06-27T06:01:19+00:00",
+          "broader_day_candidate_hit_count": 5
+        }
+      }
+    },
+    {
+      "caseId": "GB03",
+      "kind": "single_message_negative_control",
+      "rawId": 11193,
+      "source": "message-usefulness judge dry-run",
+      "expected": "REJECT_LINK_ONLY_NEEDS_ENRICHMENT",
+      "current": "PRE_GATE_REJECTED",
+      "evidence": {
+        "classifier": {
+          "sample_type": "TARGET",
+          "raw_id": "11193",
+          "content_class": "LINK_ONLY",
+          "candidate_route": "REJECT",
+          "proposed_material_type": "",
+          "reject_reason": "NEEDS_LINK_ENRICHMENT",
+          "llm_judge_eligible": "false",
+          "assessment": "Expected reject; no generic TOO_SHORT."
+        },
+        "judgeRejected": false,
+        "sourceRecovery": null
+      }
+    },
+    {
+      "caseId": "GB04",
+      "kind": "discussion_segment_guide",
+      "clusterId": "CL01",
+      "source": "manual expected materials",
+      "expected": "DISCUSSION_SEGMENT_GUIDE",
+      "current": "NOT_CAUGHT_TODAY",
+      "evidence": {
+        "expected_id": "E01",
+        "title": "Checklist for diagnosing ModelHub/API slowdowns and model fallback",
+        "type": "NEEDS_DISCUSSION_SEGMENT",
+        "raw_ids": "6034 6042 6052 6062 6069 6070 6078 6079 6105",
+        "cluster_id": "CL01",
+        "single_or_multi": "multi",
+        "expected_structure": "Problem symptoms; endpoint/region check; status/model availability; client fallback strategy; product diagnostics request.",
+        "why_useful": "Actionable support/product feedback for API users and model fallback.",
+        "expected_quality": "medium",
+        "should_system_catch_today": "no",
+        "needed_feature": "DISCUSSION_SEGMENT plus API/status signal aggregation"
+      }
+    },
+    {
+      "caseId": "GB05",
+      "kind": "discussion_segment_guide",
+      "clusterId": "CL02",
+      "source": "manual expected materials",
+      "expected": "DISCUSSION_SEGMENT_GUIDE",
+      "current": "NOT_CAUGHT_TODAY",
+      "evidence": {
+        "expected_id": "E02",
+        "title": "How Claude/Anthropic prompt caching affects limits and API cost",
+        "type": "SHOULD_BE_GUIDE",
+        "raw_ids": "6765 6776 6778 6799 6803 6805 6817 6826 6836 6850 6876",
+        "cluster_id": "CL02",
+        "single_or_multi": "multi",
+        "expected_structure": "Cache write/read; why first request is costly; /new/clear caveat; long context cost; practical rules.",
+        "why_useful": "Strong practical explanation with examples and user-facing advice.",
+        "expected_quality": "high",
+        "should_system_catch_today": "no",
+        "needed_feature": "DISCUSSION_SEGMENT and combined technical explanation scoring"
+      }
+    },
+    {
+      "caseId": "GB06",
+      "kind": "single_or_pair_resume_answer",
+      "clusterId": "CL05",
+      "source": "manual expected materials",
+      "expected": "GUIDE_OR_STRONG_ANSWER",
+      "current": "SHOULD_BE_CAUGHT_TODAY_PER_MANUAL_AUDIT",
+      "evidence": {
+        "expected_id": "E05",
+        "title": "How to improve hh.ru resume visibility: activity checklist and AI-filter limitations",
+        "type": "SHOULD_BE_GUIDE",
+        "raw_ids": "6716 6861",
+        "cluster_id": "CL05",
+        "single_or_multi": "single_or_pair",
+        "expected_structure": "Disclaimer; checklist of activity signals; contact-data caveat; timing; AI-filter limitation; resume review recommendation.",
+        "why_useful": "Strong standalone guide-like answer.",
+        "expected_quality": "high",
+        "should_system_catch_today": "yes",
+        "needed_feature": "Fixed by approvedJudgeDecision bugfix; optional controlled reprocess for raw 6861"
+      }
+    },
+    {
+      "caseId": "GB07",
+      "kind": "safety_sensitive_context",
+      "clusterId": "CL07",
+      "source": "manual expected materials",
+      "expected": "NEEDS_SAFETY_SUMMARY_OR_REJECT",
+      "current": "CORRECT_TO_KEEP_BLOCKED",
+      "evidence": {
+        "expected_id": "E07",
+        "title": "Psychedelic retreats: cautionary observations and goal-setting alternative",
+        "type": "NEEDS_DISCUSSION_SEGMENT",
+        "raw_ids": "6341 6540 6543 6592 6688 6820",
+        "cluster_id": "CL07",
+        "single_or_multi": "multi",
+        "expected_structure": "Question context; observed harms; goal-setting alternative; caveats and non-medical framing.",
+        "why_useful": "Coherent Q&A chain but sensitive and context-dependent.",
+        "expected_quality": "medium",
+        "should_system_catch_today": "no",
+        "needed_feature": "DISCUSSION_SEGMENT with safety framing and health-topic caution"
+      }
+    },
+    {
+      "caseId": "GB08",
+      "kind": "promo_noise",
+      "clusterId": "CL10",
+      "source": "manual expected materials",
+      "expected": "REJECT_PROMO",
+      "current": "CORRECT_TO_REJECT",
+      "evidence": {
+        "expected_id": "E10",
+        "title": "Hosting promo post",
+        "type": "NOISE",
+        "raw_ids": "6306 6307",
+        "cluster_id": "CL10",
+        "single_or_multi": "single",
+        "expected_structure": "N/A",
+        "why_useful": "Ad/promo, not user knowledge.",
+        "expected_quality": "low",
+        "should_system_catch_today": "no",
+        "needed_feature": "Promo suppression"
+      }
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+segment_id,material_id,quality_verdict,notes
+"S0024","23","GOOD","Grounded checklist. It does not invent SLA/API methods/model list; caveats say source lacks technical implementation details."
+"S0269","24","OK_NEEDS_MINOR_PROMPT_TWEAK","Useful and grounded as chat-observation guide. Minor tweak: stronger caveat that cache timing and paid-plan behavior must be verified against current Anthropic/Claude docs."
+"S0132","25","GOOD","Correct SUMMARY of product feedback/pain points. No guide overreach; source list supports the output."

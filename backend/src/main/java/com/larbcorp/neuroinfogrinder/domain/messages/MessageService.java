@@ -50,27 +50,48 @@ public class MessageService {
 
     @Transactional
     public PageResponse<MessageResponse> getMessages(Long groupId, String status, Long topicId, Pageable pageable) {
+        return getMessages(null, groupId, status, topicId, pageable);
+    }
+
+    @Transactional
+    public PageResponse<MessageResponse> getMessages(Long ownerUserId, Long groupId, String status, Long topicId, Pageable pageable) {
+        requireGroupForOwner(ownerUserId, groupId);
         Page<MessageEntity> page;
 
         if (topicId != null) {
             if (status != null && !status.isBlank()) {
-                page = messageRepository.findByGroupIdAndTopicIdAndProcessingStatus(groupId, topicId, status, pageable);
+                page = ownerUserId != null
+                    ? messageRepository.findByOwnerUserIdAndGroupIdAndTopicIdAndProcessingStatus(ownerUserId, groupId, topicId, status, pageable)
+                    : messageRepository.findByGroupIdAndTopicIdAndProcessingStatus(groupId, topicId, status, pageable);
             } else {
-                page = messageRepository.findByGroupIdAndTopicId(groupId, topicId, pageable);
+                page = ownerUserId != null
+                    ? messageRepository.findByOwnerUserIdAndGroupIdAndTopicId(ownerUserId, groupId, topicId, pageable)
+                    : messageRepository.findByGroupIdAndTopicId(groupId, topicId, pageable);
             }
         } else if (status != null && !status.isBlank()) {
-            page = messageRepository.findByGroupIdAndProcessingStatus(groupId, status, pageable);
+            page = ownerUserId != null
+                ? messageRepository.findByOwnerUserIdAndGroupIdAndProcessingStatus(ownerUserId, groupId, status, pageable)
+                : messageRepository.findByGroupIdAndProcessingStatus(groupId, status, pageable);
         } else {
-            page = messageRepository.findByGroupId(groupId, pageable);
+            page = ownerUserId != null
+                ? messageRepository.findByOwnerUserIdAndGroupId(ownerUserId, groupId, pageable)
+                : messageRepository.findByGroupId(groupId, pageable);
         }
 
-        repairVisibleMetadata(groupId, page.getContent());
         return PageResponse.from(page.map(this::toResponse));
     }
 
     @Transactional
     public MessageChainResponse getMessageChain(Long groupId, Long messageId) {
-        MessageEntity root = messageRepository.findById(messageId)
+        return getMessageChain(null, groupId, messageId);
+    }
+
+    @Transactional
+    public MessageChainResponse getMessageChain(Long ownerUserId, Long groupId, Long messageId) {
+        requireGroupForOwner(ownerUserId, groupId);
+        MessageEntity root = (ownerUserId != null
+                ? messageRepository.findByIdAndGroupIdAndOwnerUserId(messageId, groupId, ownerUserId)
+                : messageRepository.findByIdAndGroupId(messageId, groupId))
                 .orElseThrow(() -> new IllegalArgumentException("Message not found: " + messageId));
 
         List<MessageEntity> chainEntities = new ArrayList<>();
@@ -105,7 +126,6 @@ public class MessageService {
             replyTargets = newReplies.stream().map(MessageEntity::getTelegramMessageId).toList();
         }
 
-        repairVisibleMetadata(groupId, chainEntities);
         List<MessageResponse> chain = chainEntities.stream()
                 .map(this::toResponse)
                 .toList();
@@ -123,53 +143,137 @@ public class MessageService {
 
     @Transactional
     public MessageResponse getMessage(Long groupId, Long messageId) {
-        MessageEntity message = messageRepository.findByIdAndGroupId(messageId, groupId)
+        return getMessage(null, groupId, messageId);
+    }
+
+    @Transactional
+    public MessageResponse getMessage(Long ownerUserId, Long groupId, Long messageId) {
+        requireGroupForOwner(ownerUserId, groupId);
+        MessageEntity message = (ownerUserId != null
+                ? messageRepository.findByIdAndGroupIdAndOwnerUserId(messageId, groupId, ownerUserId)
+                : messageRepository.findByIdAndGroupId(messageId, groupId))
                 .orElseThrow(() -> new IllegalArgumentException("Message not found: " + messageId));
-        repairVisibleMetadata(groupId, List.of(message));
         return toResponse(message);
     }
 
-    public int syncMessagesFromTelegram(Long groupId) {
+    public MessageSyncResult syncMessagesFromTelegram(Long groupId) {
         GroupEntity group = groupRepository.findById(groupId)
                 .orElseThrow(() -> new IllegalArgumentException("Group not found: " + groupId));
+        MessageEntity latestBefore = messageRepository.findFirstByGroupIdOrderByMessageDateDesc(groupId).orElse(null);
 
         long fetchStartedAt = System.currentTimeMillis();
         List<TelegramMessageDto> messages;
+        boolean historyTimeout = false;
+        boolean fallbackUsed = false;
+        String reason = "completed";
         try {
             if (group.getLastReadMessageId() == null || group.getLastReadMessageId() == 0L) {
-                messages = telegramTdlibService.getMessages(group.getTelegramChatId(), 0, INITIAL_SYNC_BATCH_SIZE);
+                messages = group.getAccountId() != null
+                    ? telegramTdlibService.getMessages(group.getAccountId(), group.getTelegramChatId(), 0, INITIAL_SYNC_BATCH_SIZE)
+                    : telegramTdlibService.getMessages(group.getTelegramChatId(), 0, INITIAL_SYNC_BATCH_SIZE);
             } else {
-                messages = telegramTdlibService.getMessages(group.getTelegramChatId(), 0, INCREMENTAL_SYNC_BATCH_SIZE);
+                messages = group.getAccountId() != null
+                    ? telegramTdlibService.getMessages(group.getAccountId(), group.getTelegramChatId(), 0, INCREMENTAL_SYNC_BATCH_SIZE)
+                    : telegramTdlibService.getMessages(group.getTelegramChatId(), 0, INCREMENTAL_SYNC_BATCH_SIZE);
             }
         } catch (Exception e) {
             if (isTdlibTimeout(e)) {
+                historyTimeout = true;
                 long timeoutCount = TDLIB_TIMEOUT_COUNT.incrementAndGet();
                 log.warn("TDLib timeout during sync for group {} (timeoutCount={}): {}", groupId, timeoutCount, e.getMessage());
             }
             log.warn("Primary sync for group {} failed, falling back to latest message: {}", groupId, e.getMessage());
-            messages = telegramTdlibService.getLatestMessage(group.getTelegramChatId())
-                    .map(List::of)
-                    .orElseGet(List::of);
+            fallbackUsed = true;
+            reason = historyTimeout ? "history_timeout" : "history_error";
+            try {
+                messages = (group.getAccountId() != null
+                        ? telegramTdlibService.getLatestMessage(group.getAccountId(), group.getTelegramChatId())
+                        : telegramTdlibService.getLatestMessage(group.getTelegramChatId()))
+                        .map(List::of)
+                        .orElseGet(List::of);
+            } catch (Exception fallbackException) {
+                log.warn("Latest-message fallback failed for group {}: {}", groupId, fallbackException.getMessage());
+                messages = List.of();
+            }
         }
 
+        TelegramMessageDto newestTdlibMessage = newestMessage(messages);
         log.info(
-                "Sync for group {}: TDLib returned {} messages in {} ms",
+                "Sync for group {}: TDLib returned {} messages in {} ms (historyTimeout={}, fallbackUsed={}, newestTdlibMessageId={}, newestTdlibDate={}, newestTdlibTopicId={})",
                 groupId,
                 messages.size(),
-                System.currentTimeMillis() - fetchStartedAt
+                System.currentTimeMillis() - fetchStartedAt,
+                historyTimeout,
+                fallbackUsed,
+                newestTdlibMessage == null ? null : newestTdlibMessage.id(),
+                newestTdlibMessage == null ? null : Instant.ofEpochSecond(newestTdlibMessage.date()),
+                newestTdlibMessage == null ? null : newestTdlibMessage.messageThreadId()
         );
-        return messageSyncPersistenceService.persistSyncedMessages(groupId, messages);
+        MessageSyncPersistenceResult persistenceResult =
+                messageSyncPersistenceService.persistSyncedMessagesDetailed(groupId, messages);
+        MessageEntity latestAfter = messageRepository.findFirstByGroupIdOrderByMessageDateDesc(groupId).orElse(null);
+        MessageSyncResult result = new MessageSyncResult(
+                groupId,
+                group.getTelegramChatId(),
+                group.getTitle(),
+                messages.size(),
+                persistenceResult.changed(),
+                persistenceResult.created(),
+                persistenceResult.repaired(),
+                persistenceResult.skipped(),
+                persistenceResult.tooOld(),
+                historyTimeout,
+                fallbackUsed,
+                reason,
+                latestBefore == null ? null : latestBefore.getTelegramMessageId(),
+                latestBefore == null ? null : latestBefore.getMessageDate(),
+                latestBefore == null ? null : latestBefore.getTopicId(),
+                newestTdlibMessage == null ? null : newestTdlibMessage.id(),
+                newestTdlibMessage == null ? null : Instant.ofEpochSecond(newestTdlibMessage.date()),
+                newestTdlibMessage == null ? null : newestTdlibMessage.messageThreadId(),
+                latestAfter == null ? null : latestAfter.getTelegramMessageId(),
+                latestAfter == null ? null : latestAfter.getMessageDate(),
+                latestAfter == null ? null : latestAfter.getTopicId()
+        );
+        log.info(
+                "Sync summary groupId={} telegramChatId={} title=\"{}\" latestDbBefore={}/{}/topic{} tdlibReturned={} changed={} created={} repaired={} skipped={} tooOld={} latestDbAfter={}/{}/topic{} reason={} historyTimeout={} fallbackUsed={}",
+                result.groupId(),
+                result.telegramChatId(),
+                result.title(),
+                result.latestDbMessageIdBefore(),
+                result.latestDbMessageDateBefore(),
+                result.latestDbTopicIdBefore(),
+                result.tdlibReturned(),
+                result.changed(),
+                result.created(),
+                result.repaired(),
+                result.skipped(),
+                result.tooOld(),
+                result.latestDbMessageIdAfter(),
+                result.latestDbMessageDateAfter(),
+                result.latestDbTopicIdAfter(),
+                result.reason(),
+                result.historyTimeout(),
+                result.fallbackUsed()
+        );
+        return result;
     }
 
     @Transactional
     public void enqueueForProcessing(Long groupId, Long messageId, EnqueueRequest request) {
-        GroupEntity group = groupRepository.findById(groupId)
-                .orElseThrow(() -> new IllegalArgumentException("Group not found: " + groupId));
+        enqueueForProcessing(null, groupId, messageId, request);
+    }
+
+    @Transactional
+    public void enqueueForProcessing(Long ownerUserId, Long groupId, Long messageId, EnqueueRequest request) {
+        GroupEntity group = requireGroupForOwner(ownerUserId, groupId);
         if (!Boolean.TRUE.equals(group.getEnabled())) {
             throw new IllegalStateException("Group is disabled: " + groupId);
         }
 
-        MessageEntity message = messageRepository.findById(messageId)
+        MessageEntity message = (ownerUserId != null
+                ? messageRepository.findByIdAndGroupIdAndOwnerUserId(messageId, groupId, ownerUserId)
+                : messageRepository.findByIdAndGroupId(messageId, groupId))
                 .orElseThrow(() -> new IllegalArgumentException("Message not found: " + messageId));
 
         if ("QUEUED".equals(message.getProcessingStatus()) && !request.force()) {
@@ -186,6 +290,7 @@ public class MessageService {
             senderName = "Unknown";
         }
         GroupEntity group = groupRepository.findById(message.getGroupId()).orElse(null);
+        String topicName = TelegramTopicNames.visibleTopicName(group, message.getTopicId(), message.getTopicName());
         return new MessageResponse(
                 message.getId(),
                 message.getTelegramMessageId(),
@@ -198,11 +303,28 @@ public class MessageService {
                 message.getReplyCount(),
                 message.getProcessingStatus(),
                 message.getGuideId(),
-                message.getTopicName(),
+                topicName,
                 message.getTopicId(),
                 TelegramMessageLinkBuilder.build(group, message),
                 message.getMessageDate(),
                 message.getSignalScore(),
+                message.getGuidePotentialScore(),
+                message.getProblemSignalScore(),
+                message.getPainScore(),
+                message.getUrgencyScore(),
+                message.getWillingnessToPayScore(),
+                message.getTechnicalDepthScore(),
+                message.getSpamScore(),
+                message.getMeaningSummary(),
+                message.getProblemStatement(),
+                message.getSolutionHint(),
+                message.getMentionedToolsJson(),
+                message.getMentionedPricesJson(),
+                message.getMentionedErrorsJson(),
+                message.getIntelligenceReason(),
+                message.getClusterCandidate(),
+                message.getEmbeddingStatus(),
+                message.getMessageIntelligenceJson(),
                 message.getClassifierScore(),
                 message.getClassifierReason(),
                 message.getClassifierResultJson(),
@@ -210,6 +332,20 @@ public class MessageService {
                 message.getSignalBreakdown(),
                 message.getRuleResultJson()
         );
+    }
+
+    private TelegramMessageDto newestMessage(List<TelegramMessageDto> messages) {
+        return messages.stream()
+                .max((left, right) -> Long.compare(left.date(), right.date()))
+                .orElse(null);
+    }
+
+    private GroupEntity requireGroupForOwner(Long ownerUserId, Long groupId) {
+        return ownerUserId == null
+            ? groupRepository.findById(groupId)
+                .orElseThrow(() -> new IllegalArgumentException("Group not found: " + groupId))
+            : groupRepository.findByIdAndOwnerUserId(groupId, ownerUserId)
+                .orElseThrow(() -> new IllegalArgumentException("Group not found: " + groupId));
     }
 
     private boolean isPlaceholderSenderName(String senderName) {
@@ -317,7 +453,9 @@ public class MessageService {
         }
 
         Map<Long, String> topicNames = new HashMap<>();
-        mergeTopicNames(topicNames, telegramTdlibService.getCachedTopics(group.getTelegramChatId(), 100));
+        mergeTopicNames(topicNames, group.getAccountId() != null
+            ? telegramTdlibService.getCachedTopics(group.getAccountId(), group.getTelegramChatId(), 100)
+            : telegramTdlibService.getCachedTopics(group.getTelegramChatId(), 100));
 
         boolean stillMissing = messages.stream()
                 .map(MessageEntity::getTopicId)
@@ -326,7 +464,9 @@ public class MessageService {
 
         if (stillMissing) {
             try {
-                mergeTopicNames(topicNames, telegramTdlibService.getTopics(group.getTelegramChatId(), 100));
+                mergeTopicNames(topicNames, group.getAccountId() != null
+                    ? telegramTdlibService.getTopics(group.getAccountId(), group.getTelegramChatId(), 100)
+                    : telegramTdlibService.getTopics(group.getTelegramChatId(), 100));
             } catch (RuntimeException ignored) {
                 // Use whatever was already cached.
             }

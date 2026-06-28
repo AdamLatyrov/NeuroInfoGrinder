@@ -1,0 +1,11 @@
+segment_id,fixture_or_new,proposed_type,raw_ids,source_count,combined_score,llm_accepted,llm_decision,llm_material_type,title,confidence,rejection_reason,matches_scorer,notes
+"S0024","E01","GUIDE","6062 6064 6069 6070 6071 6078","6","0.98","yes","DISCUSSION_SEGMENT_MATERIAL_CANDIDATE","GUIDE","Fallback на другие модели и статус доступности при задержках API-провайдера","0.82","","yes",""
+"S0269","E02","GUIDE","6776 6778 6799 6803 6805 6806","6","0.98","yes","DISCUSSION_SEGMENT_MATERIAL_CANDIDATE","GUIDE","Как кеширование может влиять на расход лимитов в Claude Code","0.86","","yes",""
+"S0132","E04","SUMMARY","6220 6221 6222 6223 6224 6225","6","1","yes","DISCUSSION_SEGMENT_MATERIAL_CANDIDATE","SUMMARY","Сбор обратной связи о главных болях вайбкодеров","0.92","","yes",""
+"S0217","E07","SUMMARY","6341 6360 6538 6539 6540 6543","6","0.78","yes","DISCUSSION_SEGMENT_MATERIAL_CANDIDATE","SUMMARY","Обсуждение психоделических ретритов: запрос на опыт и осторожная критика","0.82","","yes",""
+"S0021","NEW","GUIDE","6047 6048 6052 6062 6064 6069","6","0.98","yes","DISCUSSION_SEGMENT_MATERIAL_CANDIDATE","GUIDE","Идея мониторинга статуса API и моделей для корректного fallback в агентах","0.86","","yes","non-fixture accepted"
+"S0266","NEW","GUIDE","6691 6765 6769 6776 6778 6799","6","0.98","yes","DISCUSSION_SEGMENT_MATERIAL_CANDIDATE","GUIDE","Почему первые запросы в Claude могут сильнее расходовать лимиты: объяснение через кеширование","0.82","","yes","non-fixture accepted"
+"S0222","NEW","SUMMARY","6543 6571 6574 6575 6591 6592","6","0.88","no","PARSE_ERROR","","","","","yes","Could not parse model JSON content"
+"S0135","NEW","GUIDE","6223 6224 6225 6226 6258 6259","6","0.8","no","PARSE_ERROR","","","","","yes","Could not parse model JSON content"
+"S0109","NEW","ANSWER","6038 6040 6041 6072 6077 6107","6","0.78","no","PARSE_ERROR","","","","","yes","Could not parse model JSON content"
+"S0112","NEW","ANSWER","6072 6077 6107 6109 6110 6115","6","0.78","no","PARSE_ERROR","","","","","yes","Could not parse model JSON content"

@@ -19,6 +19,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Component
 public class TelegramSyncTaskExecutor {
 
+    private static final int MIN_PARALLELISM = 4;
+    private static final int MIN_QUEUE_CAPACITY = 8;
+
     @Value("${telegram.tdlib.sync.max-parallelism:2}")
     private int maxParallelism;
 
@@ -29,8 +32,8 @@ public class TelegramSyncTaskExecutor {
 
     @PostConstruct
     void initialize() {
-        int normalizedParallelism = Math.max(1, maxParallelism);
-        int normalizedQueueCapacity = Math.max(0, queueCapacity);
+        int normalizedParallelism = Math.max(MIN_PARALLELISM, maxParallelism);
+        int normalizedQueueCapacity = Math.max(MIN_QUEUE_CAPACITY, queueCapacity);
         BlockingQueue<Runnable> queue = normalizedQueueCapacity == 0
                 ? new SynchronousQueue<>()
                 : new ArrayBlockingQueue<>(normalizedQueueCapacity);

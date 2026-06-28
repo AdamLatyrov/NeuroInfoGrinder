@@ -2,26 +2,44 @@ package com.larbcorp.neuroinfogrinder.api.rest;
 
 import com.larbcorp.neuroinfogrinder.domain.findings.PipelineService;
 import com.larbcorp.neuroinfogrinder.domain.findings.QueueProcessor;
+import com.larbcorp.neuroinfogrinder.domain.findings.TopicClusterService;
 import com.larbcorp.neuroinfogrinder.infrastructure.persistence.entity.GuideEntity;
 import com.larbcorp.neuroinfogrinder.infrastructure.persistence.entity.GroupEntity;
 import com.larbcorp.neuroinfogrinder.infrastructure.persistence.entity.MessageEntity;
 import com.larbcorp.neuroinfogrinder.infrastructure.persistence.repository.PipelineTraceRepository;
+import com.larbcorp.neuroinfogrinder.infrastructure.persistence.repository.GuideRepository;
 import com.larbcorp.neuroinfogrinder.infrastructure.persistence.repository.GroupRepository;
 import com.larbcorp.neuroinfogrinder.infrastructure.persistence.repository.MessageRepository;
 import com.larbcorp.neuroinfogrinder.shared.dto.PageResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * REST API for pipeline control and results inspection.
@@ -31,9 +49,13 @@ import java.util.List;
 @RequiredArgsConstructor
 public class PipelineController {
 
+    private static final int TOPIC_CANDIDATES_DEFAULT_LIMIT = 500;
+
     private final PipelineService pipelineService;
+    private final TopicClusterService topicClusterService;
     private final QueueProcessor queueProcessor;
     private final MessageRepository messageRepository;
+    private final GuideRepository guideRepository;
     private final GroupRepository groupRepository;
     private final PipelineTraceRepository pipelineTraceRepository;
 
@@ -42,15 +64,17 @@ public class PipelineController {
     /** Process a single message immediately by ID. */
     @PostMapping("/process/{messageId}")
     @ResponseStatus(HttpStatus.OK)
-    public void processMessage(@PathVariable Long messageId) {
+    public void processMessage(@AuthenticationPrincipal Long ownerUserId, @PathVariable Long messageId) {
+        requireMessageForOwner(ownerUserId, messageId);
         pipelineService.processMessage(messageId);
     }
 
     /** Manually drain up to N messages from the queue. */
     @PostMapping("/process-queue")
     @ResponseStatus(HttpStatus.OK)
-    public void processQueue(@RequestParam(defaultValue = "10") int limit) {
-        List<Long> enabledGroupIds = enabledGroupIds();
+    public void processQueue(@AuthenticationPrincipal Long ownerUserId,
+                             @RequestParam(defaultValue = "10") int limit) {
+        List<Long> enabledGroupIds = enabledGroupIds(ownerUserId);
         if (enabledGroupIds.isEmpty()) {
             return;
         }
@@ -71,18 +95,35 @@ public class PipelineController {
         }
     }
 
+    @PostMapping("/generate-missing-guides")
+    public PipelineService.GenerateMissingGuidesResponse generateMissingGuides(
+        @AuthenticationPrincipal Long ownerUserId,
+        @RequestParam(defaultValue = "50") int limit
+    ) {
+        return pipelineService.generateMissingGuides(ownerUserId, limit);
+    }
+
+    @PostMapping("/retry-api-errors")
+    public PipelineService.RetryApiErrorsResponse retryApiErrors(
+        @AuthenticationPrincipal Long ownerUserId,
+        @RequestParam(defaultValue = "50") int limit
+    ) {
+        return pipelineService.retryApiErrors(ownerUserId, limit);
+    }
+
     @PostMapping("/requeue")
     @ResponseStatus(HttpStatus.OK)
     public RequeueResponse requeue(
+        @AuthenticationPrincipal Long ownerUserId,
         @RequestParam(required = false) List<String> statuses
     ) {
-        List<Long> enabledGroupIds = enabledGroupIds();
+        List<Long> enabledGroupIds = enabledGroupIds(ownerUserId);
         if (enabledGroupIds.isEmpty()) {
             return new RequeueResponse(0);
         }
 
         List<String> effectiveStatuses = (statuses == null || statuses.isEmpty())
-            ? List.of("SKIPPED", "CLASSIFIED", "CLEARED")
+            ? List.of("SKIPPED", "CLASSIFIED", "CLUSTERED", "CLEARED")
             : statuses;
 
         List<MessageEntity> messages = messageRepository.findByGroupIdInAndProcessingStatusIn(
@@ -99,11 +140,11 @@ public class PipelineController {
 
     @PostMapping("/requeue/{messageId}")
     @ResponseStatus(HttpStatus.OK)
-    public RequeueResponse requeueMessage(@PathVariable Long messageId) {
-        MessageEntity message = messageRepository.findById(messageId)
-            .orElseThrow(() -> new IllegalArgumentException("Message not found: " + messageId));
+    public RequeueResponse requeueMessage(@AuthenticationPrincipal Long ownerUserId,
+                                          @PathVariable Long messageId) {
+        MessageEntity message = requireMessageForOwner(ownerUserId, messageId);
 
-        GroupEntity group = groupRepository.findById(message.getGroupId())
+        GroupEntity group = groupRepository.findByIdAndOwnerUserId(message.getGroupId(), ownerUserId)
             .orElseThrow(() -> new IllegalArgumentException("Group not found: " + message.getGroupId()));
 
         if (!Boolean.TRUE.equals(group.getEnabled())) {
@@ -116,8 +157,8 @@ public class PipelineController {
     }
 
     @PostMapping("/dev/smoke-guide")
-    public SmokeGuideResponse smokeGuide() {
-        GroupEntity group = groupRepository.findByEnabledTrue().stream()
+    public SmokeGuideResponse smokeGuide(@AuthenticationPrincipal Long ownerUserId) {
+        GroupEntity group = groupRepository.findByOwnerUserIdAndEnabledTrue(ownerUserId).stream()
             .findFirst()
             .orElseGet(() -> {
                 GroupEntity created = new GroupEntity();
@@ -127,6 +168,7 @@ public class PipelineController {
                 created.setCategory("dev");
                 created.setForum(false);
                 created.setEnabled(true);
+                created.setOwnerUserId(ownerUserId);
                 created.setLastReadMessageId(0L);
                 return groupRepository.save(created);
             });
@@ -135,6 +177,7 @@ public class PipelineController {
         MessageEntity message = new MessageEntity();
         message.setTelegramMessageId(telegramMessageId);
         message.setGroupId(group.getId());
+        message.setOwnerUserId(ownerUserId);
         message.setSenderName("Dev Smoke");
         message.setSenderTelegramUserId(-3001L);
         message.setIsBot(false);
@@ -173,10 +216,11 @@ public class PipelineController {
     /** Get queue processor status. */
     @GetMapping("/status")
     public PipelineStatusResponse getStatus(
+        @AuthenticationPrincipal Long ownerUserId,
         @RequestParam(required = false) String from,
         @RequestParam(required = false) String to
     ) {
-        List<Long> enabledGroupIds = enabledGroupIds();
+        List<Long> enabledGroupIds = enabledGroupIds(ownerUserId);
         Instant fromInstant = parseDateOrInstant(from, true);
         Instant toInstant = parseDateOrInstant(to, false);
 
@@ -186,21 +230,28 @@ public class PipelineController {
         long classified = countByStatusInWindow(enabledGroupIds, "CLASSIFIED", fromInstant, toInstant);
         long skipped = countByStatusInWindow(enabledGroupIds, "SKIPPED", fromInstant, toInstant);
         long guideFound = countByStatusInWindow(enabledGroupIds, "GUIDE_FOUND", fromInstant, toInstant);
+        long errors = countByStatusInWindow(enabledGroupIds, "ERROR", fromInstant, toInstant);
+        long guidesTotal = guideRepository.countByOwnerUserId(ownerUserId);
+        long messagesWithGuide = countMessagesWithGuideInWindow(enabledGroupIds, fromInstant, toInstant);
+        long guideGenerationErrors = guideRepository.countGenerationErrors();
 
         return new PipelineStatusResponse(
             queueProcessor.isEnabled(),
-            unprocessed, queued, processing, classified, skipped, guideFound
+            unprocessed, queued, processing, classified, skipped, guideFound, errors,
+            guidesTotal, messagesWithGuide, guideGenerationErrors,
+            classified, skipped, errors
         );
     }
 
     @GetMapping("/queue")
     public PageResponse<PipelineQueueItem> getQueue(
+        @AuthenticationPrincipal Long ownerUserId,
         @RequestParam(required = false) List<String> statuses,
         @RequestParam(required = false) String from,
         @RequestParam(required = false) String to,
         Pageable pageable
     ) {
-        List<Long> enabledGroupIds = enabledGroupIds();
+        List<Long> enabledGroupIds = enabledGroupIds(ownerUserId);
         if (enabledGroupIds.isEmpty()) {
             return PageResponse.from(Page.empty(pageable));
         }
@@ -242,9 +293,10 @@ public class PipelineController {
     @ResponseStatus(HttpStatus.OK)
     @Transactional
     public ClearQueueResponse clearQueue(
+        @AuthenticationPrincipal Long ownerUserId,
         @RequestParam(required = false) List<String> statuses
     ) {
-        List<Long> enabledGroupIds = enabledGroupIds();
+        List<Long> enabledGroupIds = enabledGroupIds(ownerUserId);
         if (enabledGroupIds.isEmpty()) {
             return new ClearQueueResponse(0);
         }
@@ -266,8 +318,12 @@ public class PipelineController {
     @DeleteMapping("/results")
     @ResponseStatus(HttpStatus.OK)
     @Transactional
-    public ClearResultsResponse clearResults() {
-        List<MessageEntity> processed = messageRepository.findAll().stream()
+    public ClearResultsResponse clearResults(@AuthenticationPrincipal Long ownerUserId) {
+        List<Long> enabledGroupIds = enabledGroupIds(ownerUserId);
+        List<MessageEntity> processed = messageRepository.findByGroupIdInAndProcessingStatusIn(
+            enabledGroupIds,
+            List.of("UNPROCESSED", "QUEUED", "PROCESSING", "CLUSTERED", "CLASSIFIED", "SKIPPED", "GUIDE_FOUND", "ERROR", "CLEARED")
+        ).stream()
             .filter(message -> message.getSignalScore() != null
                 || message.getClassifierScore() != null
                 || message.getGuideId() != null
@@ -285,6 +341,7 @@ public class PipelineController {
 
         processed.forEach(message -> {
             message.setSignalScore(null);
+            clearIntelligence(message);
             message.setClassifierScore(null);
             message.setClassifierReason(null);
             message.setClassifierResultJson(null);
@@ -312,19 +369,23 @@ public class PipelineController {
      */
     @GetMapping("/results")
     public PageResponse<PipelineResultItem> getResults(
+        @AuthenticationPrincipal Long ownerUserId,
         @RequestParam(required = false) String status,
+        @RequestParam(required = false) List<String> statuses,
         @RequestParam(required = false) String from,
         @RequestParam(required = false) String to,
         Pageable pageable
     ) {
-        List<Long> enabledGroupIds = enabledGroupIds();
+        List<Long> enabledGroupIds = enabledGroupIds(ownerUserId);
         if (enabledGroupIds.isEmpty()) {
             return PageResponse.from(Page.empty(pageable));
         }
 
-        List<String> pipelineStatuses = status != null
-            ? List.of(status)
-            : List.of("UNPROCESSED", "QUEUED", "PROCESSING", "CLASSIFIED", "SKIPPED", "GUIDE_FOUND");
+        List<String> pipelineStatuses = statuses != null && !statuses.isEmpty()
+            ? statuses
+            : status != null
+                ? List.of(status)
+                : List.of("UNPROCESSED", "QUEUED", "PROCESSING", "CLUSTERED", "CLASSIFIED", "SKIPPED", "GUIDE_FOUND", "ERROR");
 
         Instant fromInstant = parseDateOrInstant(from, true);
         Instant toInstant = parseDateOrInstant(to, false);
@@ -355,11 +416,84 @@ public class PipelineController {
             msg.getGuideId(),
             msg.getMessageDate(),
             msg.getSignalBreakdown(),
-            msg.getRuleResultJson()
+            msg.getRuleResultJson(),
+            msg.getGuidePotentialScore(),
+            msg.getProblemSignalScore(),
+            msg.getPainScore(),
+            msg.getUrgencyScore(),
+            msg.getWillingnessToPayScore(),
+            msg.getTechnicalDepthScore(),
+            msg.getSpamScore(),
+            msg.getMeaningSummary(),
+            msg.getProblemStatement(),
+            msg.getSolutionHint(),
+            msg.getMentionedToolsJson(),
+            msg.getMentionedPricesJson(),
+            msg.getMentionedErrorsJson(),
+            msg.getIntelligenceReason(),
+            msg.getClusterCandidate(),
+            msg.getEmbeddingStatus(),
+            msg.getMessageIntelligenceJson()
         )));
     }
 
-    // ── DTOs ──
+    @GetMapping("/topic-candidates")
+    public TopicClusterService.TopicCandidatesResponse getTopicCandidates(
+        @AuthenticationPrincipal Long ownerUserId,
+        @RequestParam(required = false) String group,
+        @RequestParam(required = false) String topic,
+        @RequestParam(required = false) String from,
+        @RequestParam(required = false) String to,
+        @RequestParam(defaultValue = "20") int windowMinutes,
+        @RequestParam(defaultValue = "false") boolean clusterCandidateOnly,
+        @RequestParam(required = false) Integer minProblemSignalScore,
+        @RequestParam(required = false) Integer minPainScore,
+        @RequestParam(required = false) Integer minWillingnessToPayScore,
+        @RequestParam(required = false) Integer minGuidePotentialScore,
+        @RequestParam(defaultValue = "70") int maxSpamScore,
+        @RequestParam(defaultValue = "" + TOPIC_CANDIDATES_DEFAULT_LIMIT) int limit
+    ) {
+        return topicClusterService.getTopicCandidates(
+            ownerUserId,
+            group,
+            topic,
+            from,
+            to,
+            windowMinutes,
+            clusterCandidateOnly,
+            minProblemSignalScore,
+            minPainScore,
+            minWillingnessToPayScore,
+            minGuidePotentialScore,
+            maxSpamScore,
+            limit
+        );
+    }
+
+    @GetMapping("/topics/explain")
+    public TopicClusterService.TopicExplainResponse explainTopics(
+        @AuthenticationPrincipal Long ownerUserId,
+        @RequestParam(required = false) String group,
+        @RequestParam(required = false) String topic,
+        @RequestParam(required = false) String from,
+        @RequestParam(required = false) String to,
+        @RequestParam(required = false) Long messageId,
+        @RequestParam(defaultValue = "20") int windowMinutes
+    ) {
+        return topicClusterService.explainTopics(ownerUserId, group, topic, from, to, messageId, windowMinutes);
+    }
+
+    @GetMapping("/topic-clusters")
+    public PageResponse<TopicClusterService.TopicClusterItem> getTopicClusters(
+        @AuthenticationPrincipal Long ownerUserId,
+        @RequestParam(required = false) Long groupId,
+        @RequestParam(required = false) List<String> statuses,
+        Pageable pageable
+    ) {
+        return PageResponse.from(topicClusterService.getTopicClusters(ownerUserId, groupId, statuses, pageable));
+    }
+
+    // DTOs
 
     public record PipelineStatusResponse(
         boolean processorEnabled,
@@ -368,7 +502,14 @@ public class PipelineController {
         long processing,
         long classified,
         long skipped,
-        long guideFound
+        long guideFound,
+        long errors,
+        long guidesTotal,
+        long messagesWithGuide,
+        long guideGenerationErrors,
+        long classifiedTotal,
+        long skippedTotal,
+        long errorsTotal
     ) {}
 
     public record PipelineResultItem(
@@ -385,7 +526,24 @@ public class PipelineController {
         Long guideId,
         java.time.Instant messageDate,
         String signalBreakdown,
-        String ruleResultJson
+        String ruleResultJson,
+        Integer guidePotentialScore,
+        Integer problemSignalScore,
+        Integer painScore,
+        Integer urgencyScore,
+        Integer willingnessToPayScore,
+        Integer technicalDepthScore,
+        Integer spamScore,
+        String meaningSummary,
+        String problemStatement,
+        String solutionHint,
+        String mentionedToolsJson,
+        String mentionedPricesJson,
+        String mentionedErrorsJson,
+        String intelligenceReason,
+        Boolean clusterCandidate,
+        String embeddingStatus,
+        String messageIntelligenceJson
     ) {}
 
     public record PipelineQueueItem(
@@ -410,6 +568,7 @@ public class PipelineController {
     private void resetForRequeue(MessageEntity message) {
         message.setProcessingStatus("UNPROCESSED");
         message.setSignalScore(null);
+        clearIntelligence(message);
         message.setClassifierScore(null);
         message.setClassifierReason(null);
         message.setClassifierResultJson(null);
@@ -419,10 +578,45 @@ public class PipelineController {
         message.setGuideId(null);
     }
 
+    private void clearIntelligence(MessageEntity message) {
+        message.setGuidePotentialScore(null);
+        message.setProblemSignalScore(null);
+        message.setPainScore(null);
+        message.setUrgencyScore(null);
+        message.setWillingnessToPayScore(null);
+        message.setTechnicalDepthScore(null);
+        message.setSpamScore(null);
+        message.setMeaningSummary(null);
+        message.setProblemStatement(null);
+        message.setSolutionHint(null);
+        message.setMentionedToolsJson(null);
+        message.setMentionedPricesJson(null);
+        message.setMentionedErrorsJson(null);
+        message.setIntelligenceReason(null);
+        message.setClusterCandidate(false);
+        message.setEmbeddingStatus("NONE");
+        message.setMessageIntelligenceJson(null);
+    }
+
     private List<Long> enabledGroupIds() {
-        return groupRepository.findByEnabledTrue().stream()
+        return enabledGroupIds(null);
+    }
+
+    private List<Long> enabledGroupIds(Long ownerUserId) {
+        if (ownerUserId == null) {
+            throw new IllegalArgumentException("Authenticated user is required");
+        }
+        return groupRepository.findByOwnerUserIdAndEnabledTrue(ownerUserId).stream()
             .map(GroupEntity::getId)
             .toList();
+    }
+
+    private MessageEntity requireMessageForOwner(Long ownerUserId, Long messageId) {
+        if (ownerUserId == null) {
+            throw new IllegalArgumentException("Authenticated user is required");
+        }
+        return messageRepository.findByIdAndOwnerUserId(messageId, ownerUserId)
+            .orElseThrow(() -> new IllegalArgumentException("Message not found: " + messageId));
     }
 
     private long countByStatus(List<Long> enabledGroupIds, String status) {
@@ -445,6 +639,21 @@ public class PipelineController {
                 enabledGroupIds, status, from);
         }
         return messageRepository.countByGroupIdInAndProcessingStatus(enabledGroupIds, status);
+    }
+
+    private long countMessagesWithGuideInWindow(List<Long> enabledGroupIds, Instant from, Instant to) {
+        if (enabledGroupIds.isEmpty()) {
+            return 0;
+        }
+        if (from != null && to != null) {
+            return messageRepository.countByGroupIdInAndGuideIdIsNotNullAndMessageDateBetween(
+                enabledGroupIds, from, to);
+        }
+        if (from != null) {
+            return messageRepository.countByGroupIdInAndGuideIdIsNotNullAndMessageDateAfter(
+                enabledGroupIds, from);
+        }
+        return messageRepository.countByGroupIdInAndGuideIdIsNotNull(enabledGroupIds);
     }
 
     /**

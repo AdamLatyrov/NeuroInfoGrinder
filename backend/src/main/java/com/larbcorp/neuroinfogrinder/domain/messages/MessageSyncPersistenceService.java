@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -26,9 +27,18 @@ public class MessageSyncPersistenceService {
 
     @Transactional
     public int persistSyncedMessages(Long groupId, List<TelegramMessageDto> messages) {
+        return persistSyncedMessagesDetailed(groupId, messages).changed();
+    }
+
+    @Transactional
+    public MessageSyncPersistenceResult persistSyncedMessagesDetailed(Long groupId, List<TelegramMessageDto> messages) {
         long startedAt = System.currentTimeMillis();
         GroupEntity group = groupRepository.findById(groupId)
                 .orElseThrow(() -> new IllegalArgumentException("Group not found: " + groupId));
+        if (!Boolean.TRUE.equals(group.getEnabled())) {
+            log.debug("Skipping Telegram sync persist for disabled group {}", groupId);
+            return new MessageSyncPersistenceResult(0, 0, 0, 0, messages.size());
+        }
 
         Instant monthAgo = Instant.now().minusSeconds(30L * 24L * 3600L);
         Map<Long, MessageEntity> existingByTelegramMessageId = loadExistingMessages(groupId, messages);
@@ -51,7 +61,7 @@ public class MessageSyncPersistenceService {
             }
             MessageEntity existing = existingByTelegramMessageId.get(msg.id());
             if (existing != null) {
-                if (repairMessageMetadata(existing, msg, msgDate)) {
+                if (repairMessageMetadata(group, existing, msg, msgDate)) {
                     repairedEntities.add(existing);
                     repaired++;
                 } else {
@@ -61,7 +71,10 @@ public class MessageSyncPersistenceService {
             }
             MessageEntity entity = new MessageEntity();
             entity.setTelegramMessageId(msg.id());
+            entity.setTelegramAccountId(group.getAccountId());
+            entity.setTelegramChatId(msg.chatId());
             entity.setGroupId(groupId);
+            entity.setOwnerUserId(group.getOwnerUserId());
             entity.setText(msg.text());
             entity.setSenderName(msg.senderName());
             entity.setSenderUsername(msg.senderUsername());
@@ -69,10 +82,10 @@ public class MessageSyncPersistenceService {
             entity.setIsBot(msg.isBot());
             entity.setTextEntitiesJson(msg.textEntitiesJson());
             entity.setReplyToMessageId(msg.replyToMessageId() > 0 ? msg.replyToMessageId() : null);
-            entity.setTopicName(msg.topicName());
             entity.setTopicId(msg.messageThreadId() > 0 ? msg.messageThreadId() : null);
+            entity.setTopicName(TelegramTopicNames.storedTopicName(group, msg.messageThreadId(), msg.topicName()));
             entity.setReplyCount(0);
-            entity.setProcessingStatus("UNPROCESSED");
+            applyInitialProcessingStatus(entity, group);
             entity.setMessageDate(msgDate);
             newEntities.add(entity);
             created++;
@@ -98,10 +111,10 @@ public class MessageSyncPersistenceService {
                 messages.size(),
                 System.currentTimeMillis() - startedAt
         );
-        return created + repaired;
+        return new MessageSyncPersistenceResult(created, repaired, skipped, tooOld, messages.size());
     }
 
-    private boolean repairMessageMetadata(MessageEntity entity, TelegramMessageDto msg, Instant msgDate) {
+    private boolean repairMessageMetadata(GroupEntity group, MessageEntity entity, TelegramMessageDto msg, Instant msgDate) {
         boolean changed = false;
 
         if (isPlaceholderSenderName(entity.getSenderName()) && !isPlaceholderSenderName(msg.senderName())) {
@@ -117,8 +130,10 @@ public class MessageSyncPersistenceService {
             entity.setSenderUsername(msg.senderUsername());
             changed = true;
         }
-        if ((entity.getTopicName() == null || entity.getTopicName().isBlank()) && msg.topicName() != null && !msg.topicName().isBlank()) {
-            entity.setTopicName(msg.topicName());
+        Long topicId = entity.getTopicId() != null ? entity.getTopicId() : (msg.messageThreadId() > 0 ? msg.messageThreadId() : null);
+        String topicName = TelegramTopicNames.storedTopicName(group, topicId == null ? 0L : topicId, msg.topicName());
+        if ((entity.getTopicName() == null || entity.getTopicName().isBlank()) && topicName != null && !topicName.isBlank()) {
+            entity.setTopicName(topicName);
             changed = true;
         }
         if (entity.getTopicId() == null && msg.messageThreadId() > 0) {
@@ -148,6 +163,16 @@ public class MessageSyncPersistenceService {
         }
 
         return changed;
+    }
+
+    private void applyInitialProcessingStatus(MessageEntity entity, GroupEntity group) {
+        if (Boolean.TRUE.equals(group.getEnabled())) {
+            entity.setProcessingStatus("UNPROCESSED");
+            return;
+        }
+
+        entity.setProcessingStatus("SKIPPED");
+        entity.setClassifierReason("Group is disabled; skipped at ingestion");
     }
 
     private boolean isPlaceholderSenderName(String senderName) {
@@ -185,8 +210,21 @@ public class MessageSyncPersistenceService {
                 .distinct()
                 .toList();
 
+        GroupEntity group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new IllegalArgumentException("Group not found: " + groupId));
         Map<Long, MessageEntity> existingByTelegramMessageId = new HashMap<>();
-        for (MessageEntity entity : messageRepository.findByGroupIdAndTelegramMessageIdIn(groupId, telegramMessageIds)) {
+        List<MessageEntity> existingMessages = group.getAccountId() != null && group.getTelegramChatId() != null
+                ? telegramMessageIds.stream()
+                        .map(messageId -> messageRepository
+                                .findByTelegramAccountIdAndTelegramChatIdAndTelegramMessageId(
+                                        group.getAccountId(),
+                                        group.getTelegramChatId(),
+                                        messageId
+                                ))
+                        .flatMap(Optional::stream)
+                        .toList()
+                : messageRepository.findByGroupIdAndTelegramMessageIdIn(groupId, telegramMessageIds);
+        for (MessageEntity entity : existingMessages) {
             existingByTelegramMessageId.put(entity.getTelegramMessageId(), entity);
         }
         return existingByTelegramMessageId;

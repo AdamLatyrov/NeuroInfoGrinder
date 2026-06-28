@@ -28,20 +28,23 @@ class TelegramSyncTaskExecutorTest {
         ReflectionTestUtils.setField(executor, "queueCapacity", 0);
         ReflectionTestUtils.invokeMethod(executor, "initialize");
 
-        CountDownLatch started = new CountDownLatch(1);
+        CountDownLatch started = new CountDownLatch(4);
         CountDownLatch release = new CountDownLatch(1);
 
-        assertTrue(executor.execute("first", () -> {
-            started.countDown();
-            try {
-                release.await(2, TimeUnit.SECONDS);
-            } catch (InterruptedException ignored) {
-                Thread.currentThread().interrupt();
-            }
-        }));
+        for (int i = 0; i < 12; i++) {
+            int taskNumber = i;
+            assertTrue(executor.execute("task-" + taskNumber, () -> {
+                started.countDown();
+                try {
+                    release.await(2, TimeUnit.SECONDS);
+                } catch (InterruptedException ignored) {
+                    Thread.currentThread().interrupt();
+                }
+            }));
+        }
         assertTrue(started.await(1, TimeUnit.SECONDS));
 
-        assertFalse(executor.execute("second", () -> {}));
+        assertFalse(executor.execute("overflow", () -> {}));
         release.countDown();
     }
 }

@@ -3,6 +3,15 @@ import { Badge } from "@/components/ui/badge";
 import { SpinnerGap, Hash, Star } from "@phosphor-icons/react";
 import type { Topic } from "@/shared/types";
 
+function isPlaceholderTopic(topic: Topic) {
+  return !topic.name || topic.name === "Тема без названия" || topic.name.startsWith("Topic ") || topic.titleSource === "PLACEHOLDER_UNKNOWN";
+}
+
+function topicDisplayName(topic: Topic) {
+  if (topic.general) return "Основной";
+  return isPlaceholderTopic(topic) ? "Тема без названия" : topic.name;
+}
+
 interface TopicsPanelProps {
   topics: Topic[];
   isLoading: boolean;
@@ -66,25 +75,33 @@ export function TopicsPanel({
                     {topic.general ? (
                       <Star size={14} weight="fill" />
                     ) : (
-                      topic.name.charAt(0).toUpperCase()
+                      topicDisplayName(topic).charAt(0).toUpperCase()
                     )}
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5">
                       <span className="truncate text-sm font-medium">
-                        {topic.name}
+                        {topicDisplayName(topic)}
                       </span>
                       {topic.general && (
                         <Badge
                           variant="outline"
                           className="px-1.5 py-0 text-[10px]"
                         >
-                          general
+                          Основной
+                        </Badge>
+                      )}
+                      {isPlaceholderTopic(topic) && (
+                        <Badge
+                          variant="warning"
+                          className="px-1.5 py-0 text-[10px]"
+                        >
+                          ожидает синхронизацию
                         </Badge>
                       )}
                     </div>
                     <div className="mt-0.5 text-xs text-text-muted">
-                      thread {topic.messageThreadId}
+                      ID темы {topic.messageThreadId}
                     </div>
                   </div>
                 </div>

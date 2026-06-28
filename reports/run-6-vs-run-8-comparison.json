@@ -1,0 +1,762 @@
+﻿{
+    "runs": [
+        {
+            "mode": "FULL_INTELLIGENCE_REPLAY",
+            "run_id": 6,
+            "status": "COMPLETED",
+            "run_name": "verification full replay 500",
+            "dataset_id": 3,
+            "started_at": "2026-06-23T00:53:33.445184+03:00",
+            "duration_ms": 0.000000,
+            "finished_at": "2026-06-23T00:53:33.445184+03:00",
+            "total_messages": 500,
+            "pipeline_version": "full-intelligence-replay-v2.0",
+            "estimated_cost_usd": 0.012150,
+            "processed_messages": 500,
+            "provider_calls_total": 2,
+            "knowledge_items_total": 0
+        },
+        {
+            "mode": "FULL_INTELLIGENCE_REPLAY",
+            "run_id": 8,
+            "status": "COMPLETED",
+            "run_name": "calibrated replay 500",
+            "dataset_id": 3,
+            "started_at": "2026-06-23T01:50:25.996867+03:00",
+            "duration_ms": 0.000000,
+            "finished_at": "2026-06-23T01:50:25.996867+03:00",
+            "total_messages": 500,
+            "pipeline_version": "full-intelligence-replay-v2.0",
+            "estimated_cost_usd": 0.117090,
+            "processed_messages": 500,
+            "provider_calls_total": 23,
+            "knowledge_items_total": 9
+        }
+    ],
+    "counts": [
+        {
+            "run_id": 6,
+            "dataset_id": 3,
+            "macroclusters": 7,
+            "microclusters": 7,
+            "cluster_scores": 7,
+            "labeling_items": 209,
+            "replay_metrics": 39,
+            "knowledge_items": 0,
+            "dataset_messages": 500,
+            "discovered_topics": 12,
+            "estimated_cost_usd": 0.012150,
+            "message_embeddings": 223,
+            "provider_call_rows": 2,
+            "semantic_neighbors": 11,
+            "real_provider_calls": 2,
+            "message_intelligence": 500,
+            "message_classifications": 298
+        },
+        {
+            "run_id": 8,
+            "dataset_id": 3,
+            "macroclusters": 18,
+            "microclusters": 18,
+            "cluster_scores": 18,
+            "labeling_items": 220,
+            "replay_metrics": 42,
+            "knowledge_items": 9,
+            "dataset_messages": 500,
+            "discovered_topics": 12,
+            "estimated_cost_usd": 0.117090,
+            "message_embeddings": 223,
+            "provider_call_rows": 23,
+            "semantic_neighbors": 35,
+            "real_provider_calls": 20,
+            "message_intelligence": 500,
+            "message_classifications": 298
+        }
+    ],
+    "llmMetrics": [
+        {
+            "run_id": 6,
+            "metric_name": "clusters_sent_to_llm",
+            "metric_value_numeric": 2.000000
+        },
+        {
+            "run_id": 6,
+            "metric_name": "clusters_skipped_before_llm",
+            "metric_value_numeric": 5.000000
+        },
+        {
+            "run_id": 6,
+            "metric_name": "embedding_count",
+            "metric_value_numeric": 223.000000
+        },
+        {
+            "run_id": 6,
+            "metric_name": "knowledge_items_total",
+            "metric_value_numeric": 0.000000
+        },
+        {
+            "run_id": 6,
+            "metric_name": "llm_real_calls_total",
+            "metric_value_numeric": 2.000000
+        },
+        {
+            "run_id": 6,
+            "metric_name": "macrocluster_count",
+            "metric_value_numeric": 7.000000
+        },
+        {
+            "run_id": 6,
+            "metric_name": "microcluster_count",
+            "metric_value_numeric": 7.000000
+        },
+        {
+            "run_id": 6,
+            "metric_name": "provider_calls_total",
+            "metric_value_numeric": 2.000000
+        },
+        {
+            "run_id": 6,
+            "metric_name": "semantic_neighbor_count",
+            "metric_value_numeric": 11.000000
+        },
+        {
+            "run_id": 8,
+            "metric_name": "clusters_rejected_by_judge",
+            "metric_value_numeric": 3.000000
+        },
+        {
+            "run_id": 8,
+            "metric_name": "clusters_sent_to_llm",
+            "metric_value_numeric": 13.000000
+        },
+        {
+            "run_id": 8,
+            "metric_name": "clusters_skipped_before_llm",
+            "metric_value_numeric": 0.000000
+        },
+        {
+            "run_id": 8,
+            "metric_name": "clusters_skipped_budget_blocked",
+            "metric_value_numeric": 5.000000
+        },
+        {
+            "run_id": 8,
+            "metric_name": "clusters_skipped_low_judge_confidence",
+            "metric_value_numeric": 0.000000
+        },
+        {
+            "run_id": 8,
+            "metric_name": "embedding_count",
+            "metric_value_numeric": 223.000000
+        },
+        {
+            "run_id": 8,
+            "metric_name": "knowledge_items_total",
+            "metric_value_numeric": 9.000000
+        },
+        {
+            "run_id": 8,
+            "metric_name": "llm_real_calls_total",
+            "metric_value_numeric": 20.000000
+        },
+        {
+            "run_id": 8,
+            "metric_name": "macrocluster_count",
+            "metric_value_numeric": 18.000000
+        },
+        {
+            "run_id": 8,
+            "metric_name": "microcluster_count",
+            "metric_value_numeric": 18.000000
+        },
+        {
+            "run_id": 8,
+            "metric_name": "provider_calls_total",
+            "metric_value_numeric": 23.000000
+        },
+        {
+            "run_id": 8,
+            "metric_name": "semantic_neighbor_count",
+            "metric_value_numeric": 35.000000
+        }
+    ],
+    "serverDataset": {
+        "id": 4,
+        "name": "latest-2000-useful-messages-20260623",
+        "file_path": "C:\\Users\\Adam\\Documents\\Work\\LarbCorp\\Products\\NeuroInfoGrinder\\reports\\latest-2000-useful-messages-20260623.jsonl",
+        "message_count": 1441
+    },
+    "providerStatus": [
+        {
+            "cost": 0.012150,
+            "calls": 2,
+            "stage": "LLM_CLUSTER_JUDGE_AND_ROUTING",
+            "run_id": 6,
+            "status": "SUCCESS"
+        },
+        {
+            "cost": 0.000000,
+            "calls": 1,
+            "stage": "KNOWLEDGE_GENERATION",
+            "run_id": 8,
+            "status": "BUDGET_BLOCKED"
+        },
+        {
+            "cost": 0.000000,
+            "calls": 2,
+            "stage": "LLM_CLUSTER_JUDGE_AND_ROUTING",
+            "run_id": 8,
+            "status": "CACHE_HIT"
+        },
+        {
+            "cost": 0.058960,
+            "calls": 9,
+            "stage": "KNOWLEDGE_GENERATION",
+            "run_id": 8,
+            "status": "SUCCESS"
+        },
+        {
+            "cost": 0.058130,
+            "calls": 11,
+            "stage": "LLM_CLUSTER_JUDGE_AND_ROUTING",
+            "run_id": 8,
+            "status": "SUCCESS"
+        }
+    ],
+    "topClustersRun8": [
+        {
+            "title": "Macro: да,",
+            "wtp_score": 0.4600,
+            "cluster_id": 39,
+            "pain_score": 0.6300,
+            "final_score": 1.0000,
+            "macro_score": 0.9400,
+            "message_count": 7,
+            "usefulness_score": 1.0000
+        },
+        {
+            "title": "Macro: подскажите",
+            "wtp_score": 0.4000,
+            "cluster_id": 52,
+            "pain_score": 0.5500,
+            "final_score": 0.9500,
+            "macro_score": 0.8000,
+            "message_count": 5,
+            "usefulness_score": 0.9500
+        },
+        {
+            "title": "Macro: щас",
+            "wtp_score": 0.3700,
+            "cluster_id": 45,
+            "pain_score": 0.5100,
+            "final_score": 0.8500,
+            "macro_score": 0.7300,
+            "message_count": 4,
+            "usefulness_score": 0.8500
+        },
+        {
+            "title": "Macro: у",
+            "wtp_score": 0.3400,
+            "cluster_id": 43,
+            "pain_score": 0.4700,
+            "final_score": 0.7500,
+            "macro_score": 0.6600,
+            "message_count": 3,
+            "usefulness_score": 0.7500
+        },
+        {
+            "title": "Macro: messagedirectmessagepricechanged",
+            "wtp_score": 0.3400,
+            "cluster_id": 44,
+            "pain_score": 0.4700,
+            "final_score": 0.7500,
+            "macro_score": 0.6600,
+            "message_count": 3,
+            "usefulness_score": 0.7500
+        },
+        {
+            "title": "Macro: ⚡",
+            "wtp_score": 0.3400,
+            "cluster_id": 42,
+            "pain_score": 0.4700,
+            "final_score": 0.7500,
+            "macro_score": 0.6600,
+            "message_count": 3,
+            "usefulness_score": 0.7500
+        },
+        {
+            "title": "Macro: гпт",
+            "wtp_score": 0.3400,
+            "cluster_id": 48,
+            "pain_score": 0.4700,
+            "final_score": 0.7500,
+            "macro_score": 0.6600,
+            "message_count": 3,
+            "usefulness_score": 0.7500
+        },
+        {
+            "title": "Macro: какие",
+            "wtp_score": 0.3100,
+            "cluster_id": 51,
+            "pain_score": 0.4300,
+            "final_score": 0.6500,
+            "macro_score": 0.5900,
+            "message_count": 2,
+            "usefulness_score": 0.6500
+        },
+        {
+            "title": "Macro: можно",
+            "wtp_score": 0.3100,
+            "cluster_id": 53,
+            "pain_score": 0.4300,
+            "final_score": 0.6500,
+            "macro_score": 0.5900,
+            "message_count": 2,
+            "usefulness_score": 0.6500
+        },
+        {
+            "title": "Macro: messagechatjoinbylink",
+            "wtp_score": 0.3100,
+            "cluster_id": 54,
+            "pain_score": 0.4300,
+            "final_score": 0.6500,
+            "macro_score": 0.5900,
+            "message_count": 2,
+            "usefulness_score": 0.6500
+        }
+    ],
+    "serverRun7Counts": {
+        "run_id": 7,
+        "status": "COMPLETED",
+        "dataset_id": 4,
+        "macroclusters": 30,
+        "microclusters": 34,
+        "labeling_items": 385,
+        "knowledge_items": 6,
+        "estimated_cost_usd": 0.117495,
+        "message_embeddings": 439,
+        "provider_call_rows": 36,
+        "semantic_neighbors": 92,
+        "real_provider_calls": 20
+    },
+    "knowledgeItemsRun8": [
+        {
+            "id": 7,
+            "title": "Macro: видимо",
+            "status": "DRAFT",
+            "artifact_type": "generation",
+            "source_cluster_id": 38,
+            "knowledge_value_score": 0.8200
+        },
+        {
+            "id": 8,
+            "title": "Animated Emoji Messages",
+            "status": "DRAFT",
+            "artifact_type": "cluster_summary",
+            "source_cluster_id": 40,
+            "knowledge_value_score": 0.9600
+        },
+        {
+            "id": 9,
+            "title": "Продажа и выдача ключей через Telegram-бота",
+            "status": "DRAFT",
+            "artifact_type": "cluster_analysis",
+            "source_cluster_id": 41,
+            "knowledge_value_score": 0.9500
+        },
+        {
+            "id": 10,
+            "title": "Runic добавил пополнение в рублях и генерацию изображений",
+            "status": "DRAFT",
+            "artifact_type": "generation",
+            "source_cluster_id": 42,
+            "knowledge_value_score": 0.9800
+        },
+        {
+            "id": 11,
+            "title": "Проблема с API и предложение сделать собственную интеграцию",
+            "status": "DRAFT",
+            "artifact_type": "generation",
+            "source_cluster_id": 43,
+            "knowledge_value_score": 0.9100
+        },
+        {
+            "id": 12,
+            "title": "Direct Message Price Change Events",
+            "status": "DRAFT",
+            "artifact_type": "generation",
+            "source_cluster_id": 44,
+            "knowledge_value_score": 0.9600
+        },
+        {
+            "id": 13,
+            "title": "Macro: «щас»",
+            "status": "DRAFT",
+            "artifact_type": "generation",
+            "source_cluster_id": 45,
+            "knowledge_value_score": 0.8200
+        },
+        {
+            "id": 14,
+            "title": "Запросы про использование моделей",
+            "status": "DRAFT",
+            "artifact_type": "cluster_summary",
+            "source_cluster_id": 46,
+            "knowledge_value_score": 0.8200
+        },
+        {
+            "id": 15,
+            "title": "Продолжение работы над коннектором для Codex app",
+            "status": "DRAFT",
+            "artifact_type": "cluster_summary",
+            "source_cluster_id": 47,
+            "knowledge_value_score": 0.9100
+        }
+    ],
+    "labelingBreakdownRun8": {
+        "byStatus": {
+            "PENDING": 220
+        },
+        "byItemType": {
+            "CLUSTER": 2,
+            "MESSAGE": 209,
+            "KNOWLEDGE_ITEM": 9
+        },
+        "byPriority": {
+            "65": 2,
+            "70": 209,
+            "75": 9
+        },
+        "bySuggestedLabel": {
+            "null": 11,
+            "HOW_TO_GUIDE": 209
+        },
+        "bySuggestedDecision": {
+            "PENDING": 220
+        }
+    },
+    "providerDecisionsRun8": [
+        {
+            "id": 39,
+            "stage": "LLM_CLUSTER_JUDGE_AND_ROUTING",
+            "title": "Оценка кластера «Macro: видимо»",
+            "status": "SUCCESS",
+            "decision": "accept",
+            "confidence": "0.82",
+            "error_code": null,
+            "model_name": "gpt-5.5",
+            "input_tokens": 100,
+            "artifact_type": "judge",
+            "output_tokens": 241,
+            "estimated_cost_usd": 0.004115
+        },
+        {
+            "id": 40,
+            "stage": "KNOWLEDGE_GENERATION",
+            "title": "Macro: видимо",
+            "status": "SUCCESS",
+            "decision": null,
+            "confidence": null,
+            "error_code": null,
+            "model_name": "gpt-5.5",
+            "input_tokens": 101,
+            "artifact_type": "generation",
+            "output_tokens": 293,
+            "estimated_cost_usd": 0.004900
+        },
+        {
+            "id": 41,
+            "stage": "LLM_CLUSTER_JUDGE_AND_ROUTING",
+            "title": "Оценка кластера «Macro: да»",
+            "status": "SUCCESS",
+            "decision": "reject",
+            "confidence": "0.82",
+            "error_code": null,
+            "model_name": "gpt-5.5",
+            "input_tokens": 176,
+            "artifact_type": "judge",
+            "output_tokens": 340,
+            "estimated_cost_usd": 0.005980
+        },
+        {
+            "id": 42,
+            "stage": "LLM_CLUSTER_JUDGE_AND_ROUTING",
+            "title": "Macro Cluster: MessageAnimatedEmoji",
+            "status": "SUCCESS",
+            "decision": "accept",
+            "confidence": "0.96",
+            "error_code": null,
+            "model_name": "gpt-5.5",
+            "input_tokens": 457,
+            "artifact_type": "judge",
+            "output_tokens": 337,
+            "estimated_cost_usd": 0.007340
+        },
+        {
+            "id": 43,
+            "stage": "KNOWLEDGE_GENERATION",
+            "title": "Animated Emoji Messages",
+            "status": "SUCCESS",
+            "decision": null,
+            "confidence": null,
+            "error_code": null,
+            "model_name": "gpt-5.5",
+            "input_tokens": 459,
+            "artifact_type": "cluster_summary",
+            "output_tokens": 413,
+            "estimated_cost_usd": 0.008490
+        },
+        {
+            "id": 44,
+            "stage": "LLM_CLUSTER_JUDGE_AND_ROUTING",
+            "title": "Cluster identified as Claude token/key sales and support promotion",
+            "status": "SUCCESS",
+            "decision": "approve",
+            "confidence": "0.95",
+            "error_code": null,
+            "model_name": "gpt-5.5",
+            "input_tokens": 119,
+            "artifact_type": "judge",
+            "output_tokens": 355,
+            "estimated_cost_usd": 0.005920
+        },
+        {
+            "id": 45,
+            "stage": "KNOWLEDGE_GENERATION",
+            "title": "Продажа и выдача ключей через Telegram-бота",
+            "status": "SUCCESS",
+            "decision": null,
+            "confidence": null,
+            "error_code": null,
+            "model_name": "gpt-5.5",
+            "input_tokens": 121,
+            "artifact_type": "cluster_analysis",
+            "output_tokens": 494,
+            "estimated_cost_usd": 0.008015
+        },
+        {
+            "id": 46,
+            "stage": "LLM_CLUSTER_JUDGE_AND_ROUTING",
+            "title": "Runic добавил пополнение в рублях и генерацию изображений",
+            "status": "CACHE_HIT",
+            "decision": "accept",
+            "confidence": "0.98",
+            "error_code": null,
+            "model_name": "gpt-5.5",
+            "input_tokens": 322,
+            "artifact_type": "judge",
+            "output_tokens": 343,
+            "estimated_cost_usd": 0.000000
+        },
+        {
+            "id": 47,
+            "stage": "KNOWLEDGE_GENERATION",
+            "title": "Runic добавил пополнение в рублях и генерацию изображений",
+            "status": "SUCCESS",
+            "decision": null,
+            "confidence": null,
+            "error_code": null,
+            "model_name": "gpt-5.5",
+            "input_tokens": 323,
+            "artifact_type": "generation",
+            "output_tokens": 416,
+            "estimated_cost_usd": 0.007855
+        },
+        {
+            "id": 48,
+            "stage": "LLM_CLUSTER_JUDGE_AND_ROUTING",
+            "title": "Обсуждение собственной API и выбора DeepSeek",
+            "status": "SUCCESS",
+            "decision": "accept",
+            "confidence": "0.91",
+            "error_code": null,
+            "model_name": "gpt-5.5",
+            "input_tokens": 100,
+            "artifact_type": "cluster_judgment",
+            "output_tokens": 295,
+            "estimated_cost_usd": 0.004925
+        },
+        {
+            "id": 49,
+            "stage": "KNOWLEDGE_GENERATION",
+            "title": "Проблема с API и предложение сделать собственную интеграцию",
+            "status": "SUCCESS",
+            "decision": null,
+            "confidence": null,
+            "error_code": null,
+            "model_name": "gpt-5.5",
+            "input_tokens": 101,
+            "artifact_type": "generation",
+            "output_tokens": 305,
+            "estimated_cost_usd": 0.005080
+        },
+        {
+            "id": 50,
+            "stage": "LLM_CLUSTER_JUDGE_AND_ROUTING",
+            "title": "Macro cluster: MessageDirectMessagePriceChanged",
+            "status": "CACHE_HIT",
+            "decision": "valid",
+            "confidence": "0.96",
+            "error_code": null,
+            "model_name": "gpt-5.5",
+            "input_tokens": 146,
+            "artifact_type": "judge",
+            "output_tokens": 311,
+            "estimated_cost_usd": 0.000000
+        },
+        {
+            "id": 51,
+            "stage": "KNOWLEDGE_GENERATION",
+            "title": "Direct Message Price Change Events",
+            "status": "SUCCESS",
+            "decision": null,
+            "confidence": null,
+            "error_code": null,
+            "model_name": "gpt-5.5",
+            "input_tokens": 147,
+            "artifact_type": "generation",
+            "output_tokens": 508,
+            "estimated_cost_usd": 0.008355
+        },
+        {
+            "id": 52,
+            "stage": "LLM_CLUSTER_JUDGE_AND_ROUTING",
+            "title": "Cluster judgment: Macro «щас»",
+            "status": "SUCCESS",
+            "decision": "accept",
+            "confidence": "0.82",
+            "error_code": null,
+            "model_name": "gpt-5.5",
+            "input_tokens": 121,
+            "artifact_type": "judge",
+            "output_tokens": 333,
+            "estimated_cost_usd": 0.005600
+        },
+        {
+            "id": 53,
+            "stage": "KNOWLEDGE_GENERATION",
+            "title": "Macro: «щас»",
+            "status": "SUCCESS",
+            "decision": null,
+            "confidence": null,
+            "error_code": null,
+            "model_name": "gpt-5.5",
+            "input_tokens": 122,
+            "artifact_type": "generation",
+            "output_tokens": 349,
+            "estimated_cost_usd": 0.005845
+        },
+        {
+            "id": 54,
+            "stage": "LLM_CLUSTER_JUDGE_AND_ROUTING",
+            "title": "Macro: чтоб",
+            "status": "SUCCESS",
+            "decision": "accept",
+            "confidence": "0.82",
+            "error_code": null,
+            "model_name": "gpt-5.5",
+            "input_tokens": 83,
+            "artifact_type": "judge",
+            "output_tokens": 291,
+            "estimated_cost_usd": 0.004780
+        },
+        {
+            "id": 55,
+            "stage": "KNOWLEDGE_GENERATION",
+            "title": "Запросы про использование моделей",
+            "status": "SUCCESS",
+            "decision": null,
+            "confidence": null,
+            "error_code": null,
+            "model_name": "gpt-5.5",
+            "input_tokens": 84,
+            "artifact_type": "cluster_summary",
+            "output_tokens": 209,
+            "estimated_cost_usd": 0.003555
+        },
+        {
+            "id": 56,
+            "stage": "LLM_CLUSTER_JUDGE_AND_ROUTING",
+            "title": "Кластер Macro: разработка коннектора для Codex app",
+            "status": "SUCCESS",
+            "decision": "accept",
+            "confidence": "0.91",
+            "error_code": null,
+            "model_name": "gpt-5.5",
+            "input_tokens": 112,
+            "artifact_type": "judge",
+            "output_tokens": 325,
+            "estimated_cost_usd": 0.005435
+        },
+        {
+            "id": 57,
+            "stage": "KNOWLEDGE_GENERATION",
+            "title": "Продолжение работы над коннектором для Codex app",
+            "status": "SUCCESS",
+            "decision": null,
+            "confidence": null,
+            "error_code": null,
+            "model_name": "gpt-5.5",
+            "input_tokens": 113,
+            "artifact_type": "cluster_summary",
+            "output_tokens": 420,
+            "estimated_cost_usd": 0.006865
+        },
+        {
+            "id": 58,
+            "stage": "LLM_CLUSTER_JUDGE_AND_ROUTING",
+            "title": "Упоминания GPT 5.4/5.5 в кластере «Macro: гпт»",
+            "status": "SUCCESS",
+            "decision": "supported",
+            "confidence": "0.91",
+            "error_code": null,
+            "model_name": "gpt-5.5",
+            "input_tokens": 119,
+            "artifact_type": "judge",
+            "output_tokens": 204,
+            "estimated_cost_usd": 0.003655
+        },
+        {
+            "id": 59,
+            "stage": "LLM_CLUSTER_JUDGE_AND_ROUTING",
+            "title": "Macro cluster «че»",
+            "status": "SUCCESS",
+            "decision": "partial",
+            "confidence": "0.73",
+            "error_code": null,
+            "model_name": "gpt-5.5",
+            "input_tokens": 83,
+            "artifact_type": "judge",
+            "output_tokens": 183,
+            "estimated_cost_usd": 0.003160
+        },
+        {
+            "id": 60,
+            "stage": "LLM_CLUSTER_JUDGE_AND_ROUTING",
+            "title": "BYOK custom model configuration/provider errors",
+            "status": "SUCCESS",
+            "decision": "yes",
+            "confidence": "0.93",
+            "error_code": null,
+            "model_name": "gpt-5.5",
+            "input_tokens": 283,
+            "artifact_type": "incident_cluster_judgment",
+            "output_tokens": 387,
+            "estimated_cost_usd": 0.007220
+        },
+        {
+            "id": 61,
+            "stage": "KNOWLEDGE_GENERATION",
+            "title": null,
+            "status": "BUDGET_BLOCKED",
+            "decision": null,
+            "confidence": null,
+            "error_code": "BUDGET_LIMIT_REACHED",
+            "model_name": "gpt-5.5",
+            "input_tokens": 0,
+            "artifact_type": null,
+            "output_tokens": 0,
+            "estimated_cost_usd": 0.000000
+        }
+    ]
+}

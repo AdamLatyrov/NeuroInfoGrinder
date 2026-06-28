@@ -1,0 +1,91 @@
+﻿{
+    "counts": {
+        "llmJudgeCallsAfterEnable": 8,
+        "draftMaterialsAfterEnable": 0,
+        "llmJudgeErrorsAfterEnable": 8,
+        "scorerAcceptedAfterEnable": 0,
+        "generationCallsAfterEnable": 5,
+        "llmJudgeSuccessAfterEnable": 0,
+        "generationErrorsAfterEnable": 3,
+        "segmentsDetectedAfterEnable": 948,
+        "generationSuccessAfterEnable": 2,
+        "publishedMaterialsAfterEnable": 0,
+        "discussionMaterialsOn20260626Utc": 3,
+        "discussionMaterialsOn20260627Utc": 0,
+        "preEnableSameUtcDayDiscussionMaterials": 3
+    },
+    "settings": {
+        "discussionSegmentDraftOnly": "1",
+        "discussionSegmentFreshOnly": "1",
+        "discussionSegmentGenerationMode": "CONTROLLED",
+        "discussionSegmentGenerationEnabled": "1",
+        "discussionSegmentSkipRiskSensitive": "1",
+        "discussionSegmentMaxMaterialsPerDay": "3",
+        "discussionSegmentRequireLlmAccepted": "1",
+        "discussionSegmentStopOnProviderError": "1",
+        "discussionSegmentControlledEnableTime": "2026-06-26T16:23:22Z",
+        "discussionSegmentStopOnGenerationError": "1",
+        "discussionSegmentMaxMaterialsPerChatTopicPerDay": "1"
+    },
+    "capturedAt": "2026-06-27T09:55:10.338852+00:00",
+    "enableTime": "2026-06-26T16:23:22+00:00",
+    "healthCounts": {
+        "failedIntake": 0,
+        "queuedIntake": 4,
+        "pendingIntake": 2226,
+        "processingIntake": 0,
+        "rawMessagesTotal": 11623,
+        "datasetMessagesTotal": 11207,
+        "activeKnowledgeItemsTotal": 30,
+        "activeDiscussionMaterialsTotal": 3
+    },
+    "full24hElapsed": false,
+    "finalEligibleAt": "2026-06-27T16:23:22+00:00",
+    "materialsAfterEnable": [
+    ],
+    "skipReasonsAfterEnable": {
+        "GENERATION_PROVIDER_ERROR": 8,
+        "LOW_COMBINED_SCORE_OR_SIGNAL_COUNT": 529,
+        "DISCUSSION_SEGMENT_REJECTED_DAILY_LIMIT": 2,
+        "DISCUSSION_SEGMENT_REJECTED_ENTITY_ONLY": 10,
+        "DISCUSSION_SEGMENT_REJECTED_OVERLAP_DUPLICATE": 3,
+        "DISCUSSION_SEGMENT_REJECTED_LOW_VALUE_ADJACENT": 395,
+        "DISCUSSION_SEGMENT_REJECTED_RISK_SENSITIVE_CONTROLLED_MODE": 1
+    },
+    "providerStatusesAfterEnable": {
+        "KNOWLEDGE_GENERATION:SUCCESS": 2,
+        "KNOWLEDGE_GENERATION:TIMEOUT": 3,
+        "LLM_CLUSTER_JUDGE_AND_ROUTING:SUCCESS": 8,
+        "LLM_CLUSTER_JUDGE_AND_ROUTING:TIMEOUT": 37,
+        "DISCUSSION_SEGMENT_JUDGE:PROVIDER_NOT_CONFIGURED": 8
+    },
+    "preEnableSameDayDiscussionMaterials": [
+        {
+            "id": 23,
+            "runId": 2914,
+            "title": "Fallback ╨╜╨░ ╨┤╤А╤Г╨│╨╕╨╡ ╨╝╨╛╨┤╨╡╨╗╨╕ ╨╕ ╤Б╤В╨░╤В╤Г╤Б ╨┤╨╛╤Б╤В╤Г╨┐╨╜╨╛╤Б╤В╨╕ ╨┐╤А╨╕ ╨╖╨░╨┤╨╡╤А╨╢╨║╨░╤Е API-╨┐╤А╨╛╨▓╨░╨╣╨┤╨╡╤А╨░",
+            "status": "DRAFT",
+            "createdAt": "2026-06-26T15:19:04.363769+00:00",
+            "segmentId": 118,
+            "artifactType": "GUIDE"
+        },
+        {
+            "id": 24,
+            "runId": 2915,
+            "title": "╨Ъ╨░╨║ ╨║╨╡╤И╨╕╤А╨╛╨▓╨░╨╜╨╕╨╡ ╨╝╨╛╨╢╨╡╤В ╨▓╨╗╨╕╤П╤В╤М ╨╜╨░ ╤А╨░╤Б╤Е╨╛╨┤ ╨╗╨╕╨╝╨╕╤В╨╛╨▓ ╨▓ Claude Code",
+            "status": "DRAFT",
+            "createdAt": "2026-06-26T15:20:06.899126+00:00",
+            "segmentId": 119,
+            "artifactType": "GUIDE"
+        },
+        {
+            "id": 25,
+            "runId": 2916,
+            "title": "╨б╨▒╨╛╤А ╨╛╨▒╤А╨░╤В╨╜╨╛╨╣ ╤Б╨▓╤П╨╖╨╕ ╨╛ ╨│╨╗╨░╨▓╨╜╤Л╤Е ╨▒╨╛╨╗╤П╤Е ╨▓╨░╨╣╨▒╨║╨╛╨┤╨╡╤А╨╛╨▓",
+            "status": "DRAFT",
+            "createdAt": "2026-06-26T15:24:01.502605+00:00",
+            "segmentId": 120,
+            "artifactType": "SUMMARY"
+        }
+    ]
+}

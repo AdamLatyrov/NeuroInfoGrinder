@@ -1,0 +1,33 @@
+{
+  "report": "discussion-segment-controlled-mode-enable-20260626",
+  "verdict": "ENABLED_CONTROLLED_MODE",
+  "production": true,
+  "effectiveEnableTime": "2026-06-26T16:23:22Z",
+  "capturedAt": "2026-06-26T16:38:00Z",
+  "settings": [
+    { "setting": "discussionSegmentGenerationEnabled", "before": "0", "after": "1", "effective": "1", "source": "production DB pipeline_settings" },
+    { "setting": "discussionSegmentGenerationMode", "before": "OFF", "after": "CONTROLLED", "effective": "CONTROLLED", "source": "production DB pipeline_settings" },
+    { "setting": "discussionSegmentMaxMaterialsPerDay", "before": "3", "after": "3", "effective": "3", "source": "production DB pipeline_settings" },
+    { "setting": "discussionSegmentMaxMaterialsPerChatTopicPerDay", "before": "1", "after": "1", "effective": "1", "source": "production DB pipeline_settings" },
+    { "setting": "discussionSegmentRequireLlmAccepted", "before": "1", "after": "1", "effective": "1", "source": "production DB pipeline_settings" },
+    { "setting": "discussionSegmentDraftOnly", "before": "1", "after": "1", "effective": "1", "source": "production DB pipeline_settings" },
+    { "setting": "discussionSegmentSkipRiskSensitive", "before": "1", "after": "1", "effective": "1", "source": "production DB pipeline_settings" },
+    { "setting": "discussionSegmentFreshOnly", "before": "1", "after": "1", "effective": "1", "source": "production DB pipeline_settings" },
+    { "setting": "discussionSegmentStopOnProviderError", "before": "1", "after": "1", "effective": "1", "source": "production DB pipeline_settings" },
+    { "setting": "discussionSegmentStopOnGenerationError", "before": "1", "after": "1", "effective": "1", "source": "production DB pipeline_settings" },
+    { "setting": "discussionSegmentControlledEnableTime", "before": "", "after": "2026-06-26T16:23:22Z", "effective": "2026-06-26T16:23:22Z", "source": "production DB pipeline_settings" }
+  ],
+  "checks": {
+    "activeKnowledgeItems": 24,
+    "activeDiscussionSegmentMaterials": 3,
+    "discussionSegmentMaterialsAfterEffectiveEnableTime": 0,
+    "publishedMaterialsAfterEffectiveEnableTime": 0,
+    "backlogReprocessRun": false,
+    "rawPreEnableArtifactRefreshedAfterEnable": true
+  },
+  "artifacts": [
+    "reports/discussion-controlled-mode-enable-raw-20260626.json",
+    "reports/discussion-controlled-mode-effective-raw-20260626.json",
+    "reports/discussion-controlled-production-monitor-raw-20260626.json"
+  ]
+}

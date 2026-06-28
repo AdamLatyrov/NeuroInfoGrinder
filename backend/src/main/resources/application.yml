@@ -22,6 +22,10 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
+  task:
+    scheduling:
+      pool:
+        size: ${SPRING_TASK_SCHEDULING_POOL_SIZE:4}
   data:
     redis:
       host: ${REDIS_HOST:localhost}
@@ -60,6 +64,8 @@ neuroinfogrinder:
   pipeline:
     signal-threshold: ${PIPELINE_SIGNAL_THRESHOLD:0.30}
     local-guide-fallback: ${PIPELINE_LOCAL_GUIDE_FALLBACK:false}
+    trace-retention-days: ${PIPELINE_TRACE_RETENTION_DAYS:45}
+    trace-retention-cleanup-cron: ${PIPELINE_TRACE_RETENTION_CLEANUP_CRON:0 20 3 * * *}
     classification-context-enabled: ${CLASSIFICATION_CONTEXT_ENABLED:true}
     classification-context-window-minutes: ${CLASSIFICATION_CONTEXT_WINDOW_MINUTES:10}
     classification-context-max-messages: ${CLASSIFICATION_CONTEXT_MAX_MESSAGES:80}
@@ -68,16 +74,38 @@ neuroinfogrinder:
     classification-anchor-min-score: ${CLASSIFICATION_ANCHOR_MIN_SCORE:3}
     classification-context-dedup-ttl-hours: ${CLASSIFICATION_CONTEXT_DEDUP_TTL_HOURS:24}
 
+pipeline:
+  processing:
+    enabled: ${PIPELINE_PROCESSING_ENABLED:true}
+
+material:
+  generation:
+    enabled: ${MATERIAL_GENERATION_ENABLED:true}
+
+problem:
+  extraction:
+    enabled: ${PROBLEM_EXTRACTION_ENABLED:true}
+
 telegram:
+  ingestion:
+    enabled: ${TELEGRAM_INGESTION_ENABLED:true}
+    queue-size: ${TELEGRAM_INGESTION_QUEUE_SIZE:10000}
+    worker-threads: ${TELEGRAM_INGESTION_WORKER_THREADS:2}
+    offer-timeout-ms: ${TELEGRAM_INGESTION_OFFER_TIMEOUT_MS:100}
+  backfill:
+    enabled: ${TELEGRAM_BACKFILL_ENABLED:true}
+    fixed-delay-ms: ${TELEGRAM_BACKFILL_FIXED_DELAY_MS:5000}
+    initial-delay-ms: ${TELEGRAM_BACKFILL_INITIAL_DELAY_MS:10000}
+    max-jobs-per-tick: ${TELEGRAM_BACKFILL_MAX_JOBS_PER_TICK:2}
   tdlib:
     enabled: ${TDLIB_ENABLED:true}
     sync:
-      enabled: ${TDLIB_SYNC_ENABLED:true}
-      fixed-delay-ms: ${TDLIB_SYNC_FIXED_DELAY_MS:15000}
+      enabled: ${TDLIB_SYNC_ENABLED:false}
+      fixed-delay-ms: ${TDLIB_SYNC_FIXED_DELAY_MS:10000}
       initial-delay-ms: ${TDLIB_SYNC_INITIAL_DELAY_MS:5000}
-      max-parallelism: ${TDLIB_SYNC_MAX_PARALLELISM:2}
-      batch-size: ${TDLIB_SYNC_BATCH_SIZE:2}
-      queue-capacity: ${TDLIB_SYNC_QUEUE_CAPACITY:4}
+      max-parallelism: ${TDLIB_SYNC_MAX_PARALLELISM:4}
+      batch-size: ${TDLIB_SYNC_BATCH_SIZE:4}
+      queue-capacity: ${TDLIB_SYNC_QUEUE_CAPACITY:8}
     library-name: ${TDLIB_LIBRARY_NAME:tdjni}
     library-path: ${TDLIB_LIBRARY_PATH:./native}
     api-id: ${TDLIB_API_ID:38702302}
@@ -96,3 +124,11 @@ telegram:
     application-version: ${TDLIB_APPLICATION_VERSION:0.1.0}
     chat-limit: ${TDLIB_CHAT_LIMIT:100}
     topic-limit: ${TDLIB_TOPIC_LIMIT:100}
+    proxy:
+      enabled: ${TDLIB_PROXY_ENABLED:false}
+      type: ${TDLIB_PROXY_TYPE:socks5}
+      host: ${TDLIB_PROXY_HOST:}
+      port: ${TDLIB_PROXY_PORT:0}
+      username: ${TDLIB_PROXY_USERNAME:}
+      password: ${TDLIB_PROXY_PASSWORD:}
+      secret: ${TDLIB_PROXY_SECRET:}

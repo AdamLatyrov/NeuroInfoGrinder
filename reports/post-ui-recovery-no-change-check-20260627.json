@@ -1,0 +1,22 @@
+﻿{
+    "counts": {
+        "activeKnowledgeItemsTotal": 30,
+        "activeDiscussionMaterialsTotal": 3,
+        "discussionMaterialsOn20260626Utc": 3,
+        "discussionMaterialsOn20260627Utc": 0
+    },
+    "settings": {
+        "discussionSegmentDraftOnly": "1",
+        "discussionSegmentFreshOnly": "1",
+        "discussionSegmentGenerationMode": "CONTROLLED",
+        "discussionSegmentGenerationEnabled": "1",
+        "discussionSegmentSkipRiskSensitive": "1",
+        "discussionSegmentMaxMaterialsPerDay": "3",
+        "discussionSegmentRequireLlmAccepted": "1",
+        "discussionSegmentStopOnProviderError": "1",
+        "discussionSegmentControlledEnableTime": "2026-06-26T16:23:22Z",
+        "discussionSegmentStopOnGenerationError": "1",
+        "discussionSegmentMaxMaterialsPerChatTopicPerDay": "1"
+    },
+    "capturedAt": "2026-06-27T11:04:12.139974+00:00"
+}

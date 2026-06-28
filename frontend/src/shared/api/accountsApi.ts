@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { getJsonAuth, postJsonAuth } from "./http";
+import { deleteJsonAuth, getJsonAuth, postJsonAuth } from "./http";
 import { queryClient } from "./queryClient";
 import type { TelegramAccount } from "../types";
 
@@ -31,6 +31,7 @@ function mapAccount(account: BackendAccountResponse): TelegramAccount {
     languageCode: null,
     timezone: null,
     createdAt: account.lastActivityAt,
+    groupsCount: account.groupsCount,
   };
 }
 
@@ -95,5 +96,58 @@ export function useSubmitAccountPasswordMutation() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["accounts"] });
     },
+  });
+}
+
+function invalidateAccounts() {
+  queryClient.invalidateQueries({ queryKey: ["accounts"] });
+  queryClient.invalidateQueries({ queryKey: ["telegram-accounts"] });
+  queryClient.invalidateQueries({ queryKey: ["operator-status"] });
+}
+
+export function useDeleteAccountMutation() {
+  return useMutation({
+    mutationFn: async (id: string) => deleteJsonAuth(`/api/v2/telegram/accounts/${id}`),
+    onSuccess: invalidateAccounts,
+  });
+}
+
+export function usePauseAccountMutation() {
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const response = await postJsonAuth<BackendAccountResponse>(`/api/v2/telegram/accounts/${id}/pause`, {});
+      return mapAccount(response);
+    },
+    onSuccess: invalidateAccounts,
+  });
+}
+
+export function useResumeAccountMutation() {
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const response = await postJsonAuth<BackendAccountResponse>(`/api/v2/telegram/accounts/${id}/resume`, {});
+      return mapAccount(response);
+    },
+    onSuccess: invalidateAccounts,
+  });
+}
+
+export function useDisableAccountMutation() {
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const response = await postJsonAuth<BackendAccountResponse>(`/api/v2/telegram/accounts/${id}/disable`, {});
+      return mapAccount(response);
+    },
+    onSuccess: invalidateAccounts,
+  });
+}
+
+export function useEnableAccountMutation() {
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const response = await postJsonAuth<BackendAccountResponse>(`/api/v2/telegram/accounts/${id}/enable`, {});
+      return mapAccount(response);
+    },
+    onSuccess: invalidateAccounts,
   });
 }

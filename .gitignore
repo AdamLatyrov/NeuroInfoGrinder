@@ -46,6 +46,9 @@ htmlcov/
 
 # Project
 _agent/
+!_agent/
+_agent/*
+!_agent/PROJECT_MEMORY.md
 build-tools/
 *.session
 *.session-journal
@@ -55,8 +58,15 @@ storage/
 target/
 dist/
 tdlib-data/
+backend/2.0/model-worker/.cache/
+backend/2.0/model-worker/models/
+backend/2.0/runs/
+backend/2.0/.local-run/
 *.sqlite
 *.sqlite3
+.codex-run-logs/
+.upstream-run-logs/
+*.tar.gz
 
 # OS
 .DS_Store

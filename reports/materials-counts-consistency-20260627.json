@@ -1,0 +1,133 @@
+{
+  "capturedAt": "2026-06-27T11:45:13.317Z",
+  "rootCause": "Six active materials used legacy/unknown artifact_type values not represented by visible UI tabs: cluster_summary x3, newsBrief, instruction, REFERENCE.",
+  "before": {
+    "byStatus": {
+      "DRAFT": 30
+    },
+    "byRawType": {
+      "GUIDE": 5,
+      "guide": 6,
+      "answer": 1,
+      "SUMMARY": 3,
+      "REFERENCE": 1,
+      "newsBrief": 1,
+      "generation": 9,
+      "instruction": 1,
+      "cluster_summary": 3
+    },
+    "otherCount": 6,
+    "totalActive": 30,
+    "byNormalizedType": {
+      "GUIDE": 11,
+      "OTHER": 6,
+      "ANSWER": 1,
+      "SUMMARY": 3,
+      "GENERATION": 9
+    },
+    "sumKnownUiTabsCurrent": 24
+  },
+  "missingMaterialsBeforeFix": [
+    {
+      "type": "cluster_summary",
+      "title": "╨Я╤А╨╕╨▓╨╡╤В╤Б╤В╨▓╨╡╨╜╨╜╨╛╨╡ ╤Б╨╛╨╛╨▒╤Й╨╡╨╜╨╕╨╡ ╨┤╨╗╤П ╨╜╨╛╨▓╤Л╤Е ╤Г╤З╨░╤Б╤В╨╜╨╕╨║╨╛╨▓ ╤Б╨╛╨╛╨▒╤Й╨╡╤Б╤В╨▓╨░",
+      "status": "DRAFT",
+      "createdAt": "2026-06-25T12:09:03.726556+00:00",
+      "materialId": 13,
+      "sourceCount": 4,
+      "candidateType": "MACRO",
+      "normalizedType": "OTHER"
+    },
+    {
+      "type": "newsBrief",
+      "title": "Google DeepMind ╤Б╤В╨░╨╗╨║╨╕╨▓╨░╨╡╤В╤Б╤П ╤Б ╨╜╨╛╨▓╨╛╨╣ ╨▓╨╛╨╗╨╜╨╛╨╣ ╤Г╤Е╨╛╨┤╨░ ╨╕╤Б╤Б╨╗╨╡╨┤╨╛╨▓╨░╤В╨╡╨╗╨╡╨╣ ╨║ ╨║╨╛╨╜╨║╤Г╤А╨╡╨╜╤В╨░╨╝",
+      "status": "DRAFT",
+      "createdAt": "2026-06-25T19:02:14.562836+00:00",
+      "materialId": 16,
+      "sourceCount": 2,
+      "candidateType": "MACRO",
+      "normalizedType": "OTHER"
+    },
+    {
+      "type": "cluster_summary",
+      "title": "╨Ю╨▒╤Б╤Г╨╢╨┤╨╡╨╜╨╕╨╡ ╨┐╤А╨╛╨▓╨╡╤А╨║╨╕ ╨╝╨╛╨┤╨╡╨╗╨╕ DeepSeek ╨▓╨╝╨╡╤Б╤В╨╛ Opus 4.8",
+      "status": "DRAFT",
+      "createdAt": "2026-06-25T19:03:13.624458+00:00",
+      "materialId": 17,
+      "sourceCount": 2,
+      "candidateType": "MACRO",
+      "normalizedType": "OTHER"
+    },
+    {
+      "type": "instruction",
+      "title": "╨в╤А╨╡╨▒╨╛╨▓╨░╨╜╨╕╨╡ ╨║ ╤Г╨║╨░╨╖╨░╨╜╨╕╤О 30 ╨╜╨░╨╕╨▒╨╛╨╗╨╡╨╡ ╤З╨░╤Б╤В╤Л╤Е ╨╜╨░╨▓╤Л╨║╨╛╨▓ ╨┐╨╛ ╤Б╨┐╨╡╤Ж╨╕╨░╨╗╤М╨╜╨╛╤Б╤В╨╕",
+      "status": "DRAFT",
+      "createdAt": "2026-06-26T12:39:10.767033+00:00",
+      "materialId": 19,
+      "sourceCount": 1,
+      "candidateType": "SINGLE_MESSAGE",
+      "normalizedType": "OTHER"
+    },
+    {
+      "type": "cluster_summary",
+      "title": "╨Ь╨╛╤Б╨║╨▓╨░: ╨│╨╕╨▒╤А╨╕╨┤╨╜╤Л╨╡ ╨▓╨░╨║╨░╨╜╤Б╨╕╨╕ ╨▓ digital, ╨║╨╛╨╜╤В╨╡╨╜╤В-╨┐╤А╨╛╨┤╨░╨║╤И╨╡╨╜╨╡ ╨╕ B2B-╨┐╤А╨╛╨┤╨░╨╢╨░╤Е",
+      "status": "DRAFT",
+      "createdAt": "2026-06-26T12:42:26.826647+00:00",
+      "materialId": 21,
+      "sourceCount": 2,
+      "candidateType": "MACRO",
+      "normalizedType": "OTHER"
+    },
+    {
+      "type": "REFERENCE",
+      "title": "Sol: ╤А╨╡╨╢╨╕╨╝╤Л ╤А╨░╤Б╤Б╤Г╨╢╨┤╨╡╨╜╨╕╤П, ╨╕╨╜╤Д╤А╨░╤Б╤В╤А╤Г╨║╤В╤Г╤А╨░ ╨╕ ╨╖╨░╤П╨▓╨╗╨╡╨╜╨╜╤Л╨╡ ╨╝╨╡╤А╤Л ╨▒╨╡╨╖╨╛╨┐╨░╤Б╨╜╨╛╤Б╤В╨╕",
+      "status": "DRAFT",
+      "createdAt": "2026-06-27T05:55:42.770953+00:00",
+      "materialId": 32,
+      "sourceCount": 1,
+      "candidateType": "SINGLE_MESSAGE",
+      "normalizedType": "OTHER"
+    }
+  ],
+  "after": {
+    "totalElements": 30,
+    "counts": {
+      "total": 30,
+      "byType": {
+        "GUIDE": 11,
+        "GENERATION": 9,
+        "ANSWER": 1,
+        "SUMMARY": 3,
+        "OTHER": 6
+      },
+      "byStatus": {
+        "DRAFT": 30
+      }
+    },
+    "typeTabSum": 30,
+    "otherFilter": {
+      "totalElements": 6,
+      "ids": [
+        32,
+        21,
+        19,
+        17,
+        16,
+        13
+      ]
+    },
+    "generationFilter": {
+      "totalElements": 9
+    }
+  },
+  "verification": {
+    "backendTests": "mvn test: 70 tests, 0 failures",
+    "targetedBackendTests": "mvn -Dtest=KnowledgeMaterialServiceTest test: 4 tests, 0 failures",
+    "frontendBuild": "npm run build passed",
+    "deploy": "./scripts/deploy-fast.ps1 -Target all completed; backend/frontend healthy; infra remained up",
+    "publicUrl": "deploy status returned public URL HTTP 200",
+    "backendLogs": "No recent ERROR/WARN/Exception lines in reports/materials-counts-backend-logs-20260627.txt",
+    "browserCheck": "Blocked: Kimi WebBridge health returned running=false. API/public verification completed instead."
+  },
+  "dataPolicy": "No DB type values were updated. Unknown/null/legacy types are normalized to OTHER at API/UI layer only."
+}
