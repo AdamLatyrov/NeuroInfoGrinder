@@ -32,6 +32,7 @@ export interface KnowledgeSignal {
   messageDate: string | null;
   sourceText: string | null;
   appMessageUrl: string | null;
+  entities?: string[];
   createdAt: string | null;
   updatedAt: string | null;
 }

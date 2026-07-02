@@ -301,6 +301,11 @@ public final class MaterialEligibilityGate {
         return false;
     }
 
+    /** Extract strong entities (technical domains, models, tools, apis, error codes) from text. Public for UI entity filtering. */
+    public static List<String> strongEntities(String rawText) {
+        return extractStrongEntities(rawText);
+    }
+
     private static List<String> extractStrongEntities(String rawText) {
         List<String> out = new ArrayList<>();
         java.util.regex.Matcher m = DOMAIN.matcher(rawText);

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.larbcorp.neuroinfogrinder2.decisioncore.MaterialEligibilityGate;
 import com.larbcorp.neuroinfogrinder2.replay.MessageUsefulnessResult;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -424,6 +425,10 @@ public class KnowledgeSignalService {
         row.put("senderUsername", rs.getString("resolved_sender_username"));
         row.put("messageDate", iso(rs.getObject("resolved_message_date", OffsetDateTime.class)));
         row.put("sourceText", rs.getString("source_text"));
+        // Extract strong entities (models/tools/apis/domains/error-codes) from the source text so the
+        // UI can filter signals within a topic by entity (e.g. "Claude" inside abuse-risk).
+        String sourceText = rs.getString("source_text");
+        row.put("entities", sourceText == null ? List.of() : MaterialEligibilityGate.strongEntities(sourceText));
         Long chatId = nullableLong(rs, "resolved_telegram_chat_id");
         Long messageId = nullableLong(rs, "resolved_telegram_message_id");
         Long rawId = nullableLong(rs, "resolved_raw_message_id");

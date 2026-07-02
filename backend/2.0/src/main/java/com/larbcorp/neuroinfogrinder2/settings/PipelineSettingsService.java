@@ -128,6 +128,9 @@ public class PipelineSettingsService {
         upsertSetting("materialEligibilityGateShadowEnabled", "0", "INTEGER",
             "Computes the v2 MaterialEligibilityGate verdict (route, tier, technical-entity, evidence sufficiency) for every message/cluster in shadow mode and writes it to semantic_decision_objects. Does NOT change materialization or routing; the legacy MessageUsefulnessClassifier + score thresholds remain authoritative. Enable decisionCoreShadowEnabled too.",
             "0", "1", "0", "decision_core");
+        upsertSetting("materialEligibilityGateActiveEnabled", "0", "INTEGER",
+            "Active admission gate: blocks single-message material candidates the v2 MaterialEligibilityGate routes as REJECT_SAFE (rules/onboarding/test artifacts) or CONTEXT_ONLY (roleplay/fiction/system-prompt/article-digests/LLM-refusals) from reaching LLM Judge, even when their score clears the threshold. Conservative: MANUAL_REVIEW/NEEDS_ENRICHMENT/REVIEW_HIGH_RECALL still reach the Judge. Enable after shadow validation.",
+            "0", "1", "0", "decision_core");
         upsertSetting("decisionCoreFailOpen", "1", "INTEGER",
             "Keeps the replay/live pipeline running if decision-core shadow persistence fails.",
             "0", "1", "1", "decision_core");

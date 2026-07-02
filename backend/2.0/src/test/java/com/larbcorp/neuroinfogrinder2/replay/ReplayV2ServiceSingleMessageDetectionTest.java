@@ -170,13 +170,61 @@ class ReplayV2ServiceSingleMessageDetectionTest {
     }
 
     private static ReplayV2Service service() {
+        return serviceWithActiveGate(false);
+    }
+
+    private static ReplayV2Service serviceWithActiveGate(boolean active) {
         JdbcTemplate jdbc = mock(JdbcTemplate.class);
         when(jdbc.update(anyString(), any(Object[].class))).thenReturn(1);
         PipelineSettingsService settings = mock(PipelineSettingsService.class);
         when(settings.getInt(eq("minSingleMessageTextLength"), any(Integer.class))).thenReturn(500);
+        when(settings.getInt(eq("materialEligibilityGateActiveEnabled"), any(Integer.class))).thenReturn(active ? 1 : 0);
         when(settings.getDouble(eq("singleMessageCandidateThreshold"), any(Double.class))).thenReturn(0.55);
         when(settings.getDouble(eq("directMaterialReadyThreshold"), any(Double.class))).thenReturn(0.72);
         return new ReplayV2Service(jdbc, new ObjectMapper(), mock(ModelWorkerClient.class), mock(ModelhubProviderGateway.class), mock(Environment.class), settings);
+    }
+
+    @Test
+    void activeGateBlocksTestArtifactThatWouldOtherwiseBeCandidate() throws Exception {
+        ReplayV2Service service = serviceWithActiveGate(true);
+        // A controlled-run test artifact with a checklist body that the usefulness classifier would
+        // normally accept as a SINGLE_MESSAGE guide candidate, but the v2 gate routes REJECT_SAFE
+        // because of the [NIGTEST-*] prefix -> active gate must block it from becoming a candidate.
+        Object intel = intel(71L, "[NIGTEST-A02] Мини-чеклист: если API начал отвечать медленно, сначала проверь статус провайдера, затем регион endpoint, потом включи fallback на запасную модель, отдельно залогируй latency, HTTP status и model id. Если ошибка повторяется, сравни ответ через curl и через SDK. Проверь base URL /v1, Bearer authorization header, model id из GET /models.", true, "CANDIDATE");
+        Object embedding = embedding(71L, 71L);
+        Map<String, BigDecimal> metrics = new HashMap<>();
+
+        List<?> candidates = singleMessageDetection(service, 71L, List.of(intel), List.of(embedding), metrics);
+
+        assertThat(candidates).isEmpty();
+    }
+
+    @Test
+    void activeGateBlocksNonMaterialLongFormRoleplay() throws Exception {
+        ReplayV2Service service = serviceWithActiveGate(true);
+        // English roleplay fiction that has numbered structure ("1.", "2.") so the heuristic score can
+        // clear the threshold, but the v2 gate routes CONTEXT_ONLY (plane crash survival scenario) ->
+        // active gate must block it.
+        Object intel = intel(72L, "A plane crashed into a snow forest. Some passengers survived, some died. The passengers that survived have come together and are struggling to survive. 1. We found a village that is cut off from society. 2. How to make guns for survival. 3. The survivors are requesting a gun tutorial. Choose your character and describe your actions. This is a roleplay scenario, survivors come together to survive.", true, "CANDIDATE");
+        Object embedding = embedding(72L, 72L);
+        Map<String, BigDecimal> metrics = new HashMap<>();
+
+        List<?> candidates = singleMessageDetection(service, 72L, List.of(intel), List.of(embedding), metrics);
+
+        assertThat(candidates).isEmpty();
+    }
+
+    @Test
+    void activeGateDisabledStillAllowsTestArtifactCandidate() throws Exception {
+        ReplayV2Service service = serviceWithActiveGate(false);
+        Object intel = intel(73L, "[NIGTEST-A02] Мини-чеклист: если API начал отвечать медленно, сначала проверь статус провайдера, затем регион endpoint, потом включи fallback на запасную модель, отдельно залогируй latency, HTTP status и model id. Если ошибка повторяется, сравни ответ через curl и через SDK. Проверь base URL /v1, Bearer authorization header, model id из GET /models.", true, "CANDIDATE");
+        Object embedding = embedding(73L, 73L);
+        Map<String, BigDecimal> metrics = new HashMap<>();
+
+        List<?> candidates = singleMessageDetection(service, 73L, List.of(intel), List.of(embedding), metrics);
+
+        // With the active gate OFF, the artifact must behave as before (becomes a candidate).
+        assertThat(candidates).hasSize(1);
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})

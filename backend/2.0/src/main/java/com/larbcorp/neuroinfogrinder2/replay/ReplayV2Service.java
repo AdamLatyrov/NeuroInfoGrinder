@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.larbcorp.neuroinfogrinder2.decisioncore.DecisionCoreEnums;
 import com.larbcorp.neuroinfogrinder2.decisioncore.DecisionCoreShadowService;
+import com.larbcorp.neuroinfogrinder2.decisioncore.MaterialEligibilityGate;
 import com.larbcorp.neuroinfogrinder2.signals.KnowledgeSignalService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -2801,6 +2802,33 @@ public class ReplayV2Service {
                 continue;
             }
             if (decision.equals("DIRECT_MATERIAL_READY")) directReadyCount++;
+            // Active Material Eligibility Gate: block obvious non-material (rules/onboarding/test
+            // artifacts, roleplay/fiction/system-prompt, article digests, LLM refusals) from becoming
+            // single-message material candidates, even when the score clears the threshold. This is the
+            // production admission layer ported from the offline v2 lab. Conservative: only REJECT_SAFE
+            // and CONTEXT_ONLY routes are blocked; MANUAL_REVIEW/NEEDS_ENRICHMENT/REVIEW_HIGH_RECALL still
+            // reach LLM Judge. Gated by materialEligibilityGateActiveEnabled (default 0).
+            if (settings.getInt("materialEligibilityGateActiveEnabled", 0) == 1) {
+                java.util.List<String> gateExtraUrls = new java.util.ArrayList<>();
+                JsonNode featLinks = i.features() == null ? null : i.features().path("links");
+                if (featLinks != null && featLinks.isArray()) for (JsonNode u : featLinks) if (u.isTextual()) gateExtraUrls.add(u.asText());
+                JsonNode featHidden = i.features() == null ? null : i.features().path("rawJsonUrls");
+                if (featHidden != null && featHidden.isArray()) for (JsonNode u : featHidden) if (u.isTextual()) gateExtraUrls.add(u.asText());
+                MaterialEligibilityGate.MessageVerdict gateVerdict = MaterialEligibilityGate.evaluateMessage(
+                    i.normalizedText(), text, (featLinks == null ? 0 : featLinks.size()),
+                    usefulness.candidateRoute(), usefulness.rejectReason(), usefulness.proposedMaterialType(), gateExtraUrls);
+                if (MaterialEligibilityGate.ROUTE_REJECT_SAFE.equals(gateVerdict.route())
+                    || MaterialEligibilityGate.ROUTE_CONTEXT_ONLY.equals(gateVerdict.route())) {
+                    String gateReason = MaterialEligibilityGate.ROUTE_REJECT_SAFE.equals(gateVerdict.route())
+                        ? "MATERIAL_ELIGIBILITY_GATE_REJECT_SAFE" : "MATERIAL_ELIGIBILITY_GATE_NON_MATERIAL_LONG_FORM";
+                    ArrayNode gateSignals = json.createArrayNode();
+                    gateSignals.add("MATERIAL_ELIGIBILITY_GATE_BLOCKED");
+                    gateSignals.add(gateReason);
+                    persistRejectedSignal(runId, i, text, gateReason, usefulness);
+                    rejectSingleMessage(runId, i.message().id(), score, gateReason, gateSignals, breakdown);
+                    continue;
+                }
+            }
             jdbc.update("UPDATE replay_run_messages SET final_decision = ?, single_message_score = ?, single_message_rejection_reason = NULL, single_message_signals_json = ?::jsonb, single_message_score_breakdown_json = ?::jsonb, updated_at = now() WHERE run_id = ? AND dataset_message_id = ?",
                 decision, score, write(signals), write(breakdown), runId, i.message().id());
             Long decisionObjectId = decisionCoreMessageId(runId, i.message().id());
