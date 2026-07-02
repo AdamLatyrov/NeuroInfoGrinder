@@ -5,6 +5,7 @@ import {
   BookOpenText,
   CaretRight,
   FileText,
+  Funnel,
   Info,
   MagnifyingGlass,
   Sparkle,
@@ -18,6 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { useDeleteMaterialMutation, useMaterialsQuery, type GuidesSort } from "@/shared/api/guidesApi";
@@ -441,11 +443,19 @@ export function MaterialsPage() {
   });
   const materials = materialsQuery.data?.content ?? [];
   const totalMaterials = materialsQuery.data?.totalElements ?? materials.length;
+  const activeEntity = searchParams.get("entity") ?? "__all__";
+  const entityOptions = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const m of materials) for (const e of m.entities ?? []) counts.set(e, (counts.get(e) ?? 0) + 1);
+    return [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([e]) => e);
+  }, [materials]);
+
   const filtered = useMemo(() => {
     const needle = search.trim().toLowerCase();
     if (activeTab === "SIGNALS") return [];
     return materials
       .filter((material) => typeMatches(activeTab, material))
+      .filter((material) => activeEntity === "__all__" || (material.entities ?? []).includes(activeEntity))
       .filter((material) => {
         if (!needle) {
           return true;
@@ -460,7 +470,14 @@ export function MaterialsPage() {
           .filter(Boolean)
           .some((value) => String(value).toLowerCase().includes(needle));
       });
-  }, [activeTab, materials, search]);
+  }, [activeTab, materials, search, activeEntity]);
+
+  const updateEntity = (value: string) => {
+    const next = new URLSearchParams(searchParams);
+    if (value === "__all__") next.delete("entity");
+    else next.set("entity", value);
+    setSearchParams(next, { replace: true });
+  };
 
   const updateTab = (value: MaterialTab) => {
     const next = new URLSearchParams(searchParams);
@@ -511,6 +528,20 @@ export function MaterialsPage() {
                 placeholder="Поиск по названию, описанию, источнику"
                 className="h-10 pl-9"
               />
+            </div>
+            <div className="flex items-center gap-2">
+              <Funnel size={16} className="text-text-muted" />
+              <Select value={activeEntity} onValueChange={updateEntity}>
+                <SelectTrigger className="h-10 w-[200px]">
+                  <SelectValue placeholder="Все сущности" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">Все сущности</SelectItem>
+                  {entityOptions.map((entity) => (
+                    <SelectItem key={entity} value={entity}>{entity}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <div className="inline-flex rounded-md border border-border-subtle bg-bg-elevated p-1">

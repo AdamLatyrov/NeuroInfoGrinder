@@ -319,6 +319,7 @@ export interface Guide {
   contentTitle: string | null;
   contentSummary: string | null;
   normalizedTopicKey: string | null;
+  entities?: string[];
   contentQualityScore: number | null;
   importanceScore: number | null;
   actionabilityScore: number | null;

@@ -37,6 +37,7 @@ interface GuideSummaryDto {
   contentTitle: string | null;
   contentSummary: string | null;
   normalizedTopicKey: string | null;
+  entities?: string[];
   contentQualityScore: number | null;
   importanceScore: number | null;
   actionabilityScore: number | null;
@@ -366,6 +367,7 @@ function normalizeGuide(dto: GuideSummaryDto | GuideDetailDto): Guide {
     contentTitle,
     contentSummary,
     normalizedTopicKey: dto.normalizedTopicKey ?? null,
+    entities: Array.isArray(dto.entities) ? dto.entities : [],
     contentQualityScore: dto.contentQualityScore ?? null,
     importanceScore: dto.importanceScore ?? null,
     actionabilityScore: dto.actionabilityScore ?? null,

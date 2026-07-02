@@ -122,8 +122,12 @@ public class KnowledgeMaterialService {
         ObjectNode body = parse(rs.getString("body_json"));
         String title = coalesce(rs.getString("title"), body.path("title").asText(null), body.path("recommendedTitle").asText(null));
         String summary = coalesce(rs.getString("summary"), body.path("summary").asText(null));
+        // Extract strong entities (models/tools/apis/domains) from title + body text so the materials
+        // page can filter by entity (e.g. "show materials about Claude").
+        String entityText = (title == null ? "" : title + " ") + (summary == null ? "" : summary + " ") + body.path("text").asText("");
         Map<String, Object> row = new java.util.LinkedHashMap<>();
         row.put("id", rs.getLong("id"));
+        row.put("entities", com.larbcorp.neuroinfogrinder2.decisioncore.MaterialEligibilityGate.strongEntities(entityText));
         row.put("title", title);
         row.put("groupId", null);
         row.put("groupTitle", null);

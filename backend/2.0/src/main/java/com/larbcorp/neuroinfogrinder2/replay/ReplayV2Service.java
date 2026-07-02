@@ -754,11 +754,27 @@ public class ReplayV2Service {
                 markClusterLlmSkip(runId, c, firstPolicyReason(routeDecision, "ROUTE_POLICY_BLOCKED"));
                 continue;
             }
+            // P5: Active gate on cluster/macro path — block clusters whose combined text the v2 gate
+            // routes as REJECT_SAFE (rules/onboarding/test artifacts) or CONTEXT_ONLY (roleplay/fiction/
+            // system-prompt/article-digests/LLM-refusals) from reaching LLM Judge. Gated by the same
+            // materialEligibilityGateActiveEnabled setting as the single-message path.
+            if (settings.getInt("materialEligibilityGateActiveEnabled", 0) == 1) {
+                String clusterText = clusterCombinedText(c, intel);
+                MaterialEligibilityGate.MessageVerdict gateVerdict = MaterialEligibilityGate.evaluateMessage(clusterText, clusterText, 0, null, null, c.artifactType(), List.of());
+                if (MaterialEligibilityGate.ROUTE_REJECT_SAFE.equals(gateVerdict.route())
+                    || MaterialEligibilityGate.ROUTE_CONTEXT_ONLY.equals(gateVerdict.route())) {
+                    clusterRejected++;
+                    String gateReason = MaterialEligibilityGate.ROUTE_REJECT_SAFE.equals(gateVerdict.route())
+                        ? "MATERIAL_ELIGIBILITY_GATE_REJECT_SAFE" : "MATERIAL_ELIGIBILITY_GATE_NON_MATERIAL_LONG_FORM";
+                    markClusterLlmSkip(runId, c, gateReason);
+                    continue;
+                }
+            }
             clusterSent++;
             decisionCoreLedger(decisionCoreClusterId(runId, "MACRO", c.id()), runId, "cluster:macro:" + c.id(), "cluster:macro:" + c.id(), DecisionCoreEnums.CandidateType.CLUSTER, DecisionCoreEnums.LedgerEventType.LLM_SENT, false, List.of(), null, null, BigDecimal.valueOf(gateScore), DecisionCoreEnums.FinalRoute.ROUTE_TO_CLUSTER_CANDIDATE, DecisionCoreEnums.FinalRoute.ROUTE_TO_LLM_JUDGE, c.artifactType(), c.artifactType(), List.of("LLM_JUDGE_SENT_BY_LEGACY_CLUSTER_PATH"), List.of(), List.of(), object("gateScore", gateScore));
             var judge = provider.callJson(runId, "LLM_CLUSTER_JUDGE_AND_ROUTING", prompt(c, intel, "judge", routeDecision), budget, true);
             if (!judge.success()) { if ("BUDGET_BLOCKED".equals(judge.status())) { clusterBudget = 1 + Math.max(0, clusters.size() - clusterSent); break; } clusterRejected++; continue; }
-            boolean lightweightOverride = !approvedJudgeDecision(judge.responseJson()) && shouldAllowLightweightMaterialAfterJudgeReject(judge.responseJson(), routeDecision, gateScore, c.members().size());
+            boolean lightweightOverride = !approvedJudgeDecision(judge.responseJson()) && shouldAllowLightweightMaterialAfterJudgeReject(judge.responseJson(), routeDecision, gateScore, c.members().size(), clusterCombinedText(c, intel));
             if (!approvedJudgeDecision(judge.responseJson()) && !lightweightOverride) { clusterRejected++; continue; }
             double judgeConfidence = lightweightOverride ? Math.max(gateScore, request.minJudgeConfidenceForGenerationOrDefault()) : judge.responseJson().path("confidence").asDouble();
             if (judgeConfidence < request.minJudgeConfidenceForGenerationOrDefault()) { clusterLowConf++; continue; }
@@ -793,7 +809,7 @@ public class ReplayV2Service {
             var judge = provider.callJson(runId, "LLM_CLUSTER_JUDGE_AND_ROUTING", promptSingle(sc, match, intel, "judge", routeDecision), budget, true);
             decisionCoreLedger(decisionCoreMessageId(runId, sc.messageId()), runId, "message:" + sc.messageId(), "single:" + sc.messageId(), DecisionCoreEnums.CandidateType.SINGLE_MESSAGE, judge.success() ? DecisionCoreEnums.LedgerEventType.LLM_SENT : DecisionCoreEnums.LedgerEventType.LLM_SKIPPED, false, List.of(), null, judge.providerCallId(), BigDecimal.valueOf(sc.score()), DecisionCoreEnums.FinalRoute.ROUTE_TO_SINGLE_CANDIDATE, judge.success() ? DecisionCoreEnums.FinalRoute.ROUTE_TO_LLM_JUDGE : DecisionCoreEnums.FinalRoute.REJECT_FOR_MATERIAL_NOW, sc.requiredArtifactType(), sc.requiredArtifactType(), List.of(judge.status()), List.of(), List.of(), judge.responseJson());
             if (!judge.success()) { singleRejected++; continue; }
-            boolean lightweightOverride = !approvedJudgeDecision(judge.responseJson()) && shouldAllowLightweightMaterialAfterJudgeReject(judge.responseJson(), routeDecision, sc.score(), 1);
+            boolean lightweightOverride = !approvedJudgeDecision(judge.responseJson()) && shouldAllowLightweightMaterialAfterJudgeReject(judge.responseJson(), routeDecision, sc.score(), 1, textWithFeatureLinks(match.normalizedText(), match.features()));
             if (!approvedJudgeDecision(judge.responseJson()) && !lightweightOverride) { singleRejected++; continue; }
             double judgeConfidence = lightweightOverride ? Math.max(sc.score(), request.minJudgeConfidenceForGenerationOrDefault()) : judge.responseJson().path("confidence").asDouble();
             if (judgeConfidence < request.minJudgeConfidenceForGenerationOrDefault()) { singleLowConf++; continue; }
@@ -4010,6 +4026,16 @@ public class ReplayV2Service {
                 write(suggestedLabels), artifactType, status, confidence, priority, status);
     }
     private void markClusterLlmSkip(long runId, Cluster c, String reason) { for (Long member : c.members()) jdbc.update("UPDATE replay_run_messages SET llm_skip_reason = ?, updated_at = now() WHERE run_id = ? AND dataset_message_id = ?", reason, runId, member); }
+
+    /** Combined normalized text of a cluster's member messages (for gate entity/non-material checks). */
+    private String clusterCombinedText(Cluster c, List<Intel> intel) {
+        StringBuilder sb = new StringBuilder();
+        for (Long memberId : c.members()) {
+            intel.stream().filter(i -> i.message().id() == memberId).findFirst()
+                .ifPresent(i -> sb.append(i.normalizedText()).append("\n"));
+        }
+        return sb.toString();
+    }
     private void upsertMessage(long runId, long messageId, String status, String ruleDecision, JsonNode ruleLabels, JsonNode scores, Long embeddingId, Long dedupeId, Long microId, Long macroId, boolean llmUsed, String skip, Long labelingId) { jdbc.update("INSERT INTO replay_run_messages (run_id, dataset_message_id, status, rule_decision, final_decision, scores_json, rule_labels_json, embedding_id, dedupe_group_id, microcluster_id, macrocluster_id, llm_used, llm_skip_reason, labeling_item_id) VALUES (?, ?, ?, ?, ?, ?::jsonb, ?::jsonb, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT (run_id, dataset_message_id) DO UPDATE SET status = EXCLUDED.status, rule_decision = EXCLUDED.rule_decision, final_decision = EXCLUDED.final_decision, rule_labels_json = EXCLUDED.rule_labels_json, updated_at = now()", runId, messageId, status, ruleDecision, ruleDecision, write(scores == null ? object() : scores), write(ruleLabels), embeddingId, dedupeId, microId, macroId, llmUsed, skip, labelingId); }
     private void syncRawBackedPipelineTrace(long runId) {
         jdbc.update("""
@@ -4129,8 +4155,20 @@ public class ReplayV2Service {
         return settings.getInt("classicalMlRoutingEnabled", 0) == 1 && isHardRouteBlock(routeDecision);
     }
     boolean shouldAllowLightweightMaterialAfterJudgeReject(JsonNode response, RouteIntelligenceDecision routeDecision, double score, int sourceCount) {
+        return shouldAllowLightweightMaterialAfterJudgeReject(response, routeDecision, score, sourceCount, null);
+    }
+
+    boolean shouldAllowLightweightMaterialAfterJudgeReject(JsonNode response, RouteIntelligenceDecision routeDecision, double score, int sourceCount, String sourceText) {
         if (response == null || score < 0.55) return false;
         if (shouldApplyClassicalRouteBlock(routeDecision)) return false;
+        // P4: single-message lightweight fallback requires a technical entity (model/tool/api/code/
+        // dev-domain). Without one, an opinion/chatter ("ну это нелогично.. я думаю так не работает")
+        // must NOT be turned into a SUMMARY draft via lightweight fallback even if the judge said reject.
+        // Multi-source clusters (sourceCount>=2) already passed evidence sufficiency, so keep them.
+        if (sourceCount <= 1) {
+            List<String> entities = MaterialEligibilityGate.strongEntities(sourceText == null ? "" : sourceText);
+            if (entities.isEmpty()) return false;
+        }
         String route = routeDecision == null || routeDecision.recommendedRoute() == null ? "" : routeDecision.recommendedRoute().trim().toUpperCase(Locale.ROOT);
         JsonNode payload = judgePayload(response);
         String text = (payload.path("decision").asText("") + " " + payload.path("title").asText("") + " " + payload.path("summary").asText("") + " " + payload.path("reason").asText("") + " " + payload.path("rationale").asText("")).toLowerCase(Locale.ROOT);
