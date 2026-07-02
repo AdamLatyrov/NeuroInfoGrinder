@@ -1,0 +1,6 @@
+# entity_overlap / lab-cluster-32
+
+- `msg-00646` `MODEL_RUMOR_OR_PRICING_CLAIM` `RETAIN_CONTEXT_ONLY` opus
+- `msg-00647` `MODEL_RUMOR_OR_PRICING_CLAIM` `RETAIN_CONTEXT_ONLY` deepseek gemini gpt 5 opus
+- `msg-12401` `MODEL_RUMOR_OR_PRICING_CLAIM` `RETAIN_CONTEXT_ONLY` claude opus
+- `msg-14213` `MODEL_RUMOR_OR_PRICING_CLAIM` `RETAIN_CONTEXT_ONLY` gemini gpt 5 opus

@@ -1,0 +1,4 @@
+# entity_overlap / lab-cluster-271
+
+- `msg-15862` `MODEL_RUMOR_OR_PRICING_CLAIM` `RETAIN_CONTEXT_ONLY` gpt-5
+- `msg-19758` `MODEL_RUMOR_OR_PRICING_CLAIM` `RETAIN_CONTEXT_ONLY` 400 claude gpt-5 opus

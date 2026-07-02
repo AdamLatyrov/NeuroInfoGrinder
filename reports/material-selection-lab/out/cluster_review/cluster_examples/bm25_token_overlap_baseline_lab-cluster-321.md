@@ -1,0 +1,5 @@
+# bm25_token_overlap_baseline / lab-cluster-321
+
+- `msg-18980` `MODEL_RUMOR_OR_PRICING_CLAIM` `RETAIN_CONTEXT_ONLY` фейк: claude fable 5 не возвращалась в сети появились скриншоты якобы доступной claude fable 5 однако представители anthropic amol avasare официально опровергли слухи. сообщается что трафик для моделей fable и mythos полностью отключен. появление модели в инте
+- `msg-19035` `MODEL_RUMOR_OR_PRICING_CLAIM` `RETAIN_CONTEXT_ONLY` восстановление доступа к openai team без oauth восстановлена работа team-аккаунтов openai без необходимости oauth-авторизации. ошибка 401 сменилась нормальными ответами api. подтверждена стабильная работа на модели gpt-5.5. ранее наблюдавшиеся сбои в доступе ч
+- `msg-19040` `MODEL_RUMOR_OR_PRICING_CLAIM` `RETAIN_CONTEXT_ONLY` возвращение claude fable 5 в claude code mobile согласно сообщениям пользователей в x anthropic начала постепенное восстановление доступа к модели claude fable 5. первые группы пользователей уже подтвердили наличие модели в мобильной версии claude code. ожидае

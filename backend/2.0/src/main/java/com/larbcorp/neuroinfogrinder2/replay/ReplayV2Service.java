@@ -5,8 +5,12 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.larbcorp.neuroinfogrinder2.decisioncore.DecisionCoreEnums;
+import com.larbcorp.neuroinfogrinder2.decisioncore.DecisionCoreShadowService;
+import com.larbcorp.neuroinfogrinder2.signals.KnowledgeSignalService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowCallbackHandler;
@@ -72,9 +76,12 @@ public class ReplayV2Service {
     private final SemanticAggregationEngine semanticAggregationEngine;
     private final RouteIntelligenceEngine routeIntelligenceEngine;
     private final ReviewFeedbackService reviewFeedbackService;
+    private final KnowledgeSignalService knowledgeSignalService;
+    private final DecisionCoreShadowService decisionCore;
     private final MessageUsefulnessClassifier usefulnessClassifier = new MessageUsefulnessClassifier();
 
-    public ReplayV2Service(JdbcTemplate jdbc, ObjectMapper json, ModelWorkerClient worker, ModelhubProviderGateway provider, Environment environment, PipelineSettingsService settings) {
+    @Autowired
+    public ReplayV2Service(JdbcTemplate jdbc, ObjectMapper json, ModelWorkerClient worker, ModelhubProviderGateway provider, Environment environment, PipelineSettingsService settings, KnowledgeSignalService knowledgeSignalService, DecisionCoreShadowService decisionCore) {
         this(
             jdbc,
             json,
@@ -89,20 +96,44 @@ public class ReplayV2Service {
             ),
             new com.larbcorp.neuroinfogrinder2.replay.classicalml.DefaultSemanticAggregationEngine(json),
             new com.larbcorp.neuroinfogrinder2.replay.classicalml.DefaultRouteIntelligenceEngine(json),
-            new com.larbcorp.neuroinfogrinder2.replay.classicalml.JdbcReviewFeedbackService(json)
+            new com.larbcorp.neuroinfogrinder2.replay.classicalml.JdbcReviewFeedbackService(json),
+            knowledgeSignalService,
+            decisionCore
         );
+    }
+
+    public ReplayV2Service(JdbcTemplate jdbc, ObjectMapper json, ModelWorkerClient worker, ModelhubProviderGateway provider, Environment environment, PipelineSettingsService settings, KnowledgeSignalService knowledgeSignalService) {
+        this(jdbc, json, worker, provider, environment, settings, knowledgeSignalService, null);
+    }
+
+    public ReplayV2Service(JdbcTemplate jdbc, ObjectMapper json, ModelWorkerClient worker, ModelhubProviderGateway provider, Environment environment, PipelineSettingsService settings) {
+        this(jdbc, json, worker, provider, environment, settings, null);
     }
 
     public ReplayV2Service(JdbcTemplate jdbc, ObjectMapper json, ModelWorkerClient worker, ModelhubProviderGateway provider, Environment environment, PipelineSettingsService settings,
                            FeatureVectorBuilder featureVectorBuilder, StageDecisionEngine stageDecisionEngine, SemanticAggregationEngine semanticAggregationEngine) {
         this(jdbc, json, worker, provider, environment, settings, featureVectorBuilder, stageDecisionEngine, semanticAggregationEngine,
             new com.larbcorp.neuroinfogrinder2.replay.classicalml.DefaultRouteIntelligenceEngine(json),
-            new com.larbcorp.neuroinfogrinder2.replay.classicalml.JdbcReviewFeedbackService(json));
+            new com.larbcorp.neuroinfogrinder2.replay.classicalml.JdbcReviewFeedbackService(json),
+            null);
     }
 
     public ReplayV2Service(JdbcTemplate jdbc, ObjectMapper json, ModelWorkerClient worker, ModelhubProviderGateway provider, Environment environment, PipelineSettingsService settings,
-                           FeatureVectorBuilder featureVectorBuilder, StageDecisionEngine stageDecisionEngine, SemanticAggregationEngine semanticAggregationEngine,
-                           RouteIntelligenceEngine routeIntelligenceEngine, ReviewFeedbackService reviewFeedbackService) {
+                            FeatureVectorBuilder featureVectorBuilder, StageDecisionEngine stageDecisionEngine, SemanticAggregationEngine semanticAggregationEngine,
+                            RouteIntelligenceEngine routeIntelligenceEngine, ReviewFeedbackService reviewFeedbackService) {
+        this(jdbc, json, worker, provider, environment, settings, featureVectorBuilder, stageDecisionEngine, semanticAggregationEngine, routeIntelligenceEngine, reviewFeedbackService, null);
+    }
+
+    public ReplayV2Service(JdbcTemplate jdbc, ObjectMapper json, ModelWorkerClient worker, ModelhubProviderGateway provider, Environment environment, PipelineSettingsService settings,
+                            FeatureVectorBuilder featureVectorBuilder, StageDecisionEngine stageDecisionEngine, SemanticAggregationEngine semanticAggregationEngine,
+                            RouteIntelligenceEngine routeIntelligenceEngine, ReviewFeedbackService reviewFeedbackService, KnowledgeSignalService knowledgeSignalService) {
+        this(jdbc, json, worker, provider, environment, settings, featureVectorBuilder, stageDecisionEngine, semanticAggregationEngine, routeIntelligenceEngine, reviewFeedbackService, knowledgeSignalService, null);
+    }
+
+    public ReplayV2Service(JdbcTemplate jdbc, ObjectMapper json, ModelWorkerClient worker, ModelhubProviderGateway provider, Environment environment, PipelineSettingsService settings,
+                            FeatureVectorBuilder featureVectorBuilder, StageDecisionEngine stageDecisionEngine, SemanticAggregationEngine semanticAggregationEngine,
+                            RouteIntelligenceEngine routeIntelligenceEngine, ReviewFeedbackService reviewFeedbackService, KnowledgeSignalService knowledgeSignalService,
+                            DecisionCoreShadowService decisionCore) {
         this.jdbc = jdbc;
         this.json = json;
         this.worker = worker;
@@ -114,44 +145,47 @@ public class ReplayV2Service {
         this.semanticAggregationEngine = semanticAggregationEngine;
         this.routeIntelligenceEngine = routeIntelligenceEngine;
         this.reviewFeedbackService = reviewFeedbackService;
+        this.knowledgeSignalService = knowledgeSignalService;
+        this.decisionCore = decisionCore;
     }
 
     public ReplayPlan plan(ReplayRequest request) {
+        ReplayRequest effective = resolveEffectiveRequest(request, null);
         ModelWorkerClient.WorkerHealth health = worker.health();
         updateWorker(health);
-        long total = count("SELECT count(*) FROM dataset_messages WHERE dataset_id = ?", request.datasetId());
-        int max = request.maxMessagesOrDefault();
+        long total = count("SELECT count(*) FROM dataset_messages WHERE dataset_id = ?", effective.datasetId());
+        int max = effective.maxMessagesOrDefault();
         ObjectNode warnings = json.createObjectNode();
         warnings.put("modelWorker", health.status());
         warnings.put("classifier", health.classifierStatus());
         warnings.put("embeddings", health.embeddingStatus());
         warnings.put("provider", providerConfigured() ? "OK" : "PROVIDER_NOT_CONFIGURED");
         long estimatedMessages = Math.min(total, max);
-        int maxCalls = settings.getInt("maxProviderCallsPerRun", 20);
-        return new ReplayPlan(request.datasetId(), total, health.status(), health.classifierReady(), health.embeddingsReady(), providerConfigured(),
-                Math.round(estimatedMessages * 0.55), Math.max(1, Math.round(estimatedMessages * 0.12)), providerConfigured() ? Math.min(request.maxProviderCallsOrDefault(), maxCalls) : 0,
-                request.maxEstimatedCostUsdOrDefault(), write(warnings));
+        return new ReplayPlan(effective.datasetId(), total, health.status(), health.classifierReady(), health.embeddingsReady(), providerConfigured(),
+                Math.round(estimatedMessages * 0.55), Math.max(1, Math.round(estimatedMessages * 0.12)), providerConfigured() ? effective.maxProviderCallsOrDefault() : 0,
+                effective.maxEstimatedCostUsdOrDefault(), write(warnings));
     }
 
     @Transactional
     public ReplayRun run(ReplayRequest request) {
-        List<Message> messages = loadMessages(request.datasetId(), request.maxMessagesOrDefault());
+        ReplayRequest effective = resolveEffectiveRequest(request, null);
+        List<Message> messages = loadMessages(effective.datasetId(), effective.maxMessagesOrDefault());
         ObjectNode config = json.createObjectNode();
-        config.put("maxMessages", request.maxMessagesOrDefault());
-        config.put("maxProviderCalls", request.maxProviderCalls() != null ? request.maxProviderCalls() : settings.getInt("maxProviderCallsPerRun", 50));
-        config.put("maxEstimatedCostUsd", request.maxEstimatedCostUsd() != null ? request.maxEstimatedCostUsd() : settings.getDouble("maxCostUsdPerRun", 2.0));
-        config.put("semanticSimilarityThreshold", request.semanticSimilarityThreshold() != null ? request.semanticSimilarityThreshold() : settings.getDouble("semanticSimilarityThreshold", 0.66));
-        config.put("minClusterScoreForJudge", request.minClusterScoreForJudge() != null ? request.minClusterScoreForJudge() : settings.getDouble("minClusterScoreForJudge", 0.65));
-        config.put("minJudgeConfidenceForGeneration", request.minJudgeConfidenceForGeneration() != null ? request.minJudgeConfidenceForGeneration() : settings.getDouble("minJudgeConfidenceForGeneration", 0.72));
+        config.put("maxMessages", effective.maxMessagesOrDefault());
+        config.put("maxProviderCalls", effective.maxProviderCallsOrDefault());
+        config.put("maxEstimatedCostUsd", effective.maxEstimatedCostUsdOrDefault());
+        config.put("semanticSimilarityThreshold", effective.semanticSimilarityThresholdOrDefault());
+        config.put("minClusterScoreForJudge", effective.minClusterScoreForJudgeOrDefault());
+        config.put("minJudgeConfidenceForGeneration", effective.minJudgeConfidenceForGenerationOrDefault());
         long runId = JdbcIds.insertReturningId(jdbc, """
                 INSERT INTO replay_runs (dataset_id, run_name, mode, pipeline_version, config_snapshot_json,
                                          model_config_snapshot_json, provider_config_snapshot_json, status,
                                          total_messages, processed_messages)
                 VALUES (?, ?, 'FULL_INTELLIGENCE_REPLAY', ?, ?::jsonb, ?::jsonb, ?::jsonb, 'RUNNING', ?, 0)
-                """, request.datasetId(), blank(request.runName()) ? "Full replay " + Instant.now() : request.runName(), VERSION,
+                """, effective.datasetId(), blank(effective.runName()) ? "Full replay " + Instant.now() : effective.runName(), VERSION,
                 write(config), modelConfig(), providerConfig(), messages.size());
-        log.info("[REPLAY_RUN_STARTED] runId={} datasetId={} messages={}", runId, request.datasetId(), messages.size());
-        return processExistingRun(runId, request, messages);
+        log.info("[REPLAY_RUN_STARTED] runId={} datasetId={} messages={}", runId, effective.datasetId(), messages.size());
+        return processExistingRun(runId, effective, messages);
     }
 
     @Transactional
@@ -160,11 +194,54 @@ public class ReplayV2Service {
         if (!"LIVE_AUTO_RAW_MESSAGES".equals(existing.pipelineVersion())) {
             throw new IllegalArgumentException("Run is not LIVE_AUTO_RAW_MESSAGES: " + runId);
         }
-        ReplayRequest request = new ReplayRequest(existing.datasetId(), existing.runName(), null, null, null, null, null, null);
+        JsonNode configSnapshot = oneOrNull("SELECT config_snapshot_json::text FROM replay_runs WHERE id = ?", runId);
+        ReplayRequest request = resolveEffectiveRequest(
+            new ReplayRequest(existing.datasetId(), existing.runName(), null, null, null, null, null, null),
+            configSnapshot
+        );
         List<Message> messages = loadMessages(request.datasetId(), request.maxMessagesOrDefault());
         jdbc.update("UPDATE replay_runs SET status = 'RUNNING', started_at = COALESCE(started_at, now()), total_messages = ?, processed_messages = 0, error = NULL WHERE id = ?", messages.size(), runId);
         log.info("[LIVE_AUTO_REPLAY_STARTED] runId={} datasetId={} messages={}", runId, request.datasetId(), messages.size());
         return processExistingRun(runId, request, messages);
+    }
+
+    ReplayRequest resolveEffectiveRequest(ReplayRequest request, JsonNode snapshot) {
+        JsonNode safeSnapshot = snapshot == null || !snapshot.isObject() ? json.createObjectNode() : snapshot;
+        Integer maxMessages = request.maxMessages() != null
+            ? request.maxMessages()
+            : integerValue(safeSnapshot, "maxMessages", 500);
+        Integer maxProviderCalls = request.maxProviderCalls() != null
+            ? request.maxProviderCalls()
+            : integerValue(safeSnapshot, "maxProviderCalls", settings.getInt("maxProviderCallsPerRun", 50));
+        Double maxEstimatedCostUsd = request.maxEstimatedCostUsd() != null
+            ? request.maxEstimatedCostUsd()
+            : doubleValue(safeSnapshot, List.of("maxEstimatedCostUsd", "maxCostUsd"), settings.getDouble("maxCostUsdPerRun", 2.0));
+        Double semanticSimilarityThreshold = request.semanticSimilarityThreshold() != null
+            ? request.semanticSimilarityThreshold()
+            : doubleValue(safeSnapshot, List.of("semanticSimilarityThreshold"), settings.getDouble("semanticSimilarityThreshold", 0.66));
+        Double minClusterScoreForJudge = request.minClusterScoreForJudge() != null
+            ? request.minClusterScoreForJudge()
+            : doubleValue(safeSnapshot, List.of("minClusterScoreForJudge"), settings.getDouble("minClusterScoreForJudge", 0.65));
+        Double minJudgeConfidenceForGeneration = request.minJudgeConfidenceForGeneration() != null
+            ? request.minJudgeConfidenceForGeneration()
+            : doubleValue(safeSnapshot, List.of("minJudgeConfidenceForGeneration"), settings.getDouble("minJudgeConfidenceForGeneration", 0.72));
+        return new ReplayRequest(
+            request.datasetId(), request.runName(), maxMessages, maxProviderCalls, maxEstimatedCostUsd,
+            semanticSimilarityThreshold, minClusterScoreForJudge, minJudgeConfidenceForGeneration
+        );
+    }
+
+    private int integerValue(JsonNode snapshot, String field, int fallback) {
+        JsonNode value = snapshot.path(field);
+        return value.isNumber() ? value.asInt() : fallback;
+    }
+
+    private double doubleValue(JsonNode snapshot, List<String> fields, double fallback) {
+        for (String field : fields) {
+            JsonNode value = snapshot.path(field);
+            if (value.isNumber()) return value.asDouble();
+        }
+        return fallback;
     }
 
     private ReplayRun processExistingRun(long runId, ReplayRequest request, List<Message> messages) {
@@ -238,6 +315,15 @@ public class ReplayV2Service {
                     write(f.path("questionAnswer")), write(labels), write(object("hardSignal", hard)), hard, decision, write(reasons));
             upsertMessage(runId, message.id(), decision.equals("SUPPRESS") ? "SUPPRESSED" : "CANDIDATE", decision, labels, null, null, null, null, null, false, decision.equals("SUPPRESS") ? "RULE_SUPPRESS" : null, null);
             persistShadowSemanticDecisionForMessage(runId, message.id(), message);
+            Long decisionObjectId = decisionCoreMessage(runId, message.id(), f, normalized, decision, hard);
+            decisionCoreObserve(decisionObjectId, runId, "NORMALIZATION", "ReplayV2Service", "MESSAGE_NORMALIZED", object("textLength", normalized.length(), "ruleDecision", decision), List.of("NORMALIZED"), null);
+            decisionCoreObserve(decisionObjectId, runId, "FEATURE_EXTRACTION", "ReplayV2Service", "STRUCTURAL_FEATURES", f, List.of(hard ? "HARD_SIGNAL" : "NO_HARD_SIGNAL"), null);
+            if (decision.equals("ACCUMULATE") || f.path("linkCount").asInt() > 0 || f.path("hiddenLinkCount").asInt() > 0) {
+                decisionCoreRetain(runId, message.id(), decisionObjectId, f.path("linkCount").asInt() > 0 ? "link_only" : "context", decision.equals("ACCUMULATE") ? "ACCUMULATE_RETAINED_FOR_CONTEXT" : "LINK_RETAINED_FOR_ENRICHMENT");
+            }
+            if (f.path("linkCount").asInt() > 0 || f.path("hiddenLinkCount").asInt() > 0) {
+                for (JsonNode link : f.path("links")) decisionCoreEnqueueLink(decisionObjectId, message.id(), link.asText());
+            }
             result.add(new Intel(id, message, normalized, f, hard, decision));
         }
         metric(metrics, "messages_suppressed", result.stream().filter(i -> i.ruleDecision().equals("SUPPRESS")).count());
@@ -371,6 +457,11 @@ public class ReplayV2Service {
                     updated_at = now()
                 WHERE run_id = ? AND dataset_message_id = ?
                 """, write(labels), finalDecision, finalDecision, skipReason, runId, message.message().id());
+        Long decisionObjectId = decisionCoreMessageId(runId, message.message().id());
+        decisionCoreObserve(decisionObjectId, runId, "BOOTSTRAP_CLASSIFICATION", "ModelWorkerClient", "CLASSIFICATION_RESULT", item, List.of(top), confidence);
+        if (top.equals("NOISE_OR_CHAT") && message.hardSignal()) {
+            decisionCoreRetain(runId, message.message().id(), decisionObjectId, "context", "NOISE_WITH_HARD_SIGNAL_RETAINED");
+        }
         return top.equals("NOISE_OR_CHAT") ? 1 : 0;
     }
 
@@ -402,6 +493,8 @@ public class ReplayV2Service {
                     updated_at = now()
                 WHERE run_id = ? AND dataset_message_id = ?
                 """, skipReason, runId, messageId);
+        Long decisionObjectId = decisionCoreMessageId(runId, messageId);
+        decisionCoreObserve(decisionObjectId, runId, "BOOTSTRAP_CLASSIFICATION", "ReplayV2Service", "CLASSIFICATION_SKIPPED", details, List.of(skipReason), 0.0);
     }
 
     private void recordStageSkip(long runId, long messageId, String stage, String reason, JsonNode details) {
@@ -418,9 +511,12 @@ public class ReplayV2Service {
         long started = System.nanoTime();
         Set<Long> bertNoise = new HashSet<>();
         Set<Long> bertSkipped = new HashSet<>();
+        Map<Long, String> labels = new HashMap<>();
+        Map<Long, Double> confidences = new HashMap<>();
         jdbc.query("SELECT dataset_message_id FROM message_classifications WHERE run_id = ? AND top_label = 'NOISE_OR_CHAT'", (RowCallbackHandler) rs -> bertNoise.add(rs.getLong(1)), runId);
         jdbc.query("SELECT dataset_message_id FROM message_classifications WHERE run_id = ? AND classification_source LIKE 'SKIPPED_%'", (RowCallbackHandler) rs -> bertSkipped.add(rs.getLong(1)), runId);
-        List<Intel> input = intel.stream().filter(i -> !bertSkipped.contains(i.message().id()) && (i.hardSignal() || !bertNoise.contains(i.message().id())) && i.normalizedText().length() >= 24).toList();
+        jdbc.query("SELECT dataset_message_id, top_label, confidence FROM message_classifications WHERE run_id = ?", (RowCallbackHandler) rs -> { labels.put(rs.getLong("dataset_message_id"), rs.getString("top_label")); confidences.put(rs.getLong("dataset_message_id"), rs.getDouble("confidence")); }, runId);
+        List<Intel> input = intel.stream().filter(i -> !bertSkipped.contains(i.message().id()) && (i.hardSignal() || !bertNoise.contains(i.message().id())) && i.normalizedText().length() >= 24 && !nonMaterialSignalCandidate(i, labels, confidences)).toList();
         if (input.isEmpty()) {
             metric(metrics, "embedding_count", 0);
             metric(metrics, "embedding_skipped_count", intel.size());
@@ -450,6 +546,8 @@ public class ReplayV2Service {
                     RETURNING id
                     """, runId, messageId, modelId, write(item.path("embedding")), source.normalizedText(), Hashing.sha256(source.normalizedText()));
             jdbc.update("UPDATE replay_run_messages SET embedding_id = ?, updated_at = now() WHERE run_id = ? AND dataset_message_id = ?", embeddingId, runId, messageId);
+            Long decisionObjectId = decisionCoreMessageId(runId, messageId);
+            decisionCoreObserve(decisionObjectId, runId, "EMBEDDINGS", "ModelWorkerClient", "MESSAGE_EMBEDDED", object("embeddingId", embeddingId, "embeddingKind", embeddingKind), List.of("EMBEDDED_FOR_SIMILARITY"), null);
             result.add(new Embedding(embeddingId, messageId, vector(item.path("embedding")), embeddingKind));
         }
         recordModelCall(runId, "BGE_EMBEDDINGS", "EMBED_BATCH", input.size(), result.size(), degraded ? "PROCESSED_DEGRADED" : "SUCCESS", elapsed(started), degraded ? "DEGRADED_HASH_VECTOR" : null);
@@ -460,10 +558,25 @@ public class ReplayV2Service {
         return result;
     }
 
+    private boolean nonMaterialSignalCandidate(Intel intel, Map<Long, String> labels, Map<Long, Double> confidences) {
+        String text = textWithFeatureLinks(intel.normalizedText(), intel.features());
+        if (text == null || text.isBlank()) return true;
+        MessageUsefulnessResult usefulness = usefulnessClassifier.classify(
+                text,
+                labels.getOrDefault(intel.message().id(), "NOISE_OR_CHAT"),
+                confidences.getOrDefault(intel.message().id(), 0.0),
+                intel.hardSignal()
+        );
+        String reason = usefulness.rejectReason() == null ? "" : usefulness.rejectReason();
+        String contentClass = usefulness.contentClass() == null ? "" : usefulness.contentClass();
+        return Set.of("LINK_ONLY", "PROMO_ALONE", "ABUSE_OR_FRAUD", "ACCESS_CIRCUMVENTION", "LOW_VALUE").contains(contentClass)
+                || Set.of("NEEDS_LINK_ENRICHMENT", "PROMO_ALONE", "ABUSE_OR_FRAUD", "RISK_SENSITIVE_MANUAL_ONLY", "RISK_SENSITIVE_MANUAL_REVIEW", "LOW_VALUE").contains(reason);
+    }
+
     private void dedupe(long runId, List<Intel> intel, Map<String, BigDecimal> metrics) {
         long started = System.nanoTime();
         Map<String, List<Intel>> groups = new LinkedHashMap<>();
-        for (Intel i : intel) groups.computeIfAbsent(Hashing.sha256(i.normalizedText().toLowerCase(Locale.ROOT)), ignored -> new ArrayList<>()).add(i);
+        for (Intel i : intel) groups.computeIfAbsent(Hashing.sha256(canonicalSourceKey(i.normalizedText())), ignored -> new ArrayList<>()).add(i);
         int duplicates = 0;
         for (Map.Entry<String, List<Intel>> entry : groups.entrySet()) {
             if (entry.getValue().size() < 2) continue;
@@ -473,6 +586,11 @@ public class ReplayV2Service {
             for (Intel i : group) {
                 jdbc.update("INSERT INTO dedupe_group_members (group_id, dataset_message_id, similarity, reason_json) VALUES (?, ?, 1, ?::jsonb) ON CONFLICT DO NOTHING", groupId, i.message().id(), write(object("reason", "same normalized hash")));
                 jdbc.update("UPDATE replay_run_messages SET dedupe_group_id = ?, llm_skip_reason = CASE WHEN dataset_message_id <> ? THEN 'DUPLICATE' ELSE llm_skip_reason END WHERE run_id = ? AND dataset_message_id = ?", groupId, group.get(0).message().id(), runId, i.message().id());
+                Long decisionObjectId = decisionCoreMessageId(runId, i.message().id());
+                decisionCoreDedupeIdentity("exact_text", entry.getKey(), decisionObjectId, object("dedupeGroupId", groupId, "canonicalDatasetMessageId", group.get(0).message().id()));
+                if (i.message().id() != group.get(0).message().id()) {
+                    decisionCoreLedger(decisionObjectId, runId, "dedupe:" + entry.getKey(), "message:" + i.message().id(), DecisionCoreEnums.CandidateType.SINGLE_MESSAGE, DecisionCoreEnums.LedgerEventType.DUPLICATE_SUPPRESSED, false, List.of("message:" + group.get(0).message().id()), "message:" + group.get(0).message().id(), null, null, DecisionCoreEnums.FinalRoute.NO_DECISION, DecisionCoreEnums.FinalRoute.RETAIN_FOR_CONTEXT, null, null, List.of("EXACT_NORMALIZED_DUPLICATE"), List.of(i.message().id()), List.of(), object("dedupeGroupId", groupId));
+                }
             }
         }
         metric(metrics, "duplicate_count", duplicates);
@@ -490,6 +608,7 @@ public class ReplayV2Service {
                 if (sim >= threshold) {
                     result.add(new Neighbor(embeddings.get(i).messageId(), embeddings.get(j).messageId(), sim));
                     jdbc.update("INSERT INTO semantic_neighbors (run_id, source_dataset_message_id, target_dataset_message_id, similarity, reason_json) VALUES (?, ?, ?, ?, ?::jsonb)", runId, embeddings.get(i).messageId(), embeddings.get(j).messageId(), sim, write(object("method", embeddings.get(i).kind() + "_COSINE", "threshold", threshold)));
+                    decisionCoreRelation(runId, embeddings.get(i).messageId(), embeddings.get(j).messageId(), "embedding_similarity", BigDecimal.valueOf(sim), false, object("method", embeddings.get(i).kind() + "_COSINE", "threshold", threshold));
                 }
             }
         }
@@ -502,9 +621,15 @@ public class ReplayV2Service {
         long started = System.nanoTime();
         Map<Long, Set<Long>> graph = new LinkedHashMap<>();
         embeddings.forEach(e -> graph.putIfAbsent(e.messageId(), new HashSet<>()));
-        neighbors.forEach(n -> { graph.computeIfAbsent(n.sourceId(), k -> new HashSet<>()).add(n.targetId()); graph.computeIfAbsent(n.targetId(), k -> new HashSet<>()).add(n.sourceId()); });
         Map<Long, Intel> byId = new HashMap<>();
         intel.forEach(i -> byId.put(i.message().id(), i));
+        neighbors.forEach(n -> {
+            String sourceBucket = materialBucketForIntel(byId.get(n.sourceId()));
+            String targetBucket = materialBucketForIntel(byId.get(n.targetId()));
+            if (!sourceBucket.equals(targetBucket)) return;
+            graph.computeIfAbsent(n.sourceId(), k -> new HashSet<>()).add(n.targetId());
+            graph.computeIfAbsent(n.targetId(), k -> new HashSet<>()).add(n.sourceId());
+        });
         Set<Long> seen = new HashSet<>();
         List<Cluster> clusters = new ArrayList<>();
         int seq = 1;
@@ -526,7 +651,10 @@ public class ReplayV2Service {
                 jdbc.update("INSERT INTO microcluster_members (microcluster_id, dataset_message_id, role, similarity, edge_weight, reason_json) VALUES (?, ?, 'MEMBER', ?, 0.80, ?::jsonb) ON CONFLICT DO NOTHING", clusterId, member, semanticThreshold, write(object("reason", "semantic similarity plus extracted feature overlap")));
                 jdbc.update("UPDATE replay_run_messages SET microcluster_id = ?, updated_at = now() WHERE run_id = ? AND dataset_message_id = ?", clusterId, runId, member);
             }
-            clusters.add(new Cluster(clusterId, title, score, members));
+            String artifactType = materialBucketForMembers(members, byId);
+            Long decisionObjectId = decisionCoreCluster(runId, "MICRO", clusterId, members, artifactType, score, object("method", "SEMANTIC_CONNECTED_COMPONENT", "title", title));
+            decisionCoreLedger(decisionObjectId, runId, "cluster:micro:" + clusterId, "cluster:micro:" + clusterId, DecisionCoreEnums.CandidateType.CLUSTER, DecisionCoreEnums.LedgerEventType.CANDIDATE_CREATED, false, List.of(), null, null, BigDecimal.valueOf(score), null, DecisionCoreEnums.FinalRoute.ROUTE_TO_CLUSTER_CANDIDATE, null, artifactType, List.of("MICROCLUSTER_CANDIDATE"), List.of(), List.of(), object("memberCount", members.size()));
+            clusters.add(new Cluster(clusterId, title, score, artifactType, members));
         }
         metric(metrics, "microcluster_count", clusters.size());
         stage(runId, "MICROCLUSTERING", "COMPLETED", embeddings.size(), clusters.size(), 0, 0, 0, object("microcluster_count", clusters.size()), null, elapsed(started));
@@ -537,7 +665,7 @@ public class ReplayV2Service {
     private List<Cluster> macroclusters(long runId, List<Cluster> micro, Map<String, BigDecimal> metrics) {
         long started = System.nanoTime();
         Map<String, List<Cluster>> grouped = new LinkedHashMap<>();
-        for (Cluster c : micro) grouped.computeIfAbsent(firstWord(c.title()), k -> new ArrayList<>()).add(c);
+        for (Cluster c : micro) grouped.computeIfAbsent(c.artifactType() + ":" + firstWord(c.title()), k -> new ArrayList<>()).add(c);
         List<Cluster> result = new ArrayList<>();
         for (Map.Entry<String, List<Cluster>> entry : grouped.entrySet()) {
             int count = entry.getValue().stream().mapToInt(c -> c.members().size()).sum();
@@ -549,7 +677,10 @@ public class ReplayV2Service {
                 jdbc.update("INSERT INTO macrocluster_members (macrocluster_id, microcluster_id, similarity, reason_json) VALUES (?, ?, 0.75, ?::jsonb) ON CONFLICT DO NOTHING", id, c.id(), write(object("reason", "shared topic/entity key")));
                 jdbc.update("UPDATE replay_run_messages SET macrocluster_id = ?, updated_at = now() WHERE run_id = ? AND microcluster_id = ?", id, runId, c.id());
             }
-            result.add(new Cluster(id, "Macro: " + entry.getKey(), score, members));
+            String artifactType = entry.getValue().stream().map(Cluster::artifactType).filter(v -> !blank(v)).findFirst().orElse("SUMMARY");
+            Long decisionObjectId = decisionCoreCluster(runId, "MACRO", id, members, artifactType, score, object("reason", "shared topic/entity key", "legacyMacroKey", entry.getKey()));
+            decisionCoreLedger(decisionObjectId, runId, "cluster:macro:" + id, "cluster:macro:" + id, DecisionCoreEnums.CandidateType.CLUSTER, DecisionCoreEnums.LedgerEventType.CANDIDATE_CREATED, false, List.of(), null, null, BigDecimal.valueOf(score), null, DecisionCoreEnums.FinalRoute.ROUTE_TO_CLUSTER_CANDIDATE, null, artifactType, List.of("MACROCLUSTER_CANDIDATE", "COHERENCE_REPORT_REQUIRED"), List.of(), List.of(), object("memberCount", members.size(), "microclusterCount", entry.getValue().size()));
+            result.add(new Cluster(id, "Macro: " + entry.getKey(), score, artifactType, members));
         }
         metric(metrics, "macrocluster_count", result.size());
         stage(runId, "MACROCLUSTERING", "COMPLETED", micro.size(), result.size(), 0, 0, 0, object("macrocluster_count", result.size()), null, elapsed(started));
@@ -610,41 +741,69 @@ public class ReplayV2Service {
         int singleSent = 0; int singleRejected = 0; int singleLowConf = 0; int singleBudget = 0;
         int discussionSent = 0; int discussionRejected = 0; int discussionLowConf = 0; int discussionBudget = 0;
         int generated = 0;
+        Set<Long> discussionCoveredMessages = settings.getInt("preferDiscussionOverSingleMessage", 1) == 1
+            ? discussionCandidates.stream().flatMap(candidate -> candidate.messages().stream()).map(i -> i.message().id()).collect(Collectors.toSet())
+            : Set.of();
         for (Cluster c : clusters) {
             double gateScore = finalScores.getOrDefault(c.id(), c.score());
             if (gateScore < request.minClusterScoreForJudgeOrDefault()) { clusterLow++; markClusterLlmSkip(runId, c, "LOW_CLUSTER_SCORE"); continue; }
             RouteIntelligenceDecision routeDecision = loadClusterRouteDecision(c.id());
-            if (routeDecision != null && routeDecision.blocked()) {
+            if (shouldApplyClassicalRouteBlock(routeDecision)) {
                 clusterRejected++;
                 markClusterLlmSkip(runId, c, firstPolicyReason(routeDecision, "ROUTE_POLICY_BLOCKED"));
                 continue;
             }
             clusterSent++;
+            decisionCoreLedger(decisionCoreClusterId(runId, "MACRO", c.id()), runId, "cluster:macro:" + c.id(), "cluster:macro:" + c.id(), DecisionCoreEnums.CandidateType.CLUSTER, DecisionCoreEnums.LedgerEventType.LLM_SENT, false, List.of(), null, null, BigDecimal.valueOf(gateScore), DecisionCoreEnums.FinalRoute.ROUTE_TO_CLUSTER_CANDIDATE, DecisionCoreEnums.FinalRoute.ROUTE_TO_LLM_JUDGE, c.artifactType(), c.artifactType(), List.of("LLM_JUDGE_SENT_BY_LEGACY_CLUSTER_PATH"), List.of(), List.of(), object("gateScore", gateScore));
             var judge = provider.callJson(runId, "LLM_CLUSTER_JUDGE_AND_ROUTING", prompt(c, intel, "judge", routeDecision), budget, true);
             if (!judge.success()) { if ("BUDGET_BLOCKED".equals(judge.status())) { clusterBudget = 1 + Math.max(0, clusters.size() - clusterSent); break; } clusterRejected++; continue; }
-            if (!approvedJudgeDecision(judge.responseJson())) { clusterRejected++; continue; }
-            if (judge.responseJson().path("confidence").asDouble() < request.minJudgeConfidenceForGenerationOrDefault()) { clusterLowConf++; continue; }
+            boolean lightweightOverride = !approvedJudgeDecision(judge.responseJson()) && shouldAllowLightweightMaterialAfterJudgeReject(judge.responseJson(), routeDecision, gateScore, c.members().size());
+            if (!approvedJudgeDecision(judge.responseJson()) && !lightweightOverride) { clusterRejected++; continue; }
+            double judgeConfidence = lightweightOverride ? Math.max(gateScore, request.minJudgeConfidenceForGenerationOrDefault()) : judge.responseJson().path("confidence").asDouble();
+            if (judgeConfidence < request.minJudgeConfidenceForGenerationOrDefault()) { clusterLowConf++; continue; }
             var generation = provider.callJson(runId, "KNOWLEDGE_GENERATION", prompt(c, intel, "generation", routeDecision), budget, true);
-            if (!generation.success() && "BUDGET_BLOCKED".equals(generation.status())) { clusterBudget = Math.max(0, clusters.size() - clusterSent); break; }
-            if (generation.success()) { long id = knowledge(runId, c, generation.responseJson(), judge.responseJson().path("confidence").asDouble()); generated++; }
+            if (generation.success() && generationUsable(generation.responseJson())) { long id = knowledge(runId, c, generation.responseJson(), judgeConfidence); generated++; }
+            else if (lightweightOverride) { long id = knowledge(runId, c, lightweightMaterial(c, intel, judge.responseJson()), judgeConfidence); generated++; }
+            else if ("BUDGET_BLOCKED".equals(generation.status())) { clusterBudget = Math.max(0, clusters.size() - clusterSent); break; }
         }
         for (SingleMessageCandidate sc : singleCandidates) {
+            if (discussionCoveredMessages.contains(sc.messageId())) {
+                singleRejected++;
+                decisionCoreLedger(decisionCoreMessageId(runId, sc.messageId()), runId, "message:" + sc.messageId(), "single:" + sc.messageId(), DecisionCoreEnums.CandidateType.SINGLE_MESSAGE, DecisionCoreEnums.LedgerEventType.LOSER_RECORDED, false, List.of("discussion:covered"), null, null, BigDecimal.valueOf(sc.score()), DecisionCoreEnums.FinalRoute.ROUTE_TO_SINGLE_CANDIDATE, DecisionCoreEnums.FinalRoute.RETAIN_FOR_CONTEXT, sc.requiredArtifactType(), null, List.of("DISCUSSION_CANDIDATE_PREFERRED_OVER_SINGLE_MESSAGE"), List.of(sc.messageId()), List.of(), object("preference", "preferDiscussionOverSingleMessage"));
+                continue;
+            }
             singleSent++;
             Intel match = intel.stream().filter(i -> i.message().id() == sc.messageId()).findFirst().orElse(null);
             if (match == null) { singleRejected++; continue; }
-            RouteIntelligenceDecision routeDecision = loadMessageRouteDecision(runId, sc.messageId());
-            if (routeDecision != null && routeDecision.blocked()) {
+            String singleBlockReason = singleMessageMaterialBlockReason(sc, match);
+            if (singleBlockReason != null) {
                 singleRejected++;
-                rejectSingleMessage(runId, sc.messageId(), sc.score(), firstPolicyReason(routeDecision, "ROUTE_POLICY_BLOCKED"), sc.signals(), routeDecision.reasonBundle());
+                rejectSingleMessage(runId, sc.messageId(), sc.score(), singleBlockReason, sc.signals(), sc.usefulness());
                 continue;
             }
-            var judge = provider.callJson(runId, "LLM_CLUSTER_JUDGE_AND_ROUTING", promptSingle(sc, match, "judge", routeDecision), budget, true);
+            RouteIntelligenceDecision routeDecision = loadMessageRouteDecision(runId, sc.messageId());
+            if (shouldApplyClassicalRouteBlock(routeDecision)) {
+                singleRejected++;
+                String reason = firstPolicyReason(routeDecision, "ROUTE_POLICY_BLOCKED");
+                persistRejectedSignal(runId, match, textWithFeatureLinks(match.normalizedText(), match.features()), reason, null);
+                rejectSingleMessage(runId, sc.messageId(), sc.score(), reason, sc.signals(), routeDecision.reasonBundle());
+                continue;
+            }
+            var judge = provider.callJson(runId, "LLM_CLUSTER_JUDGE_AND_ROUTING", promptSingle(sc, match, intel, "judge", routeDecision), budget, true);
+            decisionCoreLedger(decisionCoreMessageId(runId, sc.messageId()), runId, "message:" + sc.messageId(), "single:" + sc.messageId(), DecisionCoreEnums.CandidateType.SINGLE_MESSAGE, judge.success() ? DecisionCoreEnums.LedgerEventType.LLM_SENT : DecisionCoreEnums.LedgerEventType.LLM_SKIPPED, false, List.of(), null, judge.providerCallId(), BigDecimal.valueOf(sc.score()), DecisionCoreEnums.FinalRoute.ROUTE_TO_SINGLE_CANDIDATE, judge.success() ? DecisionCoreEnums.FinalRoute.ROUTE_TO_LLM_JUDGE : DecisionCoreEnums.FinalRoute.REJECT_FOR_MATERIAL_NOW, sc.requiredArtifactType(), sc.requiredArtifactType(), List.of(judge.status()), List.of(), List.of(), judge.responseJson());
             if (!judge.success()) { singleRejected++; continue; }
-            if (!approvedJudgeDecision(judge.responseJson())) { singleRejected++; continue; }
-            if (judge.responseJson().path("confidence").asDouble() < request.minJudgeConfidenceForGenerationOrDefault()) { singleLowConf++; continue; }
-            var generation = provider.callJson(runId, "KNOWLEDGE_GENERATION", promptSingle(sc, match, "generation", routeDecision), budget, true);
-            if (generation.success()) {
-                long id = knowledgeSingle(runId, sc, match, generation.responseJson(), judge.responseJson().path("confidence").asDouble());
+            boolean lightweightOverride = !approvedJudgeDecision(judge.responseJson()) && shouldAllowLightweightMaterialAfterJudgeReject(judge.responseJson(), routeDecision, sc.score(), 1);
+            if (!approvedJudgeDecision(judge.responseJson()) && !lightweightOverride) { singleRejected++; continue; }
+            double judgeConfidence = lightweightOverride ? Math.max(sc.score(), request.minJudgeConfidenceForGenerationOrDefault()) : judge.responseJson().path("confidence").asDouble();
+            if (judgeConfidence < request.minJudgeConfidenceForGenerationOrDefault()) { singleLowConf++; continue; }
+            var generation = provider.callJson(runId, "KNOWLEDGE_GENERATION", promptSingle(sc, match, intel, "generation", routeDecision), budget, true);
+            if (generation.success() && generationUsable(generation.responseJson())) {
+                long id = knowledgeSingle(runId, sc, match, generation.responseJson(), judgeConfidence);
+                decisionCoreLedger(decisionCoreMessageId(runId, sc.messageId()), runId, "message:" + sc.messageId(), "single:" + sc.messageId(), DecisionCoreEnums.CandidateType.SINGLE_MESSAGE, DecisionCoreEnums.LedgerEventType.WINNER_SELECTED, true, List.of(), null, generation.providerCallId(), BigDecimal.valueOf(sc.score()), DecisionCoreEnums.FinalRoute.ROUTE_TO_LLM_JUDGE, DecisionCoreEnums.FinalRoute.MATERIAL_DRAFT_ALLOWED, sc.requiredArtifactType(), sc.requiredArtifactType(), List.of("DRAFT_CREATED_BY_LEGACY_SINGLE_PATH"), List.of(), List.of(), object("knowledgeItemId", id));
+                generated++;
+            } else if (lightweightOverride || approvedJudgeDecision(judge.responseJson())) {
+                long id = knowledgeSingle(runId, sc, match, lightweightMaterial(sc, match, judge.responseJson()), judgeConfidence);
+                decisionCoreLedger(decisionCoreMessageId(runId, sc.messageId()), runId, "message:" + sc.messageId(), "single:" + sc.messageId(), DecisionCoreEnums.CandidateType.SINGLE_MESSAGE, DecisionCoreEnums.LedgerEventType.FALLBACK_DRAFT_ALLOWED, true, List.of(), null, null, BigDecimal.valueOf(sc.score()), DecisionCoreEnums.FinalRoute.ROUTE_TO_LLM_JUDGE, DecisionCoreEnums.FinalRoute.DRAFT_FALLBACK_NEEDS_REVIEW, sc.requiredArtifactType(), sc.requiredArtifactType(), List.of("LEGACY_LIGHTWEIGHT_FALLBACK_CREATED", "REVIEW_REQUIRED_IN_DECISION_CORE"), List.of(), List.of(), object("knowledgeItemId", id));
                 generated++;
             }
         }
@@ -659,21 +818,23 @@ public class ReplayV2Service {
                 continue;
             }
             RouteIntelligenceDecision routeDecision = loadDiscussionRouteDecision(dc.segmentId());
-            if (routeDecision != null && routeDecision.blocked()) {
+            if (shouldApplyClassicalRouteBlock(routeDecision)) {
                 discussionRejected++;
                 markDiscussionSkipped(runId, dc, firstPolicyReason(routeDecision, "ROUTE_POLICY_BLOCKED"));
                 continue;
             }
             discussionSent++;
             var judge = provider.callJson(runId, "DISCUSSION_SEGMENT_JUDGE", promptDiscussion(dc, "judge", null, routeDecision), budget, true);
+            decisionCoreLedger(dc.segmentId() == null ? null : decisionCoreDiscussionId(runId, dc.segmentId()), runId, "discussion:" + dc.segmentId(), "discussion:" + dc.segmentId(), DecisionCoreEnums.CandidateType.DISCUSSION_SEGMENT, judge.success() ? DecisionCoreEnums.LedgerEventType.LLM_SENT : DecisionCoreEnums.LedgerEventType.LLM_SKIPPED, false, List.of(), null, judge.providerCallId(), BigDecimal.valueOf(dc.score()), DecisionCoreEnums.FinalRoute.ROUTE_TO_DISCUSSION_ASSEMBLY, judge.success() ? DecisionCoreEnums.FinalRoute.ROUTE_TO_LLM_JUDGE : DecisionCoreEnums.FinalRoute.REJECT_FOR_MATERIAL_NOW, dc.proposedMaterialType(), dc.proposedMaterialType(), List.of(judge.status()), List.of(), List.of(), judge.responseJson());
             markDiscussionStage(runId, dc, "DISCUSSION_SEGMENT_LLM_JUDGE", judge.status(), judge.responseJson(), judge.providerCallId(), null);
             if (!judge.success()) { if ("BUDGET_BLOCKED".equals(judge.status())) { discussionBudget = 1 + Math.max(0, discussionCandidates.size() - discussionSent); break; } discussionRejected++; markDiscussionSkipped(runId, dc, "GENERATION_PROVIDER_ERROR"); if (settings.getInt("discussionSegmentStopOnProviderError", 1) == 1) break; continue; }
             if (!approvedJudgeDecision(judge.responseJson())) { discussionRejected++; markDiscussionSkipped(runId, dc, "LLM_REJECTED"); continue; }
             if (judge.responseJson().path("confidence").asDouble() < request.minJudgeConfidenceForGenerationOrDefault()) { discussionLowConf++; markDiscussionSkipped(runId, dc, "LOW_CONFIDENCE"); continue; }
             markDiscussionStage(runId, dc, "DISCUSSION_SEGMENT_DEDUPE", "PASSED", object("duplicate", false), null, null);
             var generation = provider.callJson(runId, "KNOWLEDGE_GENERATION", promptDiscussion(dc, "generation", judge.responseJson(), routeDecision), budget, true);
-            if (generation.success()) {
+            if (generation.success() && generationUsable(generation.responseJson())) {
                 long id = knowledgeDiscussion(runId, dc, generation.responseJson(), judge.responseJson().path("confidence").asDouble());
+                decisionCoreLedger(decisionCoreDiscussionId(runId, dc.segmentId()), runId, "discussion:" + dc.segmentId(), "discussion:" + dc.segmentId(), DecisionCoreEnums.CandidateType.DISCUSSION_SEGMENT, DecisionCoreEnums.LedgerEventType.WINNER_SELECTED, true, List.of(), null, generation.providerCallId(), BigDecimal.valueOf(dc.score()), DecisionCoreEnums.FinalRoute.ROUTE_TO_LLM_JUDGE, DecisionCoreEnums.FinalRoute.MATERIAL_DRAFT_ALLOWED, dc.proposedMaterialType(), dc.proposedMaterialType(), List.of("DISCUSSION_DRAFT_CREATED_BY_LEGACY_PATH"), List.of(), List.of(), object("knowledgeItemId", id));
                 markDiscussionStage(runId, dc, "MATERIAL_CREATED", "COMPLETED", object("knowledgeItemId", id), generation.providerCallId(), null);
                 generated++;
             } else {
@@ -1729,6 +1890,10 @@ public class ReplayV2Service {
     }
 
     public Map<String, Object> trainClassicalMlStage(ClassicalMlStageEvaluationRequest request) {
+        Map<String, Object> readiness = trainingDataReadiness();
+        if (!isClassifierTrainingAllowed(readiness)) {
+            throw new IllegalStateException("CLASSICAL_ML_TRAINING_GOVERNANCE_BLOCKED: human-reviewed benchmark is not ready");
+        }
         String stage = blank(request.stage()) ? "meaning" : request.stage().trim().toLowerCase(Locale.ROOT);
         Map<String, Object> exported = exportStageDataset(new ClassicalMlStageDatasetExport(
             stage, "jsonl", request.minConfidence(), request.includeWeakLabels(), request.splitStrategy(), "backend/2.0/training/classical-ml-" + stage + "-dataset-v1.jsonl"
@@ -1766,8 +1931,20 @@ public class ReplayV2Service {
             "macroclusters", count("SELECT count(*) FROM macroclusters"),
             "topics", count("SELECT count(*) FROM discovered_topics")
         ));
+        Map<String, Object> trainingReadiness = trainingDataReadiness();
+        result.put("trainingGovernance", Map.of(
+            "allowed", isClassifierTrainingAllowed(trainingReadiness),
+            "humanReviewedExamples", trainingReadiness.getOrDefault("humanReviewedExamples", 0),
+            "strongExamples", trainingReadiness.getOrDefault("strongExamples", 0),
+            "minimumHumanReviewedNeeded", trainingReadiness.getOrDefault("minimumHumanReviewedNeeded", 500),
+            "missing", trainingReadiness.getOrDefault("missingForClassifierV1", List.of())
+        ));
         result.put("workerModels", classicalMlModels());
         return result;
+    }
+
+    static boolean isClassifierTrainingAllowed(Map<String, Object> readiness) {
+        return readiness != null && Boolean.TRUE.equals(readiness.get("readyForClassifierV1"));
     }
 
     public Map<String, Object> exportActiveLearningBatch(long batchId) {
@@ -2256,14 +2433,10 @@ public class ReplayV2Service {
     private ObjectNode features(Message m, String text) {
         ObjectNode f = json.createObjectNode();
         ArrayNode links = f.putArray("links");
-        URL.matcher(text).results().forEach(match -> links.add(match.group()));
-        JsonNode entities = parseArray(m.entitiesJson());
-        int hidden = 0;
-        for (JsonNode e : entities) {
-            String url = e.path("url").asText(null);
-            if (url == null) url = e.path("textUrl").path("url").asText(null);
-            if (url != null && !url.isBlank()) { links.add(url); hidden++; }
-        }
+        Set<String> seenLinks = new LinkedHashSet<>();
+        URL.matcher(text).results().forEach(match -> addFeatureLink(links, seenLinks, match.group()));
+        int hidden = appendEntityLinks(parseArray(m.entitiesJson()), links, seenLinks);
+        hidden += appendEntityLinks(rawJsonEntities(m.rawJson()), links, seenLinks);
         ArrayNode domains = f.putArray("domains");
         for (JsonNode link : links) { var matcher = DOMAIN.matcher(link.asText()); if (matcher.find()) domains.add(matcher.group(1).toLowerCase(Locale.ROOT)); }
         f.put("linkCount", links.size()); f.put("hiddenLinkCount", hidden); f.put("domainCount", domains.size());
@@ -2275,24 +2448,248 @@ public class ReplayV2Service {
         return f;
     }
 
+    private boolean addFeatureLink(ArrayNode links, Set<String> seenLinks, String url) {
+        if (url == null || url.isBlank()) return false;
+        String trimmed = url.trim();
+        if (!seenLinks.add(trimmed)) return false;
+        links.add(trimmed);
+        return true;
+    }
+
+    private int appendEntityLinks(JsonNode entities, ArrayNode links, Set<String> seenLinks) {
+        if (entities == null || !entities.isArray()) return 0;
+        int hidden = 0;
+        for (JsonNode entity : entities) if (addFeatureLink(links, seenLinks, entityUrl(entity))) hidden++;
+        return hidden;
+    }
+
+    private JsonNode rawJsonEntities(String rawJson) {
+        JsonNode raw = parse(rawJson);
+        ArrayNode result = json.createArrayNode();
+        appendArray(result, raw.path("entities"));
+        appendArray(result, raw.path("captionEntities"));
+        appendArray(result, raw.path("content").path("text").path("entities"));
+        appendArray(result, raw.path("content").path("caption").path("entities"));
+        return result;
+    }
+
+    private void appendArray(ArrayNode target, JsonNode source) {
+        if (source != null && source.isArray()) source.forEach(target::add);
+    }
+
+    private String entityUrl(JsonNode entity) {
+        String url = entity.path("url").asText(null);
+        if (url == null) url = entity.path("textUrl").path("url").asText(null);
+        if (url == null) url = entity.path("type").path("url").asText(null);
+        return url;
+    }
+
+    private String textWithFeatureLinks(String text, JsonNode features) {
+        String value = text == null ? "" : text;
+        JsonNode links = features == null ? null : features.path("links");
+        if (links == null || !links.isArray() || links.isEmpty()) return value;
+        StringBuilder result = new StringBuilder(value);
+        for (JsonNode link : links) {
+            String url = link.asText("").trim();
+            if (!url.isBlank() && !value.contains(url)) result.append(' ').append(url);
+        }
+        return result.toString().trim();
+    }
+
     private ArrayNode labels(JsonNode f, String decision) { ArrayNode a = json.createArrayNode(); if (f.path("hasError").asBoolean()) a.add("ERROR_LOG_WITH_FIX"); if (f.path("hasCode").asBoolean()) a.add("API_OR_CONFIG_SNIPPET"); if (f.path("hasPriceOrAccess").asBoolean()) a.add("PRICING_OR_ACCESS_SIGNAL"); if (f.path("linkCount").asInt() > 0) a.add("RESOURCE_LINK_COLLECTION"); if (f.path("isQuestion").asBoolean()) a.add("QUESTION_WITH_VALUABLE_ANSWER"); if (a.isEmpty() && decision.equals("SUPPRESS")) a.add("NOISE_OR_CHAT"); return a; }
     private String prompt(Cluster c, List<Intel> intel, String type) { return prompt(c, intel, type, null); }
-    private String prompt(Cluster c, List<Intel> intel, String type, RouteIntelligenceDecision routeDecision) { ArrayNode evidence = json.createArrayNode(); Set<Long> ids = new HashSet<>(c.members()); for (Intel i : intel) if (ids.contains(i.message().id())) evidence.addObject().put("datasetMessageId", i.message().id()).put("text", i.normalizedText()); return "Return strict JSON. Type=" + type + ". For judge use {decision,artifactType,title,summary,evidenceIds,confidence,safetyNotes}. For generation use {artifactType,title,summary,body,sources}. " + generationStyleInstructions() + " Cluster=" + c.title() + routePromptHint(routeDecision) + " evidence=" + write(evidence); }
-    private long knowledge(long runId, Cluster c, JsonNode g, double confidence) { long id = JdbcIds.insertReturningId(jdbc, "INSERT INTO knowledge_items (run_id, source_cluster_type, source_cluster_id, artifact_type, vertical, title, summary, body_json, knowledge_value_score, status) VALUES (?, 'MACRO', ?, ?, 'telegram-intelligence', ?, ?, ?::jsonb, ?, 'DRAFT')", runId, c.id(), g.path("artifactType").asText("NOTE"), g.path("title").asText(c.title()), g.path("summary").asText(""), write(g), confidence); for (Long member : c.members().stream().limit(5).toList()) jdbc.update("INSERT INTO knowledge_item_sources (knowledge_item_id, dataset_message_id, source_role, quote, confidence) VALUES (?, ?, 'EVIDENCE', '', ?)", id, member, confidence); return id; }
+    private String prompt(Cluster c, List<Intel> intel, String type, RouteIntelligenceDecision routeDecision) { ArrayNode evidence = json.createArrayNode(); Set<Long> ids = new HashSet<>(c.members()); for (Intel i : intel) if (ids.contains(i.message().id())) evidence.addObject().put("datasetMessageId", i.message().id()).put("text", i.normalizedText()); return "Return strict JSON. Type=" + type + ". Required artifactType=" + c.artifactType() + ". For judge use {decision,artifactType,title,summary,evidenceIds,confidence,safetyNotes}. For generation use {artifactType,title,summary,body,sources}; artifactType MUST equal required artifactType. " + generationStyleInstructions() + " Cluster=" + c.title() + routePromptHint(routeDecision) + " evidence=" + write(evidence); }
+    private long knowledge(long runId, Cluster c, JsonNode g, double confidence) { JsonNode material = materialWithRequiredArtifactType(g, c.artifactType()); long id = JdbcIds.insertReturningId(jdbc, "INSERT INTO knowledge_items (run_id, source_cluster_type, source_cluster_id, artifact_type, vertical, title, summary, body_json, knowledge_value_score, status) VALUES (?, 'MACRO', ?, ?, 'telegram-intelligence', ?, ?, ?::jsonb, ?, 'DRAFT')", runId, c.id(), material.path("artifactType").asText("NOTE"), material.path("title").asText(c.title()), material.path("summary").asText(""), write(material), confidence); for (Long member : materialSourceMembers(runId, c).stream().limit(5).toList()) jdbc.update("INSERT INTO knowledge_item_sources (knowledge_item_id, dataset_message_id, source_role, quote, confidence) VALUES (?, ?, 'EVIDENCE', '', ?)", id, member, confidence); assignKnowledgeItemTopics(id, material.path("artifactType").asText(""), c.members(), confidence); return id; }
+
+    private ObjectNode lightweightMaterial(Cluster c, List<Intel> intel, JsonNode judge) {
+        JsonNode payload = judgePayload(judge);
+        ArrayNode evidence = json.createArrayNode();
+        Set<Long> ids = new HashSet<>(c.members());
+        for (Intel i : intel) if (ids.contains(i.message().id())) evidence.addObject().put("datasetMessageId", i.message().id()).put("text", i.normalizedText());
+        String summary = payload.path("summary").asText("");
+        ObjectNode g = object();
+        g.put("artifactType", lightweightArtifactType(payload, evidence));
+        g.put("title", payload.path("title").asText(c.title()));
+        g.put("summary", summary);
+        g.put("body", lightweightBody(summary, evidence));
+        g.set("sources", evidence);
+        g.put("generationMode", "LIGHTWEIGHT_FALLBACK");
+        return g;
+    }
+
+    private ObjectNode lightweightMaterial(SingleMessageCandidate sc, Intel match, JsonNode judge) {
+        JsonNode payload = judgePayload(judge);
+        ArrayNode evidence = json.createArrayNode();
+        evidence.addObject().put("datasetMessageId", match.message().id()).put("text", match.normalizedText());
+        String summary = payload.path("summary").asText(match.normalizedText());
+        ObjectNode g = object();
+        g.put("artifactType", lightweightArtifactType(payload, evidence));
+        g.put("title", payload.path("title").asText(match.normalizedText().substring(0, Math.min(80, match.normalizedText().length()))));
+        g.put("summary", summary);
+        g.put("body", lightweightBody(summary, evidence));
+        g.set("sources", evidence);
+        g.put("generationMode", "LIGHTWEIGHT_FALLBACK");
+        return g;
+    }
+
+    private String lightweightArtifactType(JsonNode payload, ArrayNode evidence) {
+        String text = (payload.path("title").asText("") + " " + payload.path("summary").asText("")).toLowerCase(Locale.ROOT);
+        if (text.contains("github") || text.contains("resource") || text.contains("reference") || text.contains("ресурс") || text.contains("ссыл")) return "REFERENCE";
+        if (text.contains("checklist") || text.contains("чеклист")) return "CHECKLIST";
+        return evidence.size() <= 1 ? "NOTE" : "SUMMARY";
+    }
+
+    private JsonNode materialWithRequiredArtifactType(JsonNode material, String requiredArtifactType) {
+        ObjectNode normalized = material != null && material.isObject() ? (ObjectNode) material.deepCopy() : object();
+        String required = normalizeArtifactType(requiredArtifactType);
+        String provider = normalizeArtifactType(normalized.path("artifactType").asText(""));
+        if (blank(provider)) provider = "NOTE";
+        if (!required.equals(provider)) normalized.put("providerArtifactType", provider);
+        normalized.put("artifactType", required);
+        return normalized;
+    }
+
+    private boolean generationUsable(JsonNode generation) {
+        JsonNode payload = judgePayload(generation);
+        String decision = payload.path("decision").asText("").trim().toUpperCase(Locale.ROOT);
+        if (decision.startsWith("REJECT") || decision.contains("NEEDS_MORE_CONTEXT")) return false;
+        return !blank(payload.path("body").asText("")) || payload.has("sources");
+    }
+
+    private List<Long> materialSourceMembers(long runId, Cluster c) {
+        List<Long> sourceMembers = new ArrayList<>();
+        Set<String> seenSourceKeys = new HashSet<>();
+        for (Long member : c.members()) {
+            String reason = jdbc.query("SELECT llm_skip_reason FROM replay_run_messages WHERE run_id = ? AND dataset_message_id = ?", rs -> rs.next() ? rs.getString(1) : null, runId, member);
+            String text = jdbc.query("SELECT COALESCE(text, caption, '') FROM dataset_messages WHERE id = ?", rs -> rs.next() ? rs.getString(1) : "", member);
+            String key = canonicalSourceKey(text);
+            if (!"DUPLICATE".equals(reason) && seenSourceKeys.add(key)) sourceMembers.add(member);
+        }
+        return sourceMembers.isEmpty() ? c.members() : sourceMembers;
+    }
+
+    private String canonicalSourceKey(String text) {
+        return (text == null ? "" : text)
+                .replaceFirst("^\\[[^]]+]", "")
+                .replaceFirst("(?i)^NIG[A-Z0-9-]*[-_: ]+S\\d{1,3}[-_: ][A-Z_ -]+\\.\\s*", "")
+                .replaceFirst("(?i)^NIG[A-Z0-9-]*[-_: ]+S\\d{1,3}[-_: ]", "")
+                .replaceFirst("(?i)^NIG[A-Z0-9-]*\\s+", "")
+                .replaceFirst("(?i)^S\\d{1,3}[-_: ][A-Z_ -]+\\.\\s*", "")
+                .replaceFirst("(?i)^S\\d{1,3}[-_: ]", "")
+                .replaceAll("\\s+", " ")
+                .trim()
+                .toLowerCase(Locale.ROOT);
+    }
+
+    private String requiredArtifactType(JsonNode usefulness, String text) {
+        String proposed = usefulness == null ? "" : usefulness.path("proposedMaterialType").asText("");
+        if (!blank(proposed)) return normalizeArtifactType(proposed);
+        return inferArtifactTypeFromText(text);
+    }
+
+    private String materialBucketForMembers(List<Long> members, Map<Long, Intel> byId) {
+        Map<String, Integer> counts = new LinkedHashMap<>();
+        for (Long member : members) {
+            String type = materialBucketForIntel(byId.get(member));
+            counts.merge(type, 1, Integer::sum);
+        }
+        return counts.entrySet().stream().max(Map.Entry.comparingByValue()).map(Map.Entry::getKey).orElse("SUMMARY");
+    }
+
+    private String materialBucketForIntel(Intel intel) {
+        if (intel == null) return "SUMMARY";
+        String text = textWithFeatureLinks(intel.normalizedText(), intel.features());
+        MessageUsefulnessResult usefulness = usefulnessClassifier.classify(text, "NOISE_OR_CHAT", 0.0, intel.hardSignal());
+        if (usefulness.proposedMaterialType() != null) return normalizeArtifactType(usefulness.proposedMaterialType());
+        return inferArtifactTypeFromText(text);
+    }
+
+    private String inferArtifactTypeFromText(String text) {
+        String lower = text == null ? "" : text.toLowerCase(Locale.ROOT);
+        if (containsAny(lower, "prompt", "generate", "generation", "сгенер", "шаблон", "template")) return "GENERATION";
+        if (containsAny(lower, "github", "repo", "repository", "reference", "ресурс", "ссыл", "документац")) return "REFERENCE";
+        if (containsAny(lower, "summary", "итог", "сводк", "резюме", "обзор")) return "SUMMARY";
+        if (containsAny(lower, "?", "ответ", "почему", "что делать", "объясни")) return "ANSWER";
+        if (containsAny(lower, "шаг", "чеклист", "guide", "гайд", "инструкц", "проверь", "настрой")) return "GUIDE";
+        return "SUMMARY";
+    }
+
+    private String normalizeArtifactType(String value) {
+        String normalized = value == null ? "" : value.trim().toUpperCase(Locale.ROOT);
+        return switch (normalized) {
+            case "GUIDE", "GENERATION", "ANSWER", "SUMMARY", "REFERENCE", "OTHER" -> normalized;
+            case "RESOURCE", "RESOURCE_CARD", "LINK_WITH_CONTEXT" -> "REFERENCE";
+            case "NOTE" -> "OTHER";
+            default -> blank(normalized) ? "SUMMARY" : normalized;
+        };
+    }
+
+    private String lightweightBody(String summary, ArrayNode evidence) {
+        StringBuilder body = new StringBuilder();
+        if (!blank(summary)) body.append(summary).append("\n\n");
+        body.append("Материал создан в lightweight fallback режиме по предоставленным сообщениям без добавления внешних фактов.");
+        if (evidence.size() > 0) body.append("\n\nИсточники: ");
+        for (int i = 0; i < evidence.size(); i++) {
+            if (i > 0) body.append(", ");
+            body.append("dataset_message_id=").append(evidence.get(i).path("datasetMessageId").asLong());
+        }
+        if (summary.toLowerCase(Locale.ROOT).contains("provider") || summary.toLowerCase(Locale.ROOT).contains("api") || summary.toLowerCase(Locale.ROOT).contains("github")) {
+            body.append("\n\nПроверьте актуальную документацию провайдера: лимиты, тарифы, поведение cache и доступность моделей могут меняться.");
+        }
+        return body.toString();
+    }
     private long knowledgeSingle(long runId, SingleMessageCandidate sc, Intel intel, JsonNode g, double confidence) {
-        long id = JdbcIds.insertReturningId(jdbc, "INSERT INTO knowledge_items (run_id, source_cluster_type, source_cluster_id, artifact_type, vertical, title, summary, body_json, knowledge_value_score, status) VALUES (?, 'SINGLE_MESSAGE', ?, ?, 'telegram-intelligence', ?, ?, ?::jsonb, ?, 'DRAFT')", runId, sc.messageId(), g.path("artifactType").asText("NOTE"), g.path("title").asText(g.path("recommendedTitle").asText("Single message")), g.path("summary").asText(""), write(g), confidence);
+        JsonNode material = materialWithRequiredArtifactType(g, sc.requiredArtifactType());
+        long id = JdbcIds.insertReturningId(jdbc, "INSERT INTO knowledge_items (run_id, source_cluster_type, source_cluster_id, artifact_type, vertical, title, summary, body_json, knowledge_value_score, status) VALUES (?, 'SINGLE_MESSAGE', ?, ?, 'telegram-intelligence', ?, ?, ?::jsonb, ?, 'DRAFT')", runId, sc.messageId(), material.path("artifactType").asText("NOTE"), material.path("title").asText(material.path("recommendedTitle").asText("Single message")), material.path("summary").asText(""), write(material), confidence);
         jdbc.update("INSERT INTO knowledge_item_sources (knowledge_item_id, dataset_message_id, source_role, quote, confidence) VALUES (?, ?, 'EVIDENCE', '', ?)", id, sc.messageId(), confidence);
+        assignKnowledgeItemTopics(id, material.path("artifactType").asText(""), List.of(sc.messageId()), confidence);
         jdbc.update("UPDATE replay_run_messages SET llm_used = true, updated_at = now() WHERE run_id = ? AND dataset_message_id = ?", runId, sc.messageId());
         return id;
     }
     private long knowledgeDiscussion(long runId, DiscussionSegmentCandidate dc, JsonNode g, double confidence) {
-        long id = JdbcIds.insertReturningId(jdbc, "INSERT INTO knowledge_items (run_id, source_cluster_type, source_cluster_id, artifact_type, vertical, title, summary, body_json, knowledge_value_score, status) VALUES (?, 'DISCUSSION_SEGMENT', ?, ?, 'telegram-intelligence', ?, ?, ?::jsonb, ?, 'DRAFT')", runId, dc.segmentId(), g.path("artifactType").asText(dc.proposedMaterialType()), g.path("title").asText(g.path("recommendedTitle").asText("Discussion segment")), g.path("summary").asText(""), write(g), confidence);
+        JsonNode material = materialWithRequiredArtifactType(g, dc.proposedMaterialType());
+        long id = JdbcIds.insertReturningId(jdbc, "INSERT INTO knowledge_items (run_id, source_cluster_type, source_cluster_id, artifact_type, vertical, title, summary, body_json, knowledge_value_score, status) VALUES (?, 'DISCUSSION_SEGMENT', ?, ?, 'telegram-intelligence', ?, ?, ?::jsonb, ?, 'DRAFT')", runId, dc.segmentId(), material.path("artifactType").asText(dc.proposedMaterialType()), material.path("title").asText(material.path("recommendedTitle").asText("Discussion segment")), material.path("summary").asText(""), write(material), confidence);
         for (Intel source : dc.messages()) {
             jdbc.update("INSERT INTO knowledge_item_sources (knowledge_item_id, dataset_message_id, source_role, quote, confidence) VALUES (?, ?, ?, ?, ?)", id, source.message().id(), roleFor(source).toUpperCase(Locale.ROOT), preview(normalized(source), 500), confidence);
             jdbc.update("UPDATE replay_run_messages SET llm_used = true, knowledge_item_id = ?, updated_at = now() WHERE run_id = ? AND dataset_message_id = ?", id, runId, source.message().id());
         }
+        assignKnowledgeItemTopics(id, material.path("artifactType").asText(""), dc.messages().stream().map(i -> i.message().id()).toList(), confidence);
         if (dc.segmentId() != null) jdbc.update("UPDATE discussion_segments SET decision = 'DISCUSSION_SEGMENT_MATERIAL_CANDIDATE', updated_at = now() WHERE id = ?", dc.segmentId());
         return id;
+    }
+
+    private void assignKnowledgeItemTopics(long knowledgeItemId, String artifactType, List<Long> sourceMessageIds, double confidence) {
+        Set<String> slugs = new LinkedHashSet<>();
+        StringBuilder text = new StringBuilder(normalizeArtifactType(artifactType)).append(' ');
+        for (Long messageId : sourceMessageIds) {
+            String value = jdbc.query("SELECT COALESCE(text, caption, '') FROM dataset_messages WHERE id = ?", rs -> rs.next() ? rs.getString(1) : "", messageId);
+            text.append(value == null ? "" : value).append(' ');
+        }
+        String lower = text.toString().toLowerCase(Locale.ROOT);
+        if (containsAny(lower, "github", "gitlab", "repo", "repository", "open-source", "sdk repo", "npm package", "pypi")) slugs.add("tools-repos");
+        if (containsAny(lower, "prompt", "промпт", "agent", "агент", "cursor", "claude code", "codex", "workflow", "шаблон промп")) slugs.add("agents-prompts");
+        if (containsAny(lower, "free-tier", "free tier", "бесплат", "quota", "квот", "токенов в сутки")) slugs.add("free-tokens-quotas");
+        if (containsAny(lower, "outage", "сбой", "degraded", "429", "timeout", "rate limit", "лимит", "quota exhausted")) slugs.add("outages-limits");
+        if (containsAny(lower, "provider", "router", "openrouter", "modelhub", "litellm", "gateway", "fallback endpoint")) slugs.add("providers-routers");
+        if (containsAny(lower, "api", "endpoint", "/v1", "openai-compatible", "sdk", "auth", "bearer", "webhook", "rest", "graphql")) slugs.add("api-integrations");
+        if (containsAny(lower, "gpt", "claude", "gemini", "qwen", "deepseek", "llama", "mistral", "benchmark", "context window", "release", "релиз", "новая модель")) slugs.add("models-releases");
+        if (containsAny(lower, "pricing", "billing", "стоим", "цена", "тариф", "cost", "cache cost", "token spend", "оплата", "invoice")) slugs.add("pricing-costs");
+        if (containsAny(lower, "privacy", "приват", "логи", "leak", "утеч", "secret", "password", "credential", "безопас")) slugs.add("security-privacy");
+        if (containsAny(lower, "bypass", "loophole", "накрут", "фарм", "anti-abuse", "антиабьюз")) slugs.add("abuse-risk");
+        if (slugs.isEmpty()) slugs.add(switch (normalizeArtifactType(artifactType)) {
+            case "GENERATION" -> "agents-prompts";
+            case "REFERENCE" -> "tools-repos";
+            default -> "api-integrations";
+        });
+        for (String slug : slugs) {
+            jdbc.update("""
+                    INSERT INTO knowledge_item_topics (knowledge_item_id, topic_id, confidence, source, reason)
+                    SELECT ?, id, ?, 'RULE', ?
+                    FROM knowledge_topics
+                    WHERE slug = ?
+                    ON CONFLICT DO NOTHING
+                    """, knowledgeItemId, Math.max(0.50, Math.min(0.95, confidence)), "material topic keyword match", slug);
+        }
     }
     private List<SingleMessageCandidate> singleMessageDetection(long runId, List<Intel> intel, List<Embedding> embeddings, Map<String, BigDecimal> metrics) {
         long started = System.nanoTime();
@@ -2304,6 +2701,8 @@ public class ReplayV2Service {
         Map<Long, String> labels = new HashMap<>();
         Map<Long, Double> confidences = new HashMap<>();
         jdbc.query("SELECT dataset_message_id, top_label, confidence FROM message_classifications WHERE run_id = ?", (RowCallbackHandler) rs -> { labels.put(rs.getLong("dataset_message_id"), rs.getString("top_label")); confidences.put(rs.getLong("dataset_message_id"), rs.getDouble("confidence")); }, runId);
+        Set<Long> duplicates = new HashSet<>();
+        jdbc.query("SELECT dataset_message_id FROM replay_run_messages WHERE run_id = ? AND llm_skip_reason = 'DUPLICATE'", (RowCallbackHandler) rs -> duplicates.add(rs.getLong("dataset_message_id")), runId);
         Set<Long> clustered = new HashSet<>();
         jdbc.query("SELECT dataset_message_id FROM replay_run_messages WHERE run_id = ? AND (microcluster_id IS NOT NULL OR macrocluster_id IS NOT NULL)", (RowCallbackHandler) rs -> clustered.add(rs.getLong("dataset_message_id")), runId);
         int evaluatedCount = 0;
@@ -2317,16 +2716,18 @@ public class ReplayV2Service {
         int rejectedChatContextCount = 0;
         int directReadyCount = 0;
         for (Intel i : intel) {
+            if (duplicates.contains(i.message().id())) { skippedSuppressedCount++; continue; }
             if (clustered.contains(i.message().id())) { skippedClusteredCount++; continue; }
             if (i.ruleDecision().equals("SUPPRESS")) { skippedSuppressedCount++; rejectSingleMessage(runId, i.message().id(), null, "SUPPRESSED_BY_CLASSIFIER", json.createArrayNode()); continue; }
             String topLabel = labels.getOrDefault(i.message().id(), "NOISE_OR_CHAT");
             double confidence = confidences.getOrDefault(i.message().id(), 0.0);
-            String text = i.normalizedText();
+            String text = textWithFeatureLinks(i.normalizedText(), i.features());
             if (text == null || text.isBlank()) { rejectSingleMessage(runId, i.message().id(), null, "NO_TEXT", json.createArrayNode()); continue; }
             MessageUsefulnessResult usefulness = usefulnessClassifier.classify(text, topLabel, confidence, i.hardSignal());
             ObjectNode usefulnessJson = usefulnessJson(usefulness);
             if (usefulness.rejected() && !"LOW_VALUE".equals(usefulness.rejectReason())) {
                 rejectedLowSignalCount++;
+                persistRejectedSignal(runId, i, text, usefulness.rejectReason(), usefulness);
                 rejectSingleMessage(runId, i.message().id(), usefulness.overallScore(), usefulness.rejectReason(), usefulnessSignals(usefulness), usefulnessJson);
                 continue;
             }
@@ -2362,7 +2763,8 @@ public class ReplayV2Service {
             double classifierConfidenceScore = confidence >= 0.65 && !topLabel.equals("NOISE_OR_CHAT") ? 0.06 : 0.0;
             double noisePenalty = topLabel.equals("NOISE_OR_CHAT") && !i.hardSignal() ? 0.20 : 0.0;
             double usefulnessScore = "SINGLE_MESSAGE".equals(usefulness.candidateRoute()) ? Math.max(0.0, usefulness.overallScore() - candidateThreshold) : 0.0;
-            double score = Math.max(0.0, Math.min(1.0, lengthScore + structureScore + guideHowToScore + troubleshootingScore + solutionScore + hardSignalScore + codeApiScore + urlLinkScore + qaScore + troubleshootingExplanationScore + classifierConfidenceScore + usefulnessScore - noisePenalty));
+            double heuristicScore = Math.max(0.0, Math.min(1.0, lengthScore + structureScore + guideHowToScore + troubleshootingScore + solutionScore + hardSignalScore + codeApiScore + urlLinkScore + qaScore + troubleshootingExplanationScore + classifierConfidenceScore + usefulnessScore - noisePenalty));
+            double score = "SINGLE_MESSAGE".equals(usefulness.candidateRoute()) ? Math.max(heuristicScore, usefulness.overallScore()) : heuristicScore;
             ObjectNode breakdown = object("lengthScore", lengthScore, "structureScore", structureScore, "guideHowToScore", guideHowToScore, "troubleshootingScore", troubleshootingScore, "hardSignalScore", hardSignalScore);
             breakdown.put("solutionScore", solutionScore);
             breakdown.put("codeApiScore", codeApiScore);
@@ -2388,6 +2790,7 @@ public class ReplayV2Service {
             if ("SINGLE_MESSAGE".equals(usefulness.candidateRoute())) signals.add("USEFULNESS_" + usefulness.contentClass());
             if (score < candidateThreshold) {
                 String rejectionReason = "LOW_VALUE".equals(usefulness.rejectReason()) ? "LOW_VALUE" : (signals.isEmpty() ? "LOW_SIGNAL" : "LOW_SINGLE_MESSAGE_SCORE");
+                persistRejectedSignal(runId, i, text, rejectionReason, usefulness);
                 if (signals.isEmpty()) {
                     rejectedLowSignalCount++;
                     rejectSingleMessage(runId, i.message().id(), score, rejectionReason, signals, breakdown);
@@ -2400,7 +2803,12 @@ public class ReplayV2Service {
             if (decision.equals("DIRECT_MATERIAL_READY")) directReadyCount++;
             jdbc.update("UPDATE replay_run_messages SET final_decision = ?, single_message_score = ?, single_message_rejection_reason = NULL, single_message_signals_json = ?::jsonb, single_message_score_breakdown_json = ?::jsonb, updated_at = now() WHERE run_id = ? AND dataset_message_id = ?",
                 decision, score, write(signals), write(breakdown), runId, i.message().id());
-            candidates.add(new SingleMessageCandidate(i.message().id(), score, decision, signals, usefulnessJson));
+            Long decisionObjectId = decisionCoreMessageId(runId, i.message().id());
+            String requiredType = requiredArtifactType(usefulnessJson, text);
+            decisionCoreLedger(decisionObjectId, runId, "message:" + i.message().id(), "single:" + i.message().id(), DecisionCoreEnums.CandidateType.SINGLE_MESSAGE, DecisionCoreEnums.LedgerEventType.CANDIDATE_CREATED, false, List.of(), null, null, BigDecimal.valueOf(score), null, DecisionCoreEnums.FinalRoute.ROUTE_TO_SINGLE_CANDIDATE, null, requiredType, List.of("SINGLE_MESSAGE_CANDIDATE"), List.of(), List.of(), breakdown);
+            decisionCoreRank(decisionObjectId, runId, "message:" + i.message().id(), "single_message", 1, BigDecimal.valueOf(score), object("valueScore", usefulness.overallScore(), "evidenceScore", hardSignalScore, "coherenceScore", 0.0, "sourceQualityScore", classifierConfidenceScore, "riskPenalty", usefulness.safetyClass().contains("RISK") ? 1.0 : 0.0, "promoPenalty", "PROMO_ALONE".equals(usefulness.contentClass()) ? 1.0 : 0.0, "duplicatePenalty", 0.0, "freshnessScore", 0.5, "noveltyScore", 0.5, "actionabilityScore", solutionScore + guideHowToScore, "materialReadinessScore", score, "alreadyCoveredPenalty", 0.0, "contradictionPenalty", 0.0), false, List.of("SHADOW_RANK_ONLY"));
+            decisionCoreSafety(decisionObjectId, runId, usefulness.safetyClass(), usefulness.safetyClass().contains("UNSAFE") || usefulness.safetyClass().contains("RISK"), usefulness.safetyClass().contains("RISK"), usefulness.safetyClass().contains("RISK"), false, usefulness.safetyClass().contains("RISK") ? BigDecimal.ONE : BigDecimal.ZERO, usefulness.negativeSignals(), usefulnessJson);
+            candidates.add(new SingleMessageCandidate(i.message().id(), score, decision, signals, usefulnessJson, requiredType));
         }
         metric(metrics, "single_message_candidates", candidates.size());
         metric(metrics, "single_message_evaluated", evaluatedCount);
@@ -2461,6 +2869,8 @@ public class ReplayV2Service {
         candidates = candidates.stream().filter(c -> "DISCUSSION_SEGMENT_CANDIDATE".equals(c.decision())).toList();
         for (DiscussionSegmentCandidate candidate : candidates) persistDiscussionSegment(runId, candidate);
         for (DiscussionSegmentCandidate candidate : rejectedCandidates) persistDiscussionSegment(runId, candidate);
+        for (DiscussionSegmentCandidate candidate : candidates) decisionCoreDiscussion(runId, candidate, true);
+        for (DiscussionSegmentCandidate candidate : rejectedCandidates) decisionCoreDiscussion(runId, candidate, false);
         metric(metrics, "discussion_segment_candidates", candidates.size());
         long overlapRejected = rejectedCandidates.stream().filter(c -> "DISCUSSION_SEGMENT_REJECTED_OVERLAP_DUPLICATE".equals(c.rejectionReason())).count();
         long windowLimitRejected = rejectedCandidates.stream().filter(c -> "DISCUSSION_SEGMENT_REJECTED_WINDOW_LIMIT".equals(c.rejectionReason())).count();
@@ -3113,11 +3523,134 @@ public class ReplayV2Service {
         return messageUnitScope(first);
     }
 
+    private Long decisionCoreMessage(long runId, long datasetMessageId, JsonNode features, String normalizedText, String ruleDecision, boolean hardSignal) {
+        return decisionCore == null ? null : decisionCore.upsertMessageDecision(runId, datasetMessageId, features, normalizedText, ruleDecision, hardSignal);
+    }
+
+    private Long decisionCoreMessageId(long runId, long datasetMessageId) {
+        return decisionCore == null ? null : decisionCore.messageDecisionObjectId(runId, datasetMessageId);
+    }
+
+    private Long decisionCoreCluster(long runId, String level, long clusterId, Collection<Long> members, String artifactType, double score, JsonNode report) {
+        return decisionCore == null ? null : decisionCore.upsertClusterDecision(runId, level, clusterId, members, artifactType, BigDecimal.valueOf(score), report);
+    }
+
+    private Long decisionCoreClusterId(long runId, String level, long clusterId) {
+        if (decisionCore == null || !decisionCore.shadowEnabled()) return null;
+        return jdbc.query("""
+            SELECT id FROM semantic_decision_objects
+            WHERE decision_version = ? AND object_type = 'cluster' AND run_id = ? AND cluster_level = ? AND cluster_id = ?
+            ORDER BY id DESC LIMIT 1
+            """, rs -> rs.next() ? rs.getLong(1) : null, com.larbcorp.neuroinfogrinder2.decisioncore.SemanticDecisionCoreObject.DECISION_VERSION, runId, level, clusterId);
+    }
+
+    private void decisionCoreDiscussion(long runId, DiscussionSegmentCandidate candidate, boolean accepted) {
+        if (decisionCore == null || candidate.segmentId() == null) return;
+        List<Long> members = candidate.messages().stream().map(i -> i.message().id()).toList();
+        Long decisionObjectId = decisionCore.upsertDiscussionDecision(runId, candidate.segmentId(), members, candidate.proposedMaterialType(), BigDecimal.valueOf(candidate.score()), candidate.decision(), candidate.rejectionReason(), candidate.signals());
+        decisionCoreLedger(decisionObjectId, runId, "discussion:" + candidate.segmentId(), "discussion:" + candidate.segmentId(), DecisionCoreEnums.CandidateType.DISCUSSION_SEGMENT, accepted ? DecisionCoreEnums.LedgerEventType.CANDIDATE_CREATED : DecisionCoreEnums.LedgerEventType.CANDIDATE_REJECTED, false, List.of(), null, null, BigDecimal.valueOf(candidate.score()), null, accepted ? DecisionCoreEnums.FinalRoute.ROUTE_TO_DISCUSSION_ASSEMBLY : DecisionCoreEnums.FinalRoute.REJECT_FOR_MATERIAL_NOW, null, candidate.proposedMaterialType(), List.of(accepted ? "DISCUSSION_SEGMENT_CANDIDATE" : candidate.rejectionReason()), members, List.of(), object("sourceCount", candidate.sourceCount(), "signals", candidate.signals()));
+    }
+
+    private Long decisionCoreDiscussionId(long runId, Long segmentId) {
+        if (decisionCore == null || segmentId == null || !decisionCore.shadowEnabled()) return null;
+        return jdbc.query("""
+            SELECT id FROM semantic_decision_objects
+            WHERE decision_version = ? AND object_type = 'discussion_segment' AND run_id = ? AND object_id = ?
+            ORDER BY id DESC LIMIT 1
+            """, rs -> rs.next() ? rs.getLong(1) : null, com.larbcorp.neuroinfogrinder2.decisioncore.SemanticDecisionCoreObject.DECISION_VERSION, runId, segmentId);
+    }
+
+    private void decisionCoreObserve(Long decisionObjectId, long runId, String stageName, String observerName, String observationType, JsonNode payload, Collection<String> reasons, Double confidence) {
+        if (decisionCore != null) decisionCore.observe(decisionObjectId, runId, stageName, observerName, observationType, payload, reasons, confidence);
+    }
+
+    private void decisionCoreRetain(long runId, long datasetMessageId, Long decisionObjectId, String role, String reason) {
+        if (decisionCore != null) decisionCore.retainContext(decisionObjectId, runId, datasetMessageId, role, reason, Duration.ofDays(14));
+    }
+
+    private void decisionCoreLedger(Long decisionObjectId, long runId, String candidateGroupId, String candidateId, DecisionCoreEnums.CandidateType candidateType, DecisionCoreEnums.LedgerEventType eventType, boolean winner, List<String> competitors, String duplicateAnchorId, Long providerCallId, BigDecimal rankScore, DecisionCoreEnums.FinalRoute routeBefore, DecisionCoreEnums.FinalRoute routeAfter, String artifactTypeBefore, String artifactTypeAfter, Collection<String> reasonCodes, Collection<Long> contextNodesRetained, Collection<Long> excludedMessageIds, JsonNode details) {
+        if (decisionCore != null) decisionCore.ledger(decisionObjectId, runId, candidateGroupId, candidateId, candidateType, eventType, winner, competitors, duplicateAnchorId, providerCallId, rankScore, routeBefore, routeAfter, artifactTypeBefore, artifactTypeAfter, reasonCodes, contextNodesRetained, excludedMessageIds, details);
+    }
+
+    private void decisionCoreRank(Long decisionObjectId, long runId, String candidateGroupId, String candidateType, int rankPosition, BigDecimal rankScore, JsonNode components, boolean selectedForLlm, Collection<String> reasons) {
+        if (decisionCore != null) decisionCore.rankCandidate(decisionObjectId, runId, candidateGroupId, candidateType, rankPosition, rankScore, components, selectedForLlm, reasons);
+    }
+
+    private void decisionCoreSafety(Long decisionObjectId, long runId, String safetyClass, boolean hardBlock, boolean manualReview, boolean riskSignal, boolean warningAllowed, BigDecimal riskScore, Collection<String> riskFlags, JsonNode observations) {
+        if (decisionCore != null) decisionCore.recordSafety(decisionObjectId, runId, safetyClass, hardBlock, manualReview, riskSignal, warningAllowed, riskScore, riskFlags, observations);
+    }
+
+    private void decisionCoreEnqueueLink(Long decisionObjectId, long datasetMessageId, String url) {
+        if (decisionCore != null) decisionCore.enqueueLink(decisionObjectId, datasetMessageId, url, 50);
+    }
+
+    private void decisionCoreRelation(long runId, long sourceMessageId, long targetMessageId, String edgeType, BigDecimal weight, boolean negative, JsonNode evidence) {
+        if (decisionCore != null) decisionCore.relationEdge(runId, sourceMessageId, targetMessageId, edgeType, weight, negative, evidence);
+    }
+
+    private void decisionCoreDedupeIdentity(String type, String value, Long decisionObjectId, JsonNode metadata) {
+        if (decisionCore != null) decisionCore.dedupeIdentity(type, value, BigDecimal.ONE, decisionObjectId, null, metadata);
+    }
+
+    private String singleMessageMaterialBlockReason(SingleMessageCandidate candidate, Intel intel) {
+        String text = (intel == null || intel.normalizedText() == null) ? "" : intel.normalizedText().toLowerCase(Locale.ROOT);
+        if (containsAny(text,
+                "правила группы",
+                "ознакомились с правилами",
+                "подтвердите", "#whois", "!report", "chatkeeperbot",
+                "закрепленными сообщениями", "закреплёнными сообщениями")) {
+            return "RULES_ONBOARDING_SINGLE_MESSAGE_BLOCKED";
+        }
+        if ("OTHER".equals(candidate.requiredArtifactType()) && settings.getInt("allowOtherSingleMessageMaterials", 0) != 1) {
+            return "OTHER_SINGLE_MESSAGE_BLOCKED";
+        }
+        return null;
+    }
+
     private void rejectSingleMessage(long runId, long messageId, Double score, String reason, JsonNode signals) {
         rejectSingleMessage(runId, messageId, score, reason, signals, object());
     }
     private void rejectSingleMessage(long runId, long messageId, Double score, String reason, JsonNode signals, JsonNode breakdown) {
         jdbc.update("UPDATE replay_run_messages SET final_decision = 'REJECTED_SINGLE_MESSAGE', single_message_score = ?, single_message_rejection_reason = ?, single_message_signals_json = ?::jsonb, single_message_score_breakdown_json = ?::jsonb, updated_at = now() WHERE run_id = ? AND dataset_message_id = ?", score, reason, write(signals == null ? json.createArrayNode() : signals), write(breakdown == null ? object() : breakdown), runId, messageId);
+        Long decisionObjectId = decisionCoreMessageId(runId, messageId);
+        DecisionCoreEnums.FinalRoute route = "NEEDS_LINK_ENRICHMENT".equals(reason) ? DecisionCoreEnums.FinalRoute.ROUTE_TO_LINK_ENRICHMENT : ("LOW_VALUE".equals(reason) ? DecisionCoreEnums.FinalRoute.REJECT_FOR_MATERIAL_NOW : DecisionCoreEnums.FinalRoute.RETAIN_FOR_CONTEXT);
+        decisionCoreLedger(decisionObjectId, runId, "message:" + messageId, "single:" + messageId, DecisionCoreEnums.CandidateType.SINGLE_MESSAGE, DecisionCoreEnums.LedgerEventType.CANDIDATE_REJECTED, false, List.of(), null, null, score == null ? null : BigDecimal.valueOf(score), DecisionCoreEnums.FinalRoute.ROUTE_TO_SINGLE_CANDIDATE, route, null, null, List.of(reason), route == DecisionCoreEnums.FinalRoute.RETAIN_FOR_CONTEXT ? List.of(messageId) : List.of(), List.of(), breakdown == null ? object() : breakdown);
+        if (route == DecisionCoreEnums.FinalRoute.RETAIN_FOR_CONTEXT) decisionCoreRetain(runId, messageId, decisionObjectId, "context", reason);
+    }
+    private void persistRejectedSignal(long runId, Intel intel, String text, String rejectionReason, MessageUsefulnessResult usefulness) {
+        if (knowledgeSignalService == null || "LOW_VALUE".equals(rejectionReason)) return;
+        try {
+            JsonNode source = oneOrNull("""
+                    SELECT rm.id AS raw_id, rrm.id AS replay_run_message_id
+                    FROM dataset_messages dm
+                    LEFT JOIN raw_messages rm ON rm.account_id = dm.account_id
+                        AND rm.telegram_chat_id = dm.telegram_chat_id
+                        AND rm.telegram_message_id = dm.telegram_message_id
+                    LEFT JOIN replay_run_messages rrm ON rrm.run_id = ? AND rrm.dataset_message_id = dm.id
+                    WHERE dm.id = ?
+                    """, runId, intel.message().id());
+            Long rawId = jsonLong(source, "raw_id");
+            Long replayRunMessageId = jsonLong(source, "replay_run_message_id");
+            knowledgeSignalService.upsertRejectedSingleMessageSignal(new KnowledgeSignalService.RejectedSingleMessageSignal(
+                    rawId,
+                    intel.message().id(),
+                    runId,
+                    replayRunMessageId,
+                    intel.message().telegramChatId(),
+                    intel.message().forumTopicId(),
+                    text,
+                    rejectionReason,
+                    intel.features(),
+                    usefulness
+            ));
+        } catch (RuntimeException ex) {
+            log.warn("knowledge signal persistence skipped runId={} datasetMessageId={} reason={} error={}", runId, intel.message().id(), rejectionReason, ex.getMessage());
+        }
+    }
+    private Long jsonLong(JsonNode node, String field) {
+        if (node == null || node.isMissingNode() || node.isNull()) return null;
+        JsonNode value = node.path(field);
+        return value.isNumber() ? value.asLong() : null;
     }
     private ObjectNode usefulnessJson(MessageUsefulnessResult result) {
         ObjectNode node = json.createObjectNode();
@@ -3150,19 +3683,26 @@ public class ReplayV2Service {
         return signals;
     }
     private String promptSingle(SingleMessageCandidate sc, Intel intel, String type) {
-        return promptSingle(sc, intel, type, null);
+        return promptSingle(sc, intel, List.of(intel), type, null);
     }
     private String promptSingle(SingleMessageCandidate sc, Intel intel, String type, RouteIntelligenceDecision routeDecision) {
+        return promptSingle(sc, intel, List.of(intel), type, routeDecision);
+    }
+    private String promptSingle(SingleMessageCandidate sc, Intel intel, List<Intel> allIntel, String type, RouteIntelligenceDecision routeDecision) {
+        ArrayNode localContext = nearbySingleMessageContext(intel, allIntel);
         return "Return strict JSON. Mode=SINGLE_MESSAGE. Type=" + type
+            + ". Required artifactType=" + sc.requiredArtifactType()
+            + ". Treat localContext as evidence for whether the message is standalone, part of a chain, promo noise, or risk content."
             + ". For judge use {decision,artifactType,title,summary,confidence,reason,recommendedTitle,generationInstructions}."
             + " Positive judge decisions may include NEWS_REFERENCE_MATERIAL_CANDIDATE, RESOURCE_REFERENCE_MATERIAL_CANDIDATE, STATUS_OUTAGE_MATERIAL_CANDIDATE, DIRECT_MATERIAL_READY."
             + " Reject decisions may include REJECTED_LOW_ACTIONABILITY, REJECTED_PROMO, REJECTED_LINK_ONLY, REJECTED_NEEDS_MORE_CONTEXT, REJECTED_ACCESS_CIRCUMVENTION, RISK_SENSITIVE_MANUAL_ONLY."
-            + " For generation use {artifactType,title,summary,body,sources}. " + generationStyleInstructions()
+            + " For generation use {artifactType,title,summary,body,sources}; artifactType MUST equal required artifactType. " + generationStyleInstructions()
             + " Single message id=" + sc.messageId() + " score=" + sc.score() + " decision=" + sc.decision()
             + " signals=" + write(sc.signals())
             + " usefulness=" + write(sc.usefulness())
             + routePromptHint(routeDecision)
-            + " text=\"" + (intel.normalizedText().length() > 2000 ? intel.normalizedText().substring(0, 2000) : intel.normalizedText()) + "\"";
+            + " text=\"" + (intel.normalizedText().length() > 2000 ? intel.normalizedText().substring(0, 2000) : intel.normalizedText()) + "\""
+            + " localContext=" + write(localContext);
     }
     private String promptDiscussion(DiscussionSegmentCandidate dc, String type, JsonNode judge) {
         return promptDiscussion(dc, type, judge, null);
@@ -3182,7 +3722,7 @@ public class ReplayV2Service {
             + ". Use only the ordered source messages. Do not hallucinate. Output language follows source language."
             + " For judge use {accepted,decision,material_type,title,reason,confidence,source_message_roles,suggested_outline,rejection_reason}."
             + " Positive decisions: DISCUSSION_SEGMENT_MATERIAL_CANDIDATE or DIRECT_MATERIAL_READY. Reject decisions: REJECTED_LOW_VALUE, REJECTED_NEEDS_MORE_CONTEXT, REJECTED_DUPLICATE, REJECTED_UNSAFE_OR_UNSUPPORTED, REJECTED_PROMO_OR_NOISE."
-            + " For generation use {artifactType,title,summary,body,sources}. Keep careful/source-aware tone for health, legal, security, and employment topics. " + generationStyleInstructions()
+            + " For generation use {artifactType,title,summary,body,sources}; artifactType MUST equal proposedMaterialType. Keep careful/source-aware tone for health, legal, security, and employment topics. " + generationStyleInstructions()
             + " If sources discuss external provider docs, API limits, pricing/tariffs, cache timing, model availability, rate limits, billing, cost behavior, or provider-specific behavior, include this caveat verbatim in the material body: Проверьте актуальную документацию провайдера: лимиты, тарифы, поведение cache и доступность моделей могут меняться."
             + " segmentId=" + dc.segmentId() + " score=" + dc.score() + " proposedMaterialType=" + dc.proposedMaterialType()
             + " signals=" + write(dc.signals())
@@ -3196,7 +3736,10 @@ public class ReplayV2Service {
             + " Start with useful information directly. Do not write as a recap of chat messages. Do not use meta-chat framing."
             + " Forbidden phrases in body: участники сообщества; участники обсуждения; пользователи обсуждали; в чате; в обсуждении; авторы сообщений; из сообщений следует; в источнике говорится; сообщество пришло к выводу; один из участников; по словам участников."
             + " If source limits must be stated, use neutral caveat: Данные основаны на предоставленном контексте."
+            + " Prefer compact materials over long articles."
             + " For GUIDE output include title, short summary, practical steps, checks/checklist, caveats, and what to avoid."
+            + " GUIDE should usually be a mini-guide: 2-5 short sections or 4-8 short bullets, normally under 220 words unless the provided evidence clearly requires more."
+            + " If the evidence is narrow, write a focused checklist instead of a broad tutorial."
             + " For ANSWER output include direct answer first, explanation, caveats, and related checks."
             + " For SUMMARY output include key points, grouped observations, implications, and possible next actions."
             + " For REFERENCE output include what it is, when useful, how to verify/use, and caveats."
@@ -3204,7 +3747,32 @@ public class ReplayV2Service {
             + " Do not invent exact API docs, pricing, time limits, model availability, SLA, provider behavior, legal, medical, or security claims."
             + " For external provider/API behavior always add caveat: Проверьте актуальную документацию провайдера: лимиты, тарифы, поведение cache и доступность моделей могут меняться.";
     }
+    private ArrayNode nearbySingleMessageContext(Intel center, List<Intel> allIntel) {
+        ArrayNode rows = json.createArrayNode();
+        if (center == null || allIntel == null || allIntel.size() <= 1) {
+            return rows;
+        }
+        List<Intel> nearby = allIntel.stream()
+            .filter(item -> item != null && item.message().id() != center.message().id())
+            .filter(item -> sameDiscussionScope(center.message(), item.message()))
+            .filter(item -> withinWindow(center.message(), item.message(), 10))
+            .sorted((a, b) -> compareMessageOrder(a.message(), b.message()))
+            .limit(6)
+            .toList();
+        Instant centerAt = nullSafeInstant(center.message().messageDate());
+        for (Intel item : nearby) {
+            long relativeMinutes = Duration.between(centerAt, nullSafeInstant(item.message().messageDate())).toMinutes();
+            rows.addObject()
+                .put("datasetMessageId", item.message().id())
+                .put("relativeMinutes", relativeMinutes)
+                .put("text", preview(normalized(item), 240));
+        }
+        return rows;
+    }
     private String routePromptHint(RouteIntelligenceDecision routeDecision) {
+        if (settings.getInt("classicalMlRoutingEnabled", 0) != 1) {
+            return "";
+        }
         if (routeDecision == null || routeDecision.reasonBundle() == null || routeDecision.reasonBundle().isMissingNode()) {
             return "";
         }
@@ -3398,7 +3966,41 @@ public class ReplayV2Service {
     private long classifierModelId() { return jdbc.queryForObject("SELECT id FROM classifier_models WHERE name = 'BOOTSTRAP_BERT_CLASSIFIER'", Long.class); }
     private long embeddingModelId() { return jdbc.queryForObject("SELECT id FROM embedding_models WHERE name = 'BAAI/bge-m3'", Long.class); }
     private boolean providerConfigured() { String key = environment.getProperty("MODELHUB_API_KEY"); return key != null && !key.isBlank(); }
-    private boolean approvedJudgeDecision(JsonNode response) { String decision = response.path("decision").asText("").trim().toUpperCase(Locale.ROOT); return Set.of("APPROVE", "APPROVED", "ACCEPT", "ACCEPTED", "VALID", "KEEP", "GENERATE", "YES", "SINGLE_MESSAGE_MATERIAL_CANDIDATE", "DISCUSSION_SEGMENT_MATERIAL_CANDIDATE", "DIRECT_MATERIAL_READY", "NEWS_REFERENCE_MATERIAL_CANDIDATE", "RESOURCE_REFERENCE_MATERIAL_CANDIDATE", "STATUS_OUTAGE_MATERIAL_CANDIDATE").contains(decision); }
+    private boolean approvedJudgeDecision(JsonNode response) { String decision = judgePayload(response).path("decision").asText("").trim().toUpperCase(Locale.ROOT); return Set.of("APPROVE", "APPROVED", "ACCEPT", "ACCEPTED", "VALID", "KEEP", "GENERATE", "YES", "SINGLE_MESSAGE_MATERIAL_CANDIDATE", "DISCUSSION_SEGMENT_MATERIAL_CANDIDATE", "DIRECT_MATERIAL_READY", "NEWS_REFERENCE_MATERIAL_CANDIDATE", "RESOURCE_REFERENCE_MATERIAL_CANDIDATE", "STATUS_OUTAGE_MATERIAL_CANDIDATE").contains(decision); }
+    boolean isHardRouteBlock(RouteIntelligenceDecision routeDecision) {
+        if (routeDecision == null || !routeDecision.blocked()) return false;
+        String flags = routeDecision.policyFlags() == null ? "" : routeDecision.policyFlags().toString().toUpperCase(Locale.ROOT);
+        return flags.contains("RISK") || flags.contains("DUPLICATE") || flags.contains("PROMO") || flags.contains("ABUSE") || flags.contains("FRAUD") || flags.contains("FINAL_GATE_REJECTED") || flags.contains("MANUAL_REVIEW");
+    }
+    boolean shouldApplyClassicalRouteBlock(RouteIntelligenceDecision routeDecision) {
+        return settings.getInt("classicalMlRoutingEnabled", 0) == 1 && isHardRouteBlock(routeDecision);
+    }
+    boolean shouldAllowLightweightMaterialAfterJudgeReject(JsonNode response, RouteIntelligenceDecision routeDecision, double score, int sourceCount) {
+        if (response == null || score < 0.55) return false;
+        if (shouldApplyClassicalRouteBlock(routeDecision)) return false;
+        String route = routeDecision == null || routeDecision.recommendedRoute() == null ? "" : routeDecision.recommendedRoute().trim().toUpperCase(Locale.ROOT);
+        JsonNode payload = judgePayload(response);
+        String text = (payload.path("decision").asText("") + " " + payload.path("title").asText("") + " " + payload.path("summary").asText("") + " " + payload.path("reason").asText("") + " " + payload.path("rationale").asText("")).toLowerCase(Locale.ROOT);
+        if (text.contains("unsafe") || text.contains("risk-sensitive") || text.contains("safety-sensitive") || text.contains("promo") || text.contains("referral") || text.contains("fraud") || text.contains("psychedelic") || text.contains("microdosing") || text.contains("controlled substance") || text.contains("небезопас") || text.contains("микродоз") || text.contains("психоделик") || text.contains("реклам")) return false;
+        boolean knownSafeRoute = Set.of("GUIDE", "REFERENCE", "CHECKLIST", "ANSWER").contains(route);
+        boolean narrowChecklist = text.contains("narrow checklist") || text.contains("узк") && text.contains("чеклист") || text.contains("достаточно") && text.contains("чеклист") || text.contains("checklist") && sourceCount >= 2;
+        boolean contextualReference = "REFERENCE".equals(route) && sourceCount >= 2 && (text.contains("resource") || text.contains("reference") || text.contains("ссыл") || text.contains("ресурс") || text.contains("github"));
+        boolean conciseAnswer = "ANSWER".equals(route) && sourceCount >= 1 && (text.contains("sufficient") || text.contains("достаточно"));
+        boolean genericRoute = route.isBlank() || Set.of("NO_MATERIAL", "IGNORE", "TRACE_ONLY", "ABSTAIN").contains(route);
+        boolean inferredReference = genericRoute && sourceCount >= 2 && score >= 0.55 && (text.contains("resource") || text.contains("reference") || text.contains("ссыл") || text.contains("ресурс") || text.contains("github"));
+        boolean inferredChecklist = genericRoute && sourceCount >= 2 && score >= 0.70 && narrowChecklist;
+        return (knownSafeRoute && (narrowChecklist || contextualReference || conciseAnswer)) || inferredChecklist || inferredReference;
+    }
+
+    private JsonNode judgePayload(JsonNode response) {
+        if (response == null || response.isMissingNode() || response.isNull()) return json.createObjectNode();
+        if (response.has("decision") || response.has("summary") || response.has("reason")) return response;
+        String content = response.path("choices").path(0).path("message").path("content").asText("");
+        if (!content.isBlank()) {
+            try { return json.readTree(content); } catch (Exception ignored) { return response; }
+        }
+        return response;
+    }
     private String modelConfig() { return write(object("classifier", "BOOTSTRAP_BERT_CLASSIFIER", "embeddings", "BAAI/bge-m3")); }
     private String providerConfig() { return write(object("provider", "modelhub", "baseUrl", "https://modelhub.my/v1", "apiKeyRef", "MODELHUB_API_KEY")); }
     private ArrayNode calibrationRecommendations() { ArrayNode a = json.createArrayNode(); a.addObject().put("name", "semanticSimilarityThreshold").put("old", 0.72).put("recommended", 0.66).put("reason", "Run 6 produced only 11 semantic neighbors from 223 embeddings; a moderate threshold should recover related troubleshooting/pricing clusters without exploding LLM calls."); a.addObject().put("name", "llmClusterGate").put("old", "macroclusters.score").put("recommended", "cluster_scores.final_score").put("reason", "Run 6 final_score had five clusters at 0.65, but legacy gate used raw macro score around 0.59 and skipped them."); a.addObject().put("name", "judgeDecisionSynonyms").put("old", "APPROVE only").put("recommended", "APPROVE, ACCEPT, VALID, KEEP, GENERATE").put("reason", "Real ModelHub judge returned accept/valid with high confidence, so generation was incorrectly skipped."); a.addObject().put("name", "minClusterScoreForJudge").put("recommended", 0.50).put("reason", "Let more useful 2-message clusters reach judge while maxProviderCalls limits cost."); a.addObject().put("name", "minJudgeConfidenceForGeneration").put("recommended", 0.60).put("reason", "Keep high-signal clusters moving to generation while still rejecting low-confidence judge results."); return a; }
@@ -3413,6 +4015,7 @@ public class ReplayV2Service {
     private ObjectNode object(String k1, Object v1, String k2, Object v2, String k3, Object v3) { ObjectNode o = object(k1, v1, k2, v2); put(o, k3, v3); return o; }
     private ObjectNode object(String k1, Object v1, String k2, Object v2, String k3, Object v3, String k4, Object v4) { ObjectNode o = object(k1, v1, k2, v2, k3, v3); put(o, k4, v4); return o; }
     private ObjectNode object(String k1, Object v1, String k2, Object v2, String k3, Object v3, String k4, Object v4, String k5, Object v5) { ObjectNode o = object(k1, v1, k2, v2, k3, v3, k4, v4); put(o, k5, v5); return o; }
+    private ObjectNode object(Object... fields) { ObjectNode o = object(); for (int i = 0; i + 1 < fields.length; i += 2) put(o, String.valueOf(fields[i]), fields[i + 1]); return o; }
     private ArrayNode array(String... values) { ArrayNode a = json.createArrayNode(); for (String v : values) a.add(v); return a; }
     private void put(ObjectNode o, String k, Object v) { if (v instanceof Boolean b) o.put(k, b); else if (v instanceof Number n) o.put(k, n.doubleValue()); else o.put(k, String.valueOf(v)); }
     private JsonNode parse(String value) { try { return json.readTree(blank(value) ? "{}" : value); } catch (JsonProcessingException e) { return object(); } }
@@ -3450,10 +4053,14 @@ public class ReplayV2Service {
     private record Intel(long id, Message message, String normalizedText, JsonNode features, boolean hardSignal, String ruleDecision) {}
     private record Embedding(long id, long messageId, List<Double> vector, String kind) {}
     private record Neighbor(long sourceId, long targetId, double similarity) {}
-    private record Cluster(long id, String title, double score, List<Long> members) {}
-    private record SingleMessageCandidate(long messageId, double score, String decision, JsonNode signals, JsonNode usefulness) {
+    private record Cluster(long id, String title, double score, String artifactType, List<Long> members) {
+        private Cluster(long id, String title, double score, List<Long> members) {
+            this(id, title, score, "SUMMARY", members);
+        }
+    }
+    private record SingleMessageCandidate(long messageId, double score, String decision, JsonNode signals, JsonNode usefulness, String requiredArtifactType) {
         private SingleMessageCandidate(long messageId, double score, String decision, JsonNode signals) {
-            this(messageId, score, decision, signals, null);
+            this(messageId, score, decision, signals, null, null);
         }
     }
     private record DiscussionDedupeResult(List<DiscussionSegmentCandidate> accepted, List<DiscussionSegmentCandidate> rejected) {}

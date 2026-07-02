@@ -258,6 +258,16 @@ export function usePipelineStageDetailsQuery(stageId: string | null) {
   });
 }
 
+export function usePipelineStageMessagesQuery(stageId: string | null, status = "processed", limit = 100) {
+  return useQuery({
+    queryKey: ["pipeline-stage-messages", stageId, status, limit],
+    queryFn: () => getJsonAuth<PipelineStageMessage[]>(`/api/v2/pipeline/live/stages/${stageId}/messages?status=${encodeURIComponent(status)}&limit=${limit}`),
+    enabled: Boolean(stageId),
+    refetchInterval: 5_000,
+    placeholderData: keepPreviousData,
+  });
+}
+
 export function usePipelineClustersQuery(runId?: number | null, limit = 50) {
   const query = new URLSearchParams({ limit: String(limit) });
   if (runId) query.set("runId", String(runId));

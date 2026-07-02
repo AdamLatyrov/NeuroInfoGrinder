@@ -1,0 +1,45 @@
+{
+  "date": "2026-06-29",
+  "environment": "production",
+  "status": "passed_with_residual_risks",
+  "controlledDatasetId": 8239,
+  "finalRunId": 8258,
+  "verification": {
+    "backendTests": "mvn -q test passed",
+    "deploy": "scripts/deploy-fast.ps1 -Target backend passed",
+    "productionHealth": "backend/frontend/model-worker/postgres/redis/ssh-socks/tor healthy",
+    "publicUrl": "HTTP 200"
+  },
+  "changes": [
+    "backend-owned required artifact type for single-message candidates",
+    "required artifact type added to generation prompts",
+    "provider artifact type sanitized before knowledge_items insert",
+    "providerArtifactType preserved when provider disagrees",
+    "explicit classifier branches for GENERATION, ANSWER, SUMMARY",
+    "semantic clustering split by material bucket",
+    "reject-shaped generation payloads no longer stored as normal materials",
+    "duplicate-like source text filtered from macro material sources"
+  ],
+  "scenarios": [
+    { "id": "GUIDE", "expected": "GUIDE", "actualMaterialId": 63, "actualArtifactType": "GUIDE", "disposition": "pass" },
+    { "id": "GENERATION", "expected": "GENERATION", "actualMaterialId": 64, "actualArtifactType": "GENERATION", "providerArtifactType": "OTHER", "disposition": "pass" },
+    { "id": "ANSWER", "expected": "ANSWER", "actualMaterialId": 65, "actualArtifactType": "ANSWER", "disposition": "pass" },
+    { "id": "SUMMARY", "expected": "SUMMARY", "actualMaterialId": 66, "actualArtifactType": "SUMMARY", "disposition": "pass" },
+    { "id": "REFERENCE", "expected": "REFERENCE", "actualMaterialId": 67, "actualArtifactType": "REFERENCE", "disposition": "pass" },
+    { "id": "DUPLICATE", "expected": "no separate material and no source pollution", "actual": "no separate material; removed from GUIDE sources", "disposition": "pass" }
+  ],
+  "cleanup": {
+    "removedEarlierTestMaterials": [37, 38],
+    "softDeletedControlledMaterials": [54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67],
+    "deletedControlledDatasetId": 8239,
+    "activeOldNigtest": 0,
+    "remainingDataset": 0,
+    "remainingRuns": 0,
+    "remainingMessages": 0
+  },
+  "residualRisks": [
+    "discussion-segment artifact types still need the same controlled scenario coverage",
+    "provider timeout/error observability should distinguish fallback-created material",
+    "longer mixed discussions need stronger cluster-purity scoring"
+  ]
+}

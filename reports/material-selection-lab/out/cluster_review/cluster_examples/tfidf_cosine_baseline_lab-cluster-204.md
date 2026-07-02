@@ -1,0 +1,22 @@
+# tfidf_cosine_baseline / lab-cluster-204
+
+- `msg-09190` `TECH_SIGNAL` `REVIEW_SIGNAL_OR_DISCUSSION` попробуй чисто r-api без vpn
+- `msg-09221` `TECH_SIGNAL` `REVIEW_SIGNAL_OR_DISCUSSION` у тебя словно ключ слетел сейчас на r-api прверил работает
+- `msg-09241` `TECH_SIGNAL` `REVIEW_SIGNAL_OR_DISCUSSION` возможно в этом причина codex очень требовательные к коннекту. попробуй на r-api перейти
+- `msg-11127` `TECH_SIGNAL` `REVIEW_SIGNAL_OR_DISCUSSION` the browser could not reach the api. check backend status and allowed admin origin.
+- `msg-11675` `TECH_SIGNAL` `REVIEW_SIGNAL_OR_DISCUSSION` USERNAME после того как я переключился на апи с впн URL отлетов вообще нет. с ночи работает миссия без перерыва. спасибо
+- `msg-14375` `TECH_SIGNAL` `REVIEW_SIGNAL_OR_DISCUSSION` с r-api.vibemod.pro/v1
+- `msg-14476` `TECH_SIGNAL` `REVIEW_SIGNAL_OR_DISCUSSION` USERNAME переключился на r-api включил компактизацию через responses remote_compaction_v2 true ну и тож самое получаю
+- `msg-15977` `TECH_SIGNAL` `REVIEW_SIGNAL_OR_DISCUSSION` unable to reach r-api.vibemod.pro. your internet connection may be offline or interrupted. check your network connection and try again.
+- `msg-15979` `TECH_SIGNAL` `REVIEW_SIGNAL_OR_DISCUSSION` r-api должен без vpn нормально работать
+- `msg-16277` `TECH_SIGNAL` `REVIEW_SIGNAL_OR_DISCUSSION` угу всё так же. 13 минут в думаю раньше когда проблемы были с api то дисконектило сразу и попытки вроде 1/5 2/5 3/5... сейчас просто думаю и больше ничего
+- `msg-16752` `TECH_SIGNAL` `REVIEW_SIGNAL_OR_DISCUSSION` используй URL как openai_base_url. скилл responses-image-generation с user-agent: curl/8.7.1 именно так напиши ему.
+- `msg-16795` `TECH_SIGNAL` `REVIEW_SIGNAL_OR_DISCUSSION` в скиле поменяй с URL на URL и в python скрипте. ща скину.
+- `msg-16838` `TECH_SIGNAL` `REVIEW_SIGNAL_OR_DISCUSSION` используй URL как openai_base_url. скилл responses-image-generation с user-agent: curl/8.7.1 именно так напиши ему.
+- `msg-16883` `TECH_SIGNAL` `REVIEW_SIGNAL_OR_DISCUSSION` у тебя старая дата изменения skill файла. то есть онне обновлен. распакуй этот архив поверх там в py скрипте и в skill ссылка на URL
+- `msg-18053` `TECH_SIGNAL` `REVIEW_SIGNAL_OR_DISCUSSION` статус openai тг чат проверять свой vpn проверять настройки самого инструмента проверять автосжатие в лк смотреть и ловить запросы переключаться на другие модели создавать новые чаты
+- `msg-18104` `TECH_SIGNAL` `REVIEW_SIGNAL_OR_DISCUSSION` очень хотелось бы страницу мониторинга чтобы знать наверняка какой api и какая модель работает в идеале бы ещё по запросу списка моделей получать информацию о рабочих или не рабочих моделях
+- `msg-18107` `TECH_SIGNAL` `REVIEW_SIGNAL_OR_DISCUSSION` он по этому и r-api
+- `msg-18114` `TECH_SIGNAL` `REVIEW_SIGNAL_OR_DISCUSSION` не знаю проблема у меня или нет но на r-api порой вообще отваливается. hermes тормозит droid на домашнем сервере тоже хотя там скорее проблема в настройках маршрутизации и fake ip .
+- `msg-18300` `TECH_SIGNAL` `REVIEW_SIGNAL_OR_DISCUSSION` USERNAME - в новом лк инструкция claude code не доступна хотя в старом была и я в видео по ней делал
+- `msg-19252` `TECH_SIGNAL` `REVIEW_SIGNAL_OR_DISCUSSION` glm работает хорошо в их ide zcode а в claude хоть он и показывают настройки есть подозрение что кеширование не передается и лимит улетает супер быстро.

@@ -1,0 +1,5 @@
+# bm25_token_overlap_baseline / lab-cluster-275
+
+- `msg-15855` `MODEL_RUMOR_OR_PRICING_CLAIM` `RETAIN_CONTEXT_ONLY` prismaticapi 1 URL и prismaticapi.com - апи. 2 карты и тд не нужны 3 рега через google oauth. если регать просто через майл то письмо с подтверждение не приходит. после реги переходим сюда URL тыкаем на ползунок payg access и billing order 4 на фри плане дают 
+- `msg-18272` `MODEL_RUMOR_OR_PRICING_CLAIM` `RETAIN_CONTEXT_ONLY` prismaticapi 1 URL и prismaticapi.com - апи. 2 карты и тд не нужны 3 рега через google oauth. если регать просто через майл то письмо с подтверждение не приходит. после реги переходим сюда URL тыкаем на ползунок payg access и billing order 4 на фри плане дают 
+- `msg-18787` `MODEL_RUMOR_OR_PRICING_CLAIM` `RETAIN_CONTEXT_ONLY` prismaticapi 1 URL и prismaticapi.com - апи. 2 карты и тд не нужны 3 рега через google oauth. если регать просто через майл то письмо с подтверждение не приходит. после реги переходим сюда URL тыкаем на ползунок payg access и billing order 4 на фри плане дают 

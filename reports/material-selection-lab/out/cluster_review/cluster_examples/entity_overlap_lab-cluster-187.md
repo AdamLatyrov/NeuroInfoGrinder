@@ -1,0 +1,22 @@
+# entity_overlap / lab-cluster-187
+
+- `msg-09190` `TECH_SIGNAL` `REVIEW_SIGNAL_OR_DISCUSSION` попробуй чисто r-api без vpn
+- `msg-09221` `TECH_SIGNAL` `REVIEW_SIGNAL_OR_DISCUSSION` словно ключ слетел сейчас на r-api прверил работает
+- `msg-09241` `TECH_SIGNAL` `REVIEW_SIGNAL_OR_DISCUSSION` возможно этом причина codex очень требовательные коннекту попробуй на r-api перейти
+- `msg-11127` `TECH_SIGNAL` `REVIEW_SIGNAL_OR_DISCUSSION` browser could not reach api check backend status allowed admin origin
+- `msg-11675` `TECH_SIGNAL` `REVIEW_SIGNAL_OR_DISCUSSION` @ozerov_maxim api.vibemod.pro
+- `msg-14375` `TECH_SIGNAL` `REVIEW_SIGNAL_OR_DISCUSSION` r-api vibemod pro v1
+- `msg-14476` `TECH_SIGNAL` `REVIEW_SIGNAL_OR_DISCUSSION` @ozerov_maxim
+- `msg-15977` `TECH_SIGNAL` `REVIEW_SIGNAL_OR_DISCUSSION` unable to reach r-api vibemod pro your internet connection may be offline or interrupted check your network connection try again
+- `msg-15979` `TECH_SIGNAL` `REVIEW_SIGNAL_OR_DISCUSSION` r-api должен без vpn нормально работать
+- `msg-16277` `TECH_SIGNAL` `REVIEW_SIGNAL_OR_DISCUSSION` угу же 13 минут думаю раньше когда проблемы были api то дисконектило сразу попытки вроде сейчас просто думаю больше ничего
+- `msg-16752` `TECH_SIGNAL` `REVIEW_SIGNAL_OR_DISCUSSION` OPENAI_BASE_URL api.vibemod.pro
+- `msg-16795` `TECH_SIGNAL` `REVIEW_SIGNAL_OR_DISCUSSION` api.vibemod.pro r-api.vibemod.pro
+- `msg-16838` `TECH_SIGNAL` `REVIEW_SIGNAL_OR_DISCUSSION` OPENAI_BASE_URL api.vibemod.pro
+- `msg-16883` `TECH_SIGNAL` `REVIEW_SIGNAL_OR_DISCUSSION` SKILL api.vibemod.pro
+- `msg-18053` `TECH_SIGNAL` `REVIEW_SIGNAL_OR_DISCUSSION` статус openai тг чат проверять свой vpn проверять настройки самого инструмента проверять автосжатие лк смотреть ловить запросы переключаться на другие модели создавать новые чаты
+- `msg-18104` `TECH_SIGNAL` `REVIEW_SIGNAL_OR_DISCUSSION` очень хотелось бы страницу мониторинга чтобы знать наверняка какой api какая модель работает идеале бы по запросу списка моделей получать информацию рабочих не рабочих моделях
+- `msg-18107` `TECH_SIGNAL` `REVIEW_SIGNAL_OR_DISCUSSION` он по этому r-api
+- `msg-18114` `TECH_SIGNAL` `REVIEW_SIGNAL_OR_DISCUSSION` не знаю проблема нет но на r-api порой вообще отваливается hermes тормозит droid на домашнем сервере тоже хотя скорее проблема настройках маршрутизации fake ip
+- `msg-18300` `TECH_SIGNAL` `REVIEW_SIGNAL_OR_DISCUSSION` @awake_g claude
+- `msg-19252` `TECH_SIGNAL` `REVIEW_SIGNAL_OR_DISCUSSION` ZCODE claude

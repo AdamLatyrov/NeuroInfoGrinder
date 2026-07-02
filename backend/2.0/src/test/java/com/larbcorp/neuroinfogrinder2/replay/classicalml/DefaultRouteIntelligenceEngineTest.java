@@ -70,6 +70,57 @@ class DefaultRouteIntelligenceEngineTest {
         assertThat(decision.recommendedRoute()).isEqualTo("REFERENCE");
     }
 
+    @Test
+    void blocksNearDuplicateCandidateBeforeJudge() {
+        RouteIntelligenceDecision decision = engine.decide(
+            "MESSAGE",
+            "105",
+            featureStore(false, false, true),
+            triage("PRACTICAL_INSTRUCTION", "MATERIAL_CANDIDATE", "ACTIONABLE", "ENOUGH_SINGLE_MESSAGE", "SINGLE_MESSAGE", "GUIDE", "ENOUGH_FOR_DRAFT", 0.86, 0.78,
+                "CLEAN", "NEAR_DUPLICATE", "APPROVE_FOR_JUDGE"),
+            json.createObjectNode()
+        );
+
+        assertThat(decision.blocked()).isTrue();
+        assertThat(decision.recommendedRoute()).isEqualTo("NO_MATERIAL");
+        assertThat(decision.uiReason()).isEqualTo("DUPLICATE_SUPPRESSED");
+        assertThat(decision.policyFlags().toString()).contains("NEAR_DUPLICATE_SUPPRESSED");
+    }
+
+    @Test
+    void blocksRiskSensitiveCandidateBeforeJudge() {
+        RouteIntelligenceDecision decision = engine.decide(
+            "MESSAGE",
+            "106",
+            featureStore(false, false, true),
+            triage("PRACTICAL_INSTRUCTION", "MATERIAL_CANDIDATE", "ACTIONABLE", "ENOUGH_SINGLE_MESSAGE", "SINGLE_MESSAGE", "GUIDE", "ENOUGH_FOR_DRAFT", 0.86, 0.78,
+                "RISK_SENSITIVE", "UNIQUE", "APPROVE_FOR_JUDGE"),
+            json.createObjectNode()
+        );
+
+        assertThat(decision.blocked()).isTrue();
+        assertThat(decision.recommendedRoute()).isEqualTo("NO_MATERIAL");
+        assertThat(decision.uiReason()).isEqualTo("RISK_REQUIRES_MANUAL_REVIEW");
+        assertThat(decision.policyFlags().toString()).contains("RISK_SENSITIVE_MANUAL_REVIEW");
+    }
+
+    @Test
+    void blocksCandidateWhenClassicalFinalGateFails() {
+        RouteIntelligenceDecision decision = engine.decide(
+            "MESSAGE",
+            "107",
+            featureStore(false, false, true),
+            triage("PRACTICAL_INSTRUCTION", "MATERIAL_CANDIDATE", "ACTIONABLE", "ENOUGH_SINGLE_MESSAGE", "SINGLE_MESSAGE", "GUIDE", "ENOUGH_FOR_DRAFT", 0.86, 0.78,
+                "CLEAN", "UNIQUE", "REJECT_BEFORE_JUDGE"),
+            json.createObjectNode()
+        );
+
+        assertThat(decision.blocked()).isTrue();
+        assertThat(decision.recommendedRoute()).isEqualTo("NO_MATERIAL");
+        assertThat(decision.uiReason()).isEqualTo("CLASSICAL_FINAL_GATE_REJECTED");
+        assertThat(decision.policyFlags().toString()).contains("CLASSICAL_FINAL_GATE_REJECTED");
+    }
+
     private ObjectNode featureStore(boolean question, boolean link, boolean answerLike) {
         ObjectNode root = json.createObjectNode();
         ObjectNode lexical = root.putObject("lexical");
@@ -92,10 +143,29 @@ class DefaultRouteIntelligenceEngineTest {
         double routeProbability,
         double evidenceProbability
     ) {
+        return triage(meaning, value, usefulness, evidence, assembly, route, uiReason, routeProbability, evidenceProbability,
+            "CLEAN", "UNIQUE", "APPROVE_FOR_JUDGE");
+    }
+
+    private ObjectNode triage(
+        String meaning,
+        String value,
+        String usefulness,
+        String evidence,
+        String assembly,
+        String route,
+        String uiReason,
+        double routeProbability,
+        double evidenceProbability,
+        String preprocessing,
+        String dedupeCluster,
+        String llmJudge
+    ) {
         ObjectNode triage = json.createObjectNode();
         ObjectNode stageResults = json.createObjectNode();
         stageResults.set("triage", triage);
         ObjectNode votes = triage.putObject("modelVotes");
+        votes.put("preprocessingTop", preprocessing);
         votes.put("meaningTop", meaning);
         votes.put("valueTop", value);
         votes.put("usefulnessTop", usefulness);
@@ -103,9 +173,14 @@ class DefaultRouteIntelligenceEngineTest {
         votes.put("assemblyTop", assembly);
         votes.put("routeTop", route);
         votes.put("uiReasonTop", uiReason);
+        votes.put("dedupeClusterTop", dedupeCluster);
+        votes.put("llmJudgeTop", llmJudge);
         ObjectNode probabilities = triage.putObject("calibratedProbabilities");
+        probabilities.put("preprocessing", 0.91);
         probabilities.put("materialRoute", routeProbability);
         probabilities.put("evidenceSufficiency", evidenceProbability);
+        probabilities.put("dedupeCluster", 0.89);
+        probabilities.put("llmJudge", 0.88);
         ObjectNode modelResults = triage.putObject("modelResults");
         ArrayNode routes = modelResults.putArray("materialRoute");
         routes.add(routeNode(route, routeProbability, 1));

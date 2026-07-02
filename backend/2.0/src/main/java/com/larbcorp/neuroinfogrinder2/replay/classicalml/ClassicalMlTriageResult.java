@@ -21,6 +21,8 @@ public record ClassicalMlTriageResult(
     boolean fallbackUsed,
     double disagreementRate,
     JsonNode predictions,
-    JsonNode reasons
+    JsonNode reasons,
+    JsonNode uncertainty,
+    double modelAgreement
 ) {
 }

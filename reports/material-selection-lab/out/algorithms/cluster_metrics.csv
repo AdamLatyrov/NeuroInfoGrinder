@@ -1,0 +1,13 @@
+﻿algorithm,status,cluster_count,review_clusters,multi_message_review_clusters,singleton_review_clusters,avg_review_size,notes
+tfidf_cosine_baseline,ran_dependency_free_baseline,405,190,27,163,1.38,baseline grouping for human calibration; not importance truth
+bm25_token_overlap_baseline,ran_dependency_free_baseline,358,174,33,141,1.51,baseline grouping for human calibration; not importance truth
+simhash_near_duplicate,ran_dependency_free_baseline,540,223,17,206,1.18,baseline grouping for human calibration; not importance truth
+entity_overlap,ran_dependency_free_baseline,343,171,34,137,1.54,baseline grouping for human calibration; not importance truth
+time_thread_entity,ran_dependency_free_baseline,373,178,29,149,1.48,baseline grouping for human calibration; not importance truth
+bge_m3_cosine_optional_cached,adapter_not_run,0,0,0,0,,optional dependency/cache required; no production/model-worker call performed
+hybrid_bm25_bge_optional_cached,adapter_not_run,0,0,0,0,,optional dependency/cache required; no production/model-worker call performed
+hdbscan_optional,adapter_not_run,0,0,0,0,,optional dependency/cache required; no production/model-worker call performed
+kmeans_optional,adapter_not_run,0,0,0,0,,optional dependency/cache required; no production/model-worker call performed
+agglomerative_optional,adapter_not_run,0,0,0,0,,optional dependency/cache required; no production/model-worker call performed
+bertopic_like_optional,adapter_not_run,0,0,0,0,,optional dependency/cache required; no production/model-worker call performed
+supervised_classifier_after_gold_labels,adapter_not_run,0,0,0,0,,optional dependency/cache required; no production/model-worker call performed

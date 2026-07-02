@@ -1,0 +1,2 @@
+﻿group_id,source_count,independent_source_count,claim_type,risk_state,link_enrichment_state,duplicate_status,preliminary_topic,preliminary_route_policy,raw_ids
+eg-00712,2,2,OUTAGE_OR_TECHNICAL_PROBLEM,LOW,NOT_REQUIRED_OR_UNKNOWN,NOT_COLLAPSED,STAR,ELIGIBLE_MATERIAL_REVIEW_ONLY_NOT_FINAL,"5136,3655"

@@ -736,6 +736,7 @@ public class PipelineLiveService {
 
     public List<StageMessage> stageMessages(String stageId, String status, int limit) {
         String traceStatus = switch (status == null ? "active" : status) {
+            case "all" -> "ALL";
             case "processed" -> "PROCESSED";
             case "failed" -> "FAILED";
             case "skipped" -> "SKIPPED";
@@ -743,12 +744,14 @@ public class PipelineLiveService {
             default -> "PROCESSING";
         };
         int safeLimit = Math.max(1, Math.min(limit <= 0 ? 100 : limit, 200));
-        String statusPredicate = "WAITING".equals(traceStatus)
+        String statusPredicate = "ALL".equals(traceStatus)
+                ? "TRUE"
+                : "WAITING".equals(traceStatus)
                 ? "tr.status IN ('PENDING', 'WAITING_FOR_WORKER')"
                 : "PROCESSED".equals(traceStatus)
                 ? "tr.status IN ('PROCESSED', 'PROCESSED_DEGRADED')"
                 : "tr.status = ?";
-        Object[] args = "WAITING".equals(traceStatus) || "PROCESSED".equals(traceStatus)
+        Object[] args = "ALL".equals(traceStatus) || "WAITING".equals(traceStatus) || "PROCESSED".equals(traceStatus)
                 ? new Object[]{stageId, safeLimit}
                 : new Object[]{stageId, traceStatus, safeLimit};
         List<StageMessage> rows = jdbc.query("""
@@ -1006,7 +1009,7 @@ public class PipelineLiveService {
             if (!candidate.hasIntake()) intakeCreated++;
             if (enabled && candidate.hasText() && !candidate.hasQueue()) {
                 if (!dryRun) {
-                    long batchId = ensureCollectingBatch(candidate.accountId(), candidate.telegramChatId(), candidate.topicId());
+                    long batchId = ensureCollectingBatch(candidate.accountId(), candidate.telegramChatId(), effectiveBatchTopicId(candidate.accountId(), candidate.telegramChatId(), candidate.topicId()));
                     jdbc.update("""
                             INSERT INTO auto_pipeline_queue (raw_message_id, account_id, telegram_chat_id, topic_id, batch_id, status, reason)
                             VALUES (?, ?, ?, ?, ?, 'PENDING', 'AUTO_PIPELINE_SCOPE_BACKFILL')
@@ -1051,7 +1054,7 @@ public class PipelineLiveService {
                 """, (rs, rowNum) -> new RawCandidate(rs.getLong("id"), rs.getLong("account_id"), rs.getLong("telegram_chat_id"), nullableLong(rs, "telegram_topic_id"), nullableLong(rs, "message_thread_id"), rs.getBoolean("has_text"), nullableLong(rs, "intake_id") != null, nullableLong(rs, "queue_id") != null), limit);
         if (!dryRun) {
             for (RawCandidate candidate : candidates) {
-                long batchId = ensureCollectingBatch(candidate.accountId(), candidate.telegramChatId(), candidate.topicId());
+                long batchId = ensureCollectingBatch(candidate.accountId(), candidate.telegramChatId(), effectiveBatchTopicId(candidate.accountId(), candidate.telegramChatId(), candidate.topicId()));
                 jdbc.update("""
                         INSERT INTO auto_pipeline_queue (raw_message_id, account_id, telegram_chat_id, topic_id, batch_id, status, reason)
                         VALUES (?, ?, ?, ?, ?, 'PENDING', 'AUTO_PIPELINE_ENABLED_REQUEUE')
@@ -1270,6 +1273,11 @@ public class PipelineLiveService {
                 ORDER BY id DESC
                 LIMIT 1
                 """, rs -> rs.next() ? autoSetting(rs, 0) : null, accountId, chatId, topicId);
+    }
+
+    private Long effectiveBatchTopicId(long accountId, long chatId, Long topicId) {
+        AutoPipelineSettingDto topicSetting = topicId == null ? null : findAutoSetting(accountId, chatId, topicId);
+        return topicSetting == null ? null : topicId;
     }
 
     private WorkerSnapshot workerSnapshot() {

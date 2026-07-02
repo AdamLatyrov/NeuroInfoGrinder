@@ -1,0 +1,18 @@
+routes={'CONTEXT_ONLY': 18857, 'REJECT_SAFE': 515, 'SIGNAL_ONLY': 286, 'NEEDS_ENRICHMENT': 128, 'REVIEW_HIGH_RECALL': 97, 'AGGREGATE_ONLY': 96, 'MANUAL_REVIEW': 21}
+clusters=467
+decisions={'REVIEW_SINGLE_SIGNAL': 201, 'BLOCKED': 156, 'CONTEXT_ONLY': 50, 'SIGNAL_PAIR': 18, 'CONTEXT_GROUP': 13, 'SIGNAL_GROUP': 7, 'LINK_ENRICHMENT_FIRST': 7, 'WEAK_PAIR': 7, 'EVIDENCE_GROUP_REVIEW': 6, 'MANUAL_REVIEW': 2}
+hidden_url_messages=722
+hidden_url_total=1208
+review_biggest:
+v2c-00060 MANUAL_REVIEW size=13 ctx=11 indep=11 convs=11 shared=[] Риск / рефералы / абуз — ручная проверка
+v2c-00107 SIGNAL_GROUP size=7 ctx=0 indep=1 convs=1 shared=['codex.sale', 't.me'] Тема: codex.sale
+v2c-00141 SIGNAL_GROUP size=6 ctx=9 indep=1 convs=1 shared=['t.me'] Вакансии / события — агрегат только
+v2c-00017 SIGNAL_GROUP size=5 ctx=14 indep=1 convs=1 shared=['opus'] Тема: opus
+v2c-00026 SIGNAL_GROUP size=5 ctx=5 indep=1 convs=1 shared=['deepseek'] Тема: deepseek
+v2c-00098 EVIDENCE_GROUP_REVIEW size=5 ctx=4 indep=5 convs=1 shared=['senpis.xyz'] Тема: senpis.xyz
+v2c-00136 EVIDENCE_GROUP_REVIEW size=5 ctx=19 indep=4 convs=1 shared=['droid'] Тема: droid
+v2c-00009 LINK_ENRICHMENT_FIRST size=4 ctx=9 indep=3 convs=3 shared=['discord.gg'] Ссылки требуют обогащения
+v2c-00015 SIGNAL_GROUP size=4 ctx=7 indep=1 convs=1 shared=['opus'] Тема: opus
+v2c-00016 MANUAL_REVIEW size=4 ctx=20 indep=3 convs=1 shared=['t.me'] Риск / рефералы / абуз — ручная проверка
+v2c-00061 LINK_ENRICHMENT_FIRST size=4 ctx=4 indep=3 convs=3 shared=['telegra.ph'] Ссылки требуют обогащения
+v2c-00001 EVIDENCE_GROUP_REVIEW size=3 ctx=3 indep=2 convs=1 shared=['codex'] Тема: codex

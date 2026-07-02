@@ -1,0 +1,64 @@
+{
+  "date": "2026-06-28",
+  "environment": "production",
+  "url": "https://neuroinfogrinder.latrdev.ru",
+  "datasetId": 8136,
+  "finalRunId": 8153,
+  "status": "completed_with_findings",
+  "verification": {
+    "backendTests": "mvn test passed 113/113",
+    "frontendBuild": "npm run build passed",
+    "deployHealth": "backend/frontend healthy, public HTTP 200"
+  },
+  "codeChanges": [
+    "Expanded and tightened signal topic keyword routing",
+    "Stopped PROMO_ALONE from being stored as a knowledge signal",
+    "Preserved LINK_ONLY as NEEDS_LINK_ENRICHMENT",
+    "Resolved signal source text and app message URL through dataset/raw matching",
+    "Excluded obvious non-material signals from BGE/semantic material clustering",
+    "Persisted risk/manual-review signals on hard route rejection"
+  ],
+  "scenarios": [
+    { "id": "S01", "name": "GUIDE", "expected": "GUIDE material", "actual": "Included in macro GUIDE with S05/S10", "disposition": "partial" },
+    { "id": "S02", "name": "GENERATION", "expected": "Generation material", "actual": "Single material artifact ANSWER", "disposition": "misclassified_type" },
+    { "id": "S03", "name": "ANSWER", "expected": "Answer material", "actual": "Single material artifact GUIDE", "disposition": "misclassified_type" },
+    { "id": "S04", "name": "SUMMARY", "expected": "Summary material", "actual": "Single material artifact ANSWER", "disposition": "misclassified_type" },
+    { "id": "S05", "name": "REFERENCE_OTHER", "expected": "Reference/other material or catalog item", "actual": "Included in macro GUIDE with S01/S10", "disposition": "misclustered" },
+    { "id": "S06", "name": "LINK_ONLY", "expected": "Signal only, no material", "actual": "LINK_ONLY NEEDS_LINK_ENRICHMENT tools-repos", "disposition": "pass" },
+    { "id": "S07", "name": "PROMO", "expected": "No material, no normal signal", "actual": "REJECTED_SINGLE_MESSAGE PROMO_ALONE no signal", "disposition": "pass" },
+    { "id": "S08", "name": "RISK", "expected": "Risk/manual-review signal only", "actual": "RISK_OR_REFERRAL_SIGNAL RISK_SENSITIVE_MANUAL_REVIEW abuse-risk/security-privacy", "disposition": "pass" },
+    { "id": "S09", "name": "LOW_VALUE", "expected": "No material, no signal", "actual": "REJECTED_SINGLE_MESSAGE CHAT_CONTEXT_ONLY no signal", "disposition": "pass" },
+    { "id": "S10", "name": "DUPLICATE", "expected": "No separate duplicate material", "actual": "Included in macro GUIDE with S01/S05", "disposition": "partial" }
+  ],
+  "finalRunArtifacts": {
+    "materials": [49, 50, 51, 52],
+    "signals": [22, 23]
+  },
+  "cleanup": {
+    "completed": true,
+    "deletedRuns": [8151, 8152, 8153],
+    "deletedDataset": 8136,
+    "remainingDatasetMessages": 0,
+    "remainingRuns": 0,
+    "remainingMaterials": 0,
+    "remainingSignals": 0
+  },
+  "currentPublicSignalCounts": {
+    "models-releases": 0,
+    "free-tokens-quotas": 0,
+    "providers-routers": 1,
+    "api-integrations": 1,
+    "outages-limits": 1,
+    "tools-repos": 1,
+    "agents-prompts": 1,
+    "abuse-risk": 2,
+    "security-privacy": 0,
+    "pricing-costs": 0
+  },
+  "findings": [
+    "Signal routing safety is improved: link-only, promo, risk, and low-value no longer leak into materials",
+    "Topic assignment is less noisy after cleanup and rule tightening",
+    "Material artifact type classification remains weak for generation, answer, and summary scenarios",
+    "Macro clustering still over-merges guide/reference/duplicate content"
+  ]
+}

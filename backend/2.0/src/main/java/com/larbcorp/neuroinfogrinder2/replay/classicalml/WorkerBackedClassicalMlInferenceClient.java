@@ -60,7 +60,9 @@ public class WorkerBackedClassicalMlInferenceClient implements ClassicalMlInfere
             result.path("fallbackUsed").asBoolean(false),
             result.path("disagreementRate").asDouble(0.0),
             result.path("predictions"),
-            result.path("reasons")
+            result.path("reasons"),
+            result.path("uncertainty"),
+            result.path("modelAgreement").asDouble(0.0)
         );
     }
 }

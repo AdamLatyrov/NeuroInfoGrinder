@@ -1,0 +1,151 @@
+﻿cluster_id,ru_name,decision,decision_ru,size,independent_source_count,conversation_count,shared_strong_entities,top_20_ids,top_20_classes
+v2c-00010,Риск / рефералы / абуз — ручная проверка,MANUAL_REVIEW,ручная проверка (риск),18,1,1,t.me,"msg-18104,msg-18093,msg-15525,msg-15524,msg-09873,msg-10091,msg-18107,msg-04833,msg-18092,msg-18105,msg-04005,msg-04003,msg-09878,msg-15798,msg-15796,msg-10083,msg-09887,msg-18106","LOW_VALUE_CHATTER,CAREER_JOB_POST,CAREER_JOB_POST,LOW_VALUE_CHATTER,LOW_VALUE_CHATTER,LOW_VALUE_CHATTER,LOW_VALUE_CHATTER,LOW_VALUE_CHATTER,LOW_VALUE_CHATTER,LOW_VALUE_CHATTER,CAREER_JOB_POST,LOW_VALUE_CHATTER,WEAK_SIGNAL,CAREER_JOB_POST,WEAK_SIGNAL,CAREER_JOB_POST,CAREER_JOB_POST,LOW_VALUE_CHATTER"
+v2c-00012,Риск / рефералы / абуз — ручная проверка,MANUAL_REVIEW,ручная проверка (риск),15,3,1,,"msg-03043,msg-13636,msg-03358,msg-01430,msg-14092,msg-18421,msg-02899,msg-03257,msg-11885,msg-09788,msg-05286,msg-07338,msg-18673,msg-13961,msg-14226","TECH_SIGNAL,CAREER_JOB_POST,TECH_SIGNAL,LOW_VALUE_CHATTER,WEAK_SIGNAL,DIGEST_NEWS,POTENTIAL_DISCUSSION_SIGNAL,WEAK_SIGNAL,LOW_VALUE_CHATTER,LOW_VALUE_CHATTER,DIGEST_NEWS,WEAK_SIGNAL,WEAK_SIGNAL,DIGEST_NEWS,TECH_SIGNAL"
+v2c-00033,Риск / рефералы / абуз — ручная проверка,MANUAL_REVIEW,ручная проверка (риск),12,7,10,,"msg-08014,msg-03302,msg-03300,msg-00219,msg-13187,msg-13201,msg-17314,msg-11261,msg-00402,msg-08019,msg-05530,msg-08015","LOW_VALUE_CHATTER,REFERRAL_OR_INVITE_LINK,REFERRAL_OR_INVITE_LINK,TECH_SIGNAL,TECH_SIGNAL,TECH_SIGNAL,LOW_VALUE_CHATTER,WEAK_SIGNAL,LOW_VALUE_CHATTER,TECH_SIGNAL,WEAK_SIGNAL,WEAK_SIGNAL"
+v2c-00231,Ссылки требуют обогащения,LINK_ENRICHMENT_FIRST,сначала обогащение ссылки,10,1,1,kkinst.com,"msg-00170,msg-00169,msg-00157,msg-00156,msg-00005,msg-00161,msg-00151,msg-00987,msg-00174,msg-00163","LINK_SHARE,LINK_SHARE,LINK_SHARE,LINK_SHARE,LINK_SHARE,LINK_SHARE,LINK_SHARE,LINK_SHARE,LINK_SHARE,LINK_SHARE"
+v2c-00067,Риск / рефералы / абуз — ручная проверка,MANUAL_REVIEW,ручная проверка (риск),9,3,4,,"msg-17198,msg-11877,msg-11883,msg-11876,msg-07157,msg-18737,msg-13147,msg-15239,msg-11871","OUTAGE_STATUS,LOW_VALUE_CHATTER,OUTAGE_STATUS,LOW_VALUE_CHATTER,WEAK_SIGNAL,POTENTIAL_DISCUSSION_SIGNAL,WEAK_SIGNAL,MODEL_RUMOR_OR_PRICING_CLAIM,OUTAGE_STATUS"
+v2c-00096,Вакансии / события — агрегат только,SIGNAL_GROUP,группа сигналов (недостаточно источников),6,1,1,"codex.sale,t.me","msg-18097,msg-06233,msg-00598,msg-13588,msg-19441,msg-03460","TECH_SIGNAL,MODEL_RUMOR_OR_PRICING_CLAIM,MODEL_RUMOR_OR_PRICING_CLAIM,TECH_SIGNAL,WEAK_SIGNAL,MODEL_RUMOR_OR_PRICING_CLAIM"
+v2c-00022,Ссылки требуют обогащения,LINK_ENRICHMENT_FIRST,сначала обогащение ссылки,5,1,1,youtube.com,"msg-00624,msg-01179,msg-00751,msg-01146,msg-01216","SOCIAL_MEDIA_LINK,SOCIAL_MEDIA_LINK,LOW_VALUE_CHATTER,SOCIAL_MEDIA_LINK,LOW_VALUE_CHATTER"
+v2c-00201,Риск / рефералы / абуз — ручная проверка,MANUAL_REVIEW,ручная проверка (риск),5,5,1,senpis.xyz,"msg-05086,msg-04962,msg-06187,msg-05189,msg-07790","LOW_VALUE_CHATTER,LOW_VALUE_CHATTER,LOW_VALUE_CHATTER,LOW_VALUE_CHATTER,LOW_VALUE_CHATTER"
+v2c-00216,Тема: sonnet,SIGNAL_GROUP,группа сигналов (недостаточно источников),5,2,1,sonnet,"msg-06044,msg-06042,msg-05996,msg-06034,msg-06046","MODEL_RUMOR_OR_PRICING_CLAIM,MODEL_RUMOR_OR_PRICING_CLAIM,MODEL_RUMOR_OR_PRICING_CLAIM,MODEL_RUMOR_OR_PRICING_CLAIM,MODEL_RUMOR_OR_PRICING_CLAIM"
+v2c-00021,Риск / рефералы / абуз — ручная проверка,MANUAL_REVIEW,ручная проверка (риск),5,5,1,,"msg-12864,msg-12856,msg-12869,msg-12668,msg-12849","LOW_VALUE_CHATTER,LINK_SHARE,LOW_VALUE_CHATTER,LOW_VALUE_CHATTER,LOW_VALUE_CHATTER"
+v2c-00100,Тема: sonnet,SIGNAL_GROUP,группа сигналов (недостаточно источников),4,2,1,sonnet,"msg-03325,msg-03346,msg-03342,msg-03336","MODEL_RUMOR_OR_PRICING_CLAIM,MODEL_RUMOR_OR_PRICING_CLAIM,MODEL_RUMOR_OR_PRICING_CLAIM,MODEL_RUMOR_OR_PRICING_CLAIM"
+v2c-00116,Ссылки требуют обогащения,LINK_ENRICHMENT_FIRST,сначала обогащение ссылки,4,3,3,discord.gg,"msg-07359,msg-17257,msg-17326,msg-17315","LINK_SHARE,MODEL_RUMOR_OR_PRICING_CLAIM,MODEL_RUMOR_OR_PRICING_CLAIM,MODEL_RUMOR_OR_PRICING_CLAIM"
+v2c-00143,Риск / рефералы / абуз — ручная проверка,MANUAL_REVIEW,ручная проверка (риск),4,3,1,t.me,"msg-12896,msg-12806,msg-12803,msg-12795","INTERNAL_TELEGRAM_LINK,INTERNAL_TELEGRAM_LINK,INTERNAL_TELEGRAM_LINK,REFERRAL_OR_INVITE_LINK"
+v2c-00202,Ссылки требуют обогащения,LINK_ENRICHMENT_FIRST,сначала обогащение ссылки,4,3,3,telegra.ph,"msg-18759,msg-09943,msg-12380,msg-03718","LINK_SHARE,LINK_SHARE,WEAK_SIGNAL,LINK_SHARE"
+v2c-00219,Риск / рефералы / абуз — ручная проверка,MANUAL_REVIEW,ручная проверка (риск),4,1,1,opus,"msg-04539,msg-10001,msg-03888,msg-10000","LOW_VALUE_CHATTER,MODEL_RUMOR_OR_PRICING_CLAIM,MODEL_RUMOR_OR_PRICING_CLAIM,MODEL_RUMOR_OR_PRICING_CLAIM"
+v2c-00092,Ссылки требуют обогащения,LINK_ENRICHMENT_FIRST,сначала обогащение ссылки,4,3,1,,"msg-04770,msg-06273,msg-09032,msg-07302","INTERNAL_TELEGRAM_LINK,LOW_VALUE_CHATTER,INTERNAL_TELEGRAM_LINK,LOW_VALUE_CHATTER"
+v2c-00107,Риск / рефералы / абуз — ручная проверка,MANUAL_REVIEW,ручная проверка (риск),4,2,1,,"msg-09498,msg-09459,msg-09512,msg-09504","RISK_PROMO_REFERRAL,RISK_PROMO_REFERRAL,LOW_VALUE_CHATTER,RISK_PROMO_REFERRAL"
+v2c-00050,Риск / рефералы / абуз — ручная проверка,MANUAL_REVIEW,ручная проверка (риск),3,2,3,"github.com,github.io","msg-13575,msg-15418,msg-13573","WEAK_SIGNAL,TECH_SIGNAL,WEAK_SIGNAL"
+v2c-00041,Техническое обсуждение: r-api,EVIDENCE_GROUP_REVIEW,группа доказательств на проверку материала,3,2,1,r-api,"msg-09720,msg-09715,msg-09735","TECH_SIGNAL,TECH_SIGNAL,TECH_SIGNAL"
+v2c-00161,Риск / рефералы / абуз — ручная проверка,MANUAL_REVIEW,ручная проверка (риск),3,3,2,senpi.one,"msg-13804,msg-14247,msg-13384","LOW_VALUE_CHATTER,LOW_VALUE_CHATTER,LOW_VALUE_CHATTER"
+v2c-00189,Тема: opus,SIGNAL_GROUP,группа сигналов (недостаточно источников),3,1,1,opus,"msg-03332,msg-03341,msg-03319","MODEL_RUMOR_OR_PRICING_CLAIM,WEAK_SIGNAL,WEAK_SIGNAL"
+v2c-00235,Ссылки требуют обогащения,LINK_ENRICHMENT_FIRST,сначала обогащение ссылки,3,1,1,t.me,"msg-14414,msg-14416,msg-14420","LOW_VALUE_CHATTER,LOW_VALUE_CHATTER,LOW_VALUE_CHATTER"
+v2c-00335,Техническое обсуждение: deepseek,SIGNAL_GROUP,группа сигналов (недостаточно источников),3,1,1,deepseek,"msg-09723,msg-13754,msg-18679","TECH_SIGNAL,TECH_SIGNAL,WEAK_SIGNAL"
+v2c-00017,Ссылки требуют обогащения,LINK_ENRICHMENT_FIRST,сначала обогащение ссылки,3,3,1,,"msg-08788,msg-09712,msg-08734","OUTAGE_STATUS,TECH_SIGNAL,LINK_SHARE"
+v2c-00083,Ссылки требуют обогащения,LINK_ENRICHMENT_FIRST,сначала обогащение ссылки,3,2,1,,"msg-05355,msg-04378,msg-05366","RESOURCE_LINK,WEAK_SIGNAL,MODEL_RUMOR_OR_PRICING_CLAIM"
+v2c-00232,Риск / рефералы / абуз — ручная проверка,MANUAL_REVIEW,ручная проверка (риск),3,2,1,,"msg-17329,msg-11910,msg-11979","MODEL_RUMOR_OR_PRICING_CLAIM,RISK_PROMO_REFERRAL,LOW_VALUE_CHATTER"
+v2c-00253,Тема: deepseek,SIGNAL_PAIR,пара сигналов по strong-сущности,2,1,1,"deepseek,gpt-5,opus,t.me","msg-11419,msg-18890","DIGEST_NEWS,MODEL_RUMOR_OR_PRICING_CLAIM"
+v2c-00472,Тема: claudecode,SIGNAL_PAIR,пара сигналов по strong-сущности,2,1,2,"claudecode,github.com,githubusercontent.com,mcp","msg-03288,msg-03296","WEAK_SIGNAL,WEAK_SIGNAL"
+v2c-00065,Вакансии / события — агрегат только,SIGNAL_PAIR,пара сигналов по strong-сущности,2,1,1,"instagram.com,t.me,youtube.com","msg-16261,msg-17954","LOW_VALUE_CHATTER,WEAK_SIGNAL"
+v2c-00031,Ссылки требуют обогащения,LINK_ENRICHMENT_FIRST,сначала обогащение ссылки,2,2,2,"vibemod,vibemod.pro","msg-19249,msg-14989","TECH_SIGNAL,LINK_SHARE"
+v2c-00068,Тема: popolama.com,SIGNAL_PAIR,пара сигналов по strong-сущности,2,1,2,"popolama.com,t.me","msg-02924,msg-02948","WEAK_SIGNAL,WEAK_SIGNAL"
+v2c-00195,Тема: codex,SIGNAL_PAIR,пара сигналов по strong-сущности,2,1,1,"codex,gpt5","msg-14875,msg-14876","MODEL_RUMOR_OR_PRICING_CLAIM,MODEL_RUMOR_OR_PRICING_CLAIM"
+v2c-00268,Риск / рефералы / абуз — ручная проверка,MANUAL_REVIEW,ручная проверка (риск),2,1,1,"gemini,t.me","msg-03049,msg-14845","TECH_SIGNAL,WEAK_SIGNAL"
+v2c-00014,Ссылки требуют обогащения,LINK_ENRICHMENT_FIRST,сначала обогащение ссылки,2,2,2,anthropic.com,"msg-03825,msg-01313","WEAK_SIGNAL,LINK_SHARE"
+v2c-00018,Ссылки требуют обогащения,LINK_ENRICHMENT_FIRST,сначала обогащение ссылки,2,1,1,tiktok.com,"msg-18765,msg-18824","SOCIAL_MEDIA_LINK,SOCIAL_MEDIA_LINK"
+v2c-00020,Тема: droid,SIGNAL_PAIR,пара сигналов по strong-сущности,2,1,1,droid,"msg-15196,msg-15169","LOW_VALUE_CHATTER,LOW_VALUE_CHATTER"
+v2c-00024,Техническое обсуждение: github.com,SIGNAL_PAIR,пара сигналов по strong-сущности,2,2,1,github.com,"msg-09969,msg-08205","TECH_SIGNAL,TECH_SIGNAL"
+v2c-00043,Вакансии / события — агрегат только,SIGNAL_PAIR,пара сигналов по strong-сущности,2,1,1,mts-link.ru,"msg-18378,msg-16118","CAREER_JOB_POST,CAREER_JOB_POST"
+v2c-00052,Тема: droid,SIGNAL_PAIR,пара сигналов по strong-сущности,2,1,1,droid,"msg-10113,msg-10109","WEAK_SIGNAL,LOW_VALUE_CHATTER"
+v2c-00057,Тема: mcp,SIGNAL_PAIR,пара сигналов по strong-сущности,2,1,1,mcp,"msg-09919,msg-10072","LOW_VALUE_CHATTER,LOW_VALUE_CHATTER"
+v2c-00104,Ссылки требуют обогащения,LINK_ENRICHMENT_FIRST,сначала обогащение ссылки,2,2,1,t.me,"msg-05338,msg-10085","INTERNAL_TELEGRAM_LINK,INTERNAL_TELEGRAM_LINK"
+v2c-00105,Вакансии / события — агрегат только,SIGNAL_PAIR,пара сигналов по strong-сущности,2,1,1,impulse-hr.ru,"msg-18374,msg-15938","CAREER_JOB_POST,CAREER_JOB_POST"
+v2c-00109,Ссылки требуют обогащения,LINK_ENRICHMENT_FIRST,сначала обогащение ссылки,2,1,1,youtu.be,"msg-12181,msg-12192","SOCIAL_MEDIA_LINK,SOCIAL_MEDIA_LINK"
+v2c-00114,Ссылки требуют обогащения,LINK_ENRICHMENT_FIRST,сначала обогащение ссылки,2,1,1,youtu.be,"msg-02920,msg-02928","SOCIAL_MEDIA_LINK,SOCIAL_MEDIA_LINK"
+v2c-00144,Тема: droid,SIGNAL_PAIR,пара сигналов по strong-сущности,2,2,1,droid,"msg-15718,msg-15627","LOW_VALUE_CHATTER,LOW_VALUE_CHATTER"
+v2c-00147,Тема: tjc.edu,SIGNAL_PAIR,пара сигналов по strong-сущности,2,2,2,tjc.edu,"msg-00252,msg-04542","LOW_VALUE_CHATTER,LOW_VALUE_CHATTER"
+v2c-00150,Сбои / ошибки: 403,SIGNAL_PAIR,пара сигналов по strong-сущности,2,2,2,403,"msg-12498,msg-02864","MODEL_RUMOR_OR_PRICING_CLAIM,WEAK_SIGNAL"
+v2c-00154,Ссылки требуют обогащения,LINK_ENRICHMENT_FIRST,сначала обогащение ссылки,2,1,1,x.com,"msg-13156,msg-13158","SOCIAL_MEDIA_LINK,SOCIAL_MEDIA_LINK"
+v2c-00160,Тема: claudecode,SIGNAL_PAIR,пара сигналов по strong-сущности,2,1,1,claudecode,"msg-05438,msg-05440","WEAK_SIGNAL,WEAK_SIGNAL"
+v2c-00184,Тема: yourgpt.ai,SIGNAL_PAIR,пара сигналов по strong-сущности,2,1,1,yourgpt.ai,"msg-05783,msg-05788","LOW_VALUE_CHATTER,MODEL_RUMOR_OR_PRICING_CLAIM"
+v2c-00220,Тема: hermes,SIGNAL_PAIR,пара сигналов по strong-сущности,2,2,1,hermes,"msg-15821,msg-17499","MODEL_RUMOR_OR_PRICING_CLAIM,TECH_SIGNAL"
+v2c-00266,Тема: codex,SIGNAL_PAIR,пара сигналов по strong-сущности,2,1,1,codex,"msg-18451,msg-18446","LOW_VALUE_CHATTER,LOW_VALUE_CHATTER"
+v2c-00307,Тема: oauth,SIGNAL_PAIR,пара сигналов по strong-сущности,2,1,2,oauth,"msg-09575,msg-04031","LOW_VALUE_CHATTER,LOW_VALUE_CHATTER"
+v2c-00321,Вакансии / события — агрегат только,SIGNAL_PAIR,пара сигналов по strong-сущности,2,1,1,t.me,"msg-14855,msg-17069","CAREER_JOB_POST,TECH_SIGNAL"
+v2c-00328,Ссылки требуют обогащения,LINK_ENRICHMENT_FIRST,сначала обогащение ссылки,2,1,1,t.me,"msg-00466,msg-00467","LOW_VALUE_CHATTER,LOW_VALUE_CHATTER"
+v2c-00345,Риск / рефералы / абуз — ручная проверка,MANUAL_REVIEW,ручная проверка (риск),2,1,2,bynara.id,"msg-18818,msg-18817","LOW_VALUE_CHATTER,LOW_VALUE_CHATTER"
+v2c-00346,Ссылки требуют обогащения,LINK_ENRICHMENT_FIRST,сначала обогащение ссылки,2,2,2,goo.gl,"msg-05014,msg-01646","LINK_SHARE,LOW_VALUE_CHATTER"
+v2c-00359,Вакансии / события — агрегат только,SIGNAL_PAIR,пара сигналов по strong-сущности,2,1,1,timepad.ru,"msg-18384,msg-18379","EVENT_ANNOUNCEMENT,EVENT_ANNOUNCEMENT"
+v2c-00373,Тема: deepseek,SIGNAL_PAIR,пара сигналов по strong-сущности,2,1,1,deepseek,"msg-13813,msg-13817","WEAK_SIGNAL,DIGEST_NEWS"
+v2c-00430,Ссылки требуют обогащения,LINK_ENRICHMENT_FIRST,сначала обогащение ссылки,2,2,2,byesu.com,"msg-18620,msg-17637","OUTAGE_STATUS,LOW_VALUE_CHATTER"
+v2c-00480,Ссылки требуют обогащения,LINK_ENRICHMENT_FIRST,сначала обогащение ссылки,2,1,2,eu.cc,"msg-17564,msg-17552","LINK_SHARE,LINK_SHARE"
+v2c-00073,Риск / рефералы / абуз — ручная проверка,MANUAL_REVIEW,ручная проверка (риск),2,2,1,,"msg-05981,msg-05993","RISK_PROMO_REFERRAL,RISK_PROMO_REFERRAL"
+v2c-00082,Ссылки требуют обогащения,LINK_ENRICHMENT_FIRST,сначала обогащение ссылки,2,2,1,,"msg-03833,msg-03816","CAREER_JOB_POST,LINK_SHARE"
+v2c-00101,Риск / рефералы / абуз — ручная проверка,MANUAL_REVIEW,ручная проверка (риск),2,2,1,,"msg-06735,msg-06718","LOW_VALUE_CHATTER,LOW_VALUE_CHATTER"
+v2c-00106,Риск / рефералы / абуз — ручная проверка,MANUAL_REVIEW,ручная проверка (риск),2,2,1,,"msg-15748,msg-15752","LOW_VALUE_CHATTER,INTERNAL_TELEGRAM_LINK"
+v2c-00110,Риск / рефералы / абуз — ручная проверка,MANUAL_REVIEW,ручная проверка (риск),2,2,1,,"msg-12963,msg-12956","LOW_VALUE_CHATTER,LOW_VALUE_CHATTER"
+v2c-00115,Риск / рефералы / абуз — ручная проверка,MANUAL_REVIEW,ручная проверка (риск),2,2,1,,"msg-16331,msg-16337","LOW_VALUE_CHATTER,LOW_VALUE_CHATTER"
+v2c-00347,Риск / рефералы / абуз — ручная проверка,MANUAL_REVIEW,ручная проверка (риск),2,2,1,,"msg-11034,msg-11039","LOW_VALUE_CHATTER,LOW_VALUE_CHATTER"
+v2c-00360,Риск / рефералы / абуз — ручная проверка,MANUAL_REVIEW,ручная проверка (риск),2,2,1,,"msg-10410,msg-10417","REFERRAL_OR_INVITE_LINK,LOW_VALUE_CHATTER"
+v2c-00434,Ссылки требуют обогащения,LINK_ENRICHMENT_FIRST,сначала обогащение ссылки,2,2,1,,"msg-08360,msg-08603","TECH_SIGNAL,INTERNAL_TELEGRAM_LINK"
+v2c-00317,Тема: codex,REVIEW_SINGLE_SIGNAL,одиночный сигнал на проверку,1,1,1,"codex,deepseek,gpt-5,metr.org,opus,t.me,thehackernews.com,theinformation.com,wired.com",msg-18889,MODEL_RUMOR_OR_PRICING_CLAIM
+v2c-00387,Тема: arstechnica.com,REVIEW_SINGLE_SIGNAL,одиночный сигнал на проверку,1,1,1,"arstechnica.com,deepseek,eweek.com,gemini,gpt-5,lwilko.com,opus,t.me",msg-11418,DIGEST_NEWS
+v2c-00426,Тема: amiami.com,REVIEW_SINGLE_SIGNAL,одиночный сигнал на проверку,1,1,1,"amiami.com,animestore.com.ua,hlj.com,hobby-genki.com,orangekitsune.com.ua,rozetka.com.ua,skufnya.com",msg-08917,LOW_VALUE_CHATTER
+v2c-00131,Риск / рефералы / абуз — ручная проверка,MANUAL_REVIEW,ручная проверка (риск),1,1,1,"cometapi.com,deepseek,gemini,remixskill.com,t.me,temporam.com",msg-13927,WEAK_SIGNAL
+v2c-00126,Риск / рефералы / абуз — ручная проверка,MANUAL_REVIEW,ручная проверка (риск),1,1,1,"deepseek,github.com,mcp,mistral,qwen",msg-16826,TECH_SIGNAL
+v2c-00246,Техническое обсуждение: claudecode,REVIEW_SINGLE_SIGNAL,одиночный сигнал на проверку,1,1,1,"claudecode,cline,codex,cursor,github.com",msg-05421,TECH_SIGNAL
+v2c-00032,"Тема: 0.1:8787""",REVIEW_SINGLE_SIGNAL,одиночный сигнал на проверку,1,1,1,"0.1:8787"",haiku,opus,sonnet",msg-17393,MODEL_RUMOR_OR_PRICING_CLAIM
+v2c-00525,Тема: claude.ai,REVIEW_SINGLE_SIGNAL,одиночный сигнал на проверку,1,1,1,"claude.ai,opus,sonnet,t.me",msg-06561,MODEL_RUMOR_OR_PRICING_CLAIM
+v2c-00005,Тема: opus,REVIEW_SINGLE_SIGNAL,одиночный сигнал на проверку,1,1,1,"opus,sonnet,t.me",msg-07551,MODEL_RUMOR_OR_PRICING_CLAIM
+v2c-00077,Тема: cursor,REVIEW_SINGLE_SIGNAL,одиночный сигнал на проверку,1,1,1,"cursor,deepseek,qwen",msg-08969,LOW_VALUE_CHATTER
+v2c-00121,Тема: haiku,REVIEW_SINGLE_SIGNAL,одиночный сигнал на проверку,1,1,1,"haiku,opus,sonnet",msg-00112,MODEL_RUMOR_OR_PRICING_CLAIM
+v2c-00170,Тема: codebase-memory-mcp,SINGLE_MESSAGE_GUIDE_CANDIDATE,содержательный одиночный гайд на проверку материала,1,1,1,"codebase-memory-mcp,codex,github.com",msg-05768,WEAK_SIGNAL
+v2c-00239,Техническое обсуждение: deepseek,SINGLE_MESSAGE_GUIDE_CANDIDATE,содержательный одиночный гайд на проверку материала,1,1,1,"deepseek,mcp,t.me",msg-15144,TECH_SIGNAL
+v2c-00309,Тема: gpt-5,REVIEW_SINGLE_SIGNAL,одиночный сигнал на проверку,1,1,1,"gpt-5,opus,venturebeat.com",msg-18629,MODEL_RUMOR_OR_PRICING_CLAIM
+v2c-00403,Тема: context7.com,REVIEW_SINGLE_SIGNAL,одиночный сигнал на проверку,1,1,1,"context7.com,github.com,hermes",msg-11392,WEAK_SIGNAL
+v2c-00427,Тема: claudecode,REVIEW_SINGLE_SIGNAL,одиночный сигнал на проверку,1,1,1,"claudecode,codex,cursor",msg-12539,WEAK_SIGNAL
+v2c-00452,Тема: anytype.io,REVIEW_SINGLE_SIGNAL,одиночный сигнал на проверку,1,1,1,"anytype.io,github.com,obsidian.md",msg-03621,LOW_VALUE_CHATTER
+v2c-00037,Тема: gpt-5,REVIEW_SINGLE_SIGNAL,одиночный сигнал на проверку,1,1,1,"gpt-5,t.co",msg-12800,MODEL_RUMOR_OR_PRICING_CLAIM
+v2c-00171,Риск / рефералы / абуз — ручная проверка,MANUAL_REVIEW,ручная проверка (риск),1,1,1,"gemini,opus",msg-14528,WEAK_SIGNAL
+v2c-00178,Техническое обсуждение: r-api,REVIEW_SINGLE_SIGNAL,одиночный сигнал на проверку,1,1,1,"r-api,vibemod",msg-09307,TECH_SIGNAL
+v2c-00203,Тема: deepseek,REVIEW_SINGLE_SIGNAL,одиночный сигнал на проверку,1,1,1,"deepseek,whatllm.org",msg-05901,MODEL_RUMOR_OR_PRICING_CLAIM
+v2c-00229,Ссылки требуют обогащения,LINK_ENRICHMENT_FIRST,сначала обогащение ссылки,1,1,1,"github.com,hermes",msg-11507,RESOURCE_LINK
+v2c-00237,Тема: claudecode,REVIEW_SINGLE_SIGNAL,одиночный сигнал на проверку,1,1,1,"claudecode,opus",msg-03011,MODEL_RUMOR_OR_PRICING_CLAIM
+v2c-00287,Тема: explainx.ai,REVIEW_SINGLE_SIGNAL,одиночный сигнал на проверку,1,1,1,"explainx.ai,gpt-5",msg-06132,MODEL_RUMOR_OR_PRICING_CLAIM
+v2c-00362,Ссылки требуют обогащения,LINK_ENRICHMENT_FIRST,сначала обогащение ссылки,1,1,1,"deepseek,deepseek.com",msg-11454,LINK_SHARE
+v2c-00366,Тема: max.ru,REVIEW_SINGLE_SIGNAL,одиночный сигнал на проверку,1,1,1,"max.ru,smmplanner.com",msg-15046,LOW_VALUE_CHATTER
+v2c-00429,Ссылки требуют обогащения,LINK_ENRICHMENT_FIRST,сначала обогащение ссылки,1,1,1,"codex,reddit.com",msg-18224,SOCIAL_MEDIA_LINK
+v2c-00431,Риск / рефералы / абуз — ручная проверка,MANUAL_REVIEW,ручная проверка (риск),1,1,1,"gemini,zoer.ai",msg-16929,LOW_VALUE_CHATTER
+v2c-00458,Тема: claudecode,REVIEW_SINGLE_SIGNAL,одиночный сигнал на проверку,1,1,1,"claudecode,opus",msg-02664,MODEL_RUMOR_OR_PRICING_CLAIM
+v2c-00459,Тема: codex,REVIEW_SINGLE_SIGNAL,одиночный сигнал на проверку,1,1,1,"codex,droid",msg-04336,WEAK_SIGNAL
+v2c-00462,Тема: t.me,REVIEW_SINGLE_SIGNAL,одиночный сигнал на проверку,1,1,1,"t.me,v1.ru",msg-12375,LOW_VALUE_CHATTER
+v2c-00483,Техническое обсуждение: opus,REVIEW_SINGLE_SIGNAL,одиночный сигнал на проверку,1,1,1,"opus,zyloo.io",msg-08881,TECH_SIGNAL
+v2c-00501,Техническое обсуждение: r-api,REVIEW_SINGLE_SIGNAL,одиночный сигнал на проверку,1,1,1,"r-api,vibemod",msg-03858,TECH_SIGNAL
+v2c-00502,Риск / рефералы / абуз — ручная проверка,MANUAL_REVIEW,ручная проверка (риск),1,1,1,"t.me,youtube.com",msg-19926,LOW_VALUE_CHATTER
+v2c-00001,Тема: 27.225:8080,REVIEW_SINGLE_SIGNAL,одиночный сигнал на проверку,1,1,1,27.225:8080,msg-07860,LOW_VALUE_CHATTER
+v2c-00007,Тема: youtu.be,REVIEW_SINGLE_SIGNAL,одиночный сигнал на проверку,1,1,1,youtu.be,msg-05914,LOW_VALUE_CHATTER
+v2c-00008,Ссылки требуют обогащения,LINK_ENRICHMENT_FIRST,сначала обогащение ссылки,1,1,1,github.com,msg-12037,RESOURCE_LINK
+v2c-00009,Тема: sonnet,REVIEW_SINGLE_SIGNAL,одиночный сигнал на проверку,1,1,1,sonnet,msg-06955,MODEL_RUMOR_OR_PRICING_CLAIM
+v2c-00011,Тема: opus,REVIEW_SINGLE_SIGNAL,одиночный сигнал на проверку,1,1,1,opus,msg-12403,MODEL_RUMOR_OR_PRICING_CLAIM
+v2c-00016,Ссылки требуют обогащения,LINK_ENRICHMENT_FIRST,сначала обогащение ссылки,1,1,1,youtube.com,msg-02989,SOCIAL_MEDIA_LINK
+v2c-00019,Тема: t.me,REVIEW_SINGLE_SIGNAL,одиночный сигнал на проверку,1,1,1,t.me,msg-07678,LOW_VALUE_CHATTER
+v2c-00027,Тема: vibeling.app,REVIEW_SINGLE_SIGNAL,одиночный сигнал на проверку,1,1,1,vibeling.app,msg-07251,WEAK_SIGNAL
+v2c-00029,Тема: gpt5,REVIEW_SINGLE_SIGNAL,одиночный сигнал на проверку,1,1,1,gpt5,msg-09240,MODEL_RUMOR_OR_PRICING_CLAIM
+v2c-00034,Ссылки требуют обогащения,LINK_ENRICHMENT_FIRST,сначала обогащение ссылки,1,1,1,youtu.be,msg-09496,SOCIAL_MEDIA_LINK
+v2c-00035,Тема: gpt5,REVIEW_SINGLE_SIGNAL,одиночный сигнал на проверку,1,1,1,gpt5,msg-06538,MODEL_RUMOR_OR_PRICING_CLAIM
+v2c-00039,Ссылки требуют обогащения,LINK_ENRICHMENT_FIRST,сначала обогащение ссылки,1,1,1,youtu.be,msg-09377,SOCIAL_MEDIA_LINK
+v2c-00040,Ссылки требуют обогащения,LINK_ENRICHMENT_FIRST,сначала обогащение ссылки,1,1,1,youtu.be,msg-09476,SOCIAL_MEDIA_LINK
+v2c-00045,Тема: youtube.com,REVIEW_SINGLE_SIGNAL,одиночный сигнал на проверку,1,1,1,youtube.com,msg-07017,LOW_VALUE_CHATTER
+v2c-00046,Ссылки требуют обогащения,LINK_ENRICHMENT_FIRST,сначала обогащение ссылки,1,1,1,t.me,msg-11423,INTERNAL_TELEGRAM_LINK
+v2c-00049,Тема: t.me,REVIEW_SINGLE_SIGNAL,одиночный сигнал на проверку,1,1,1,t.me,msg-19017,LOW_VALUE_CHATTER
+v2c-00053,Ссылки требуют обогащения,LINK_ENRICHMENT_FIRST,сначала обогащение ссылки,1,1,1,t.me,msg-10481,INTERNAL_TELEGRAM_LINK
+v2c-00055,Тема: gpt-5,REVIEW_SINGLE_SIGNAL,одиночный сигнал на проверку,1,1,1,gpt-5,msg-17807,MODEL_RUMOR_OR_PRICING_CLAIM
+v2c-00058,Риск / рефералы / абуз — ручная проверка,MANUAL_REVIEW,ручная проверка (риск),1,1,1,alon-pre.sale,msg-13619,LOW_VALUE_CHATTER
+v2c-00060,Техническое обсуждение: t.me,REVIEW_SINGLE_SIGNAL,одиночный сигнал на проверку,1,1,1,t.me,msg-07404,TECH_SIGNAL
+v2c-00062,Ссылки требуют обогащения,LINK_ENRICHMENT_FIRST,сначала обогащение ссылки,1,1,1,t.me,msg-08658,INTERNAL_TELEGRAM_LINK
+v2c-00064,Ссылки требуют обогащения,LINK_ENRICHMENT_FIRST,сначала обогащение ссылки,1,1,1,github.com,msg-08157,RESOURCE_LINK
+v2c-00072,Тема: google.com,REVIEW_SINGLE_SIGNAL,одиночный сигнал на проверку,1,1,1,google.com,msg-15847,LOW_VALUE_CHATTER
+v2c-00079,Ссылки требуют обогащения,LINK_ENRICHMENT_FIRST,сначала обогащение ссылки,1,1,1,t.me,msg-03062,LOW_VALUE_CHATTER
+v2c-00080,Ссылки требуют обогащения,LINK_ENRICHMENT_FIRST,сначала обогащение ссылки,1,1,1,cloudvps.host,msg-16771,LINK_SHARE
+v2c-00084,Ссылки требуют обогащения,LINK_ENRICHMENT_FIRST,сначала обогащение ссылки,1,1,1,github.com,msg-17154,RESOURCE_LINK
+v2c-00086,Ссылки требуют обогащения,LINK_ENRICHMENT_FIRST,сначала обогащение ссылки,1,1,1,youtu.be,msg-09963,SOCIAL_MEDIA_LINK
+v2c-00087,Тема: droid,REVIEW_SINGLE_SIGNAL,одиночный сигнал на проверку,1,1,1,droid,msg-15521,LOW_VALUE_CHATTER
+v2c-00094,Риск / рефералы / абуз — ручная проверка,MANUAL_REVIEW,ручная проверка (риск),1,1,1,lovable.dev,msg-03224,ABUSE_OR_CIRCUMVENTION
+v2c-00095,Тема: droid,REVIEW_SINGLE_SIGNAL,одиночный сигнал на проверку,1,1,1,droid,msg-18099,LOW_VALUE_CHATTER
+v2c-00108,Тема: droid,REVIEW_SINGLE_SIGNAL,одиночный сигнал на проверку,1,1,1,droid,msg-14008,LOW_VALUE_CHATTER
+v2c-00113,Ссылки требуют обогащения,LINK_ENRICHMENT_FIRST,сначала обогащение ссылки,1,1,1,t.me,msg-08652,INTERNAL_TELEGRAM_LINK
+v2c-00120,Ссылки требуют обогащения,LINK_ENRICHMENT_FIRST,сначала обогащение ссылки,1,1,1,t.me,msg-04829,INTERNAL_TELEGRAM_LINK
+v2c-00124,Ссылки требуют обогащения,LINK_ENRICHMENT_FIRST,сначала обогащение ссылки,1,1,1,youtube.com,msg-14557,SOCIAL_MEDIA_LINK
+v2c-00128,Техническое обсуждение: droid,REVIEW_SINGLE_SIGNAL,одиночный сигнал на проверку,1,1,1,droid,msg-01307,TECH_SIGNAL
+v2c-00132,Тема: opus,REVIEW_SINGLE_SIGNAL,одиночный сигнал на проверку,1,1,1,opus,msg-03492,LOW_VALUE_CHATTER
+v2c-00136,Риск / рефералы / абуз — ручная проверка,MANUAL_REVIEW,ручная проверка (риск),1,1,1,t.me,msg-07025,LOW_VALUE_CHATTER
+v2c-00141,Тема: claudecode,REVIEW_SINGLE_SIGNAL,одиночный сигнал на проверку,1,1,1,claudecode,msg-02800,WEAK_SIGNAL
+v2c-00142,Ссылки требуют обогащения,LINK_ENRICHMENT_FIRST,сначала обогащение ссылки,1,1,1,zelenka.guru,msg-13300,LINK_SHARE
+v2c-00145,Техническое обсуждение: codex,REVIEW_SINGLE_SIGNAL,одиночный сигнал на проверку,1,1,1,codex,msg-14020,TECH_SIGNAL
+v2c-00151,Ссылки требуют обогащения,LINK_ENRICHMENT_FIRST,сначала обогащение ссылки,1,1,1,gdebenz.ru,msg-08770,LINK_SHARE
+v2c-00152,Риск / рефералы / абуз — ручная проверка,MANUAL_REVIEW,ручная проверка (риск),1,1,1,t.me,msg-03968,LOW_VALUE_CHATTER
+v2c-00153,Ссылки требуют обогащения,LINK_ENRICHMENT_FIRST,сначала обогащение ссылки,1,1,1,github.com,msg-18404,RESOURCE_LINK
+v2c-00158,Ссылки требуют обогащения,LINK_ENRICHMENT_FIRST,сначала обогащение ссылки,1,1,1,x.com,msg-04790,SOCIAL_MEDIA_LINK
+v2c-00164,Тема: sonnet,REVIEW_SINGLE_SIGNAL,одиночный сигнал на проверку,1,1,1,sonnet,msg-05095,MODEL_RUMOR_OR_PRICING_CLAIM
+v2c-00165,Тема: sonnet,REVIEW_SINGLE_SIGNAL,одиночный сигнал на проверку,1,1,1,sonnet,msg-05458,MODEL_RUMOR_OR_PRICING_CLAIM

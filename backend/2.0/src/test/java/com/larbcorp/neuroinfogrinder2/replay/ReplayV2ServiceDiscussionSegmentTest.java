@@ -224,6 +224,22 @@ class ReplayV2ServiceDiscussionSegmentTest {
     }
 
     @Test
+    void singleMessageGuidePromptUsesLocalContextAndCompactGuideInstructions() throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+        Object single = singleMessageCandidate(9001L, 0.91, "SINGLE_MESSAGE_MATERIAL_CANDIDATE", mapper.createArrayNode().add("API_TROUBLESHOOTING"));
+        Object source = intel(9001L, "Проверьте base_url, ключ и выбранную модель", 1, -900L, 90L, "2026-06-26T11:00:00Z");
+        Object before = intel(9000L, "У нас 401 и 404 плавают после смены endpoint", 1, -900L, 90L, "2026-06-26T10:56:00Z");
+        Object after = intel(9002L, "Ещё проверьте GET /models и smoke request", 1, -900L, 90L, "2026-06-26T11:04:00Z");
+
+        String prompt = promptSingleWithContext(service(), single, source, List.of(before, source, after), "generation");
+
+        assertThat(prompt).contains("localContext=");
+        assertThat(prompt).contains("Treat localContext as evidence");
+        assertThat(prompt).contains("Prefer compact materials over long articles");
+        assertThat(prompt).contains("GUIDE should usually be a mini-guide");
+    }
+
+    @Test
     void clusterGenerationPromptPreservesFactsAndBlocksUnsupportedExactValues() throws Exception {
         Object cluster = cluster(1L, "Provider API diagnostics", 0.78, List.of(1L, 2L));
         List<?> intel = List.of(
@@ -332,6 +348,13 @@ class ReplayV2ServiceDiscussionSegmentTest {
         Method method = ReplayV2Service.class.getDeclaredMethod("promptSingle", candidate.getClass(), intel.getClass(), String.class);
         method.setAccessible(true);
         return (String) method.invoke(service, candidate, intel, type);
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private static String promptSingleWithContext(ReplayV2Service service, Object candidate, Object intel, List context, String type) throws Exception {
+        Method method = ReplayV2Service.class.getDeclaredMethod("promptSingle", candidate.getClass(), intel.getClass(), List.class, String.class, Class.forName("com.larbcorp.neuroinfogrinder2.replay.classicalml.RouteIntelligenceDecision"));
+        method.setAccessible(true);
+        return (String) method.invoke(service, candidate, intel, context, type, null);
     }
 
     private static Object cluster(long id, String title, double score, List<Long> members) throws Exception {

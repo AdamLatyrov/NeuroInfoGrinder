@@ -47,6 +47,12 @@ public class PipelineSettingsService {
         upsertSetting("semanticSimilarityThreshold", "0.62", "DOUBLE",
             "Cosine similarity threshold for semantic grouping and neighbor search.",
             "0.0", "1.0", "0.62", "threshold");
+        upsertSetting("minClusterScoreForJudge", "0.65", "DOUBLE",
+            "Minimum effective cluster score before LLM Judge.",
+            "0.0", "1.0", "0.65", "threshold");
+        upsertSetting("minJudgeConfidenceForGeneration", "0.72", "DOUBLE",
+            "Minimum accepted LLM Judge confidence before generation.",
+            "0.0", "1.0", "0.72", "threshold");
         upsertSetting("minMicroclusterSize", "2", "INTEGER",
             "Minimum number of messages inside a microcluster.",
             "1", "100", "2", "threshold");
@@ -110,9 +116,45 @@ public class PipelineSettingsService {
         upsertSetting("classicalMlShadowEnabled", "1", "INTEGER",
             "Runs the classical ML stage scaffold in shadow mode and persists feature/stage traces without changing final materialization authority.",
             "0", "1", "1", "classical_ml");
+        upsertSetting("classicalMlRoutingEnabled", "0", "INTEGER",
+            "Allows validated classical ML decisions to affect Judge routing. Keep disabled until training governance is ready.",
+            "0", "1", "0", "classical_ml");
         upsertSetting("classicalMlSoftFail", "1", "INTEGER",
             "Keeps the pipeline running when internal classical ML inference contracts fail.",
             "0", "1", "1", "classical_ml");
+        upsertSetting("decisionCoreShadowEnabled", "0", "INTEGER",
+            "Writes normalized decision-core shadow objects/observations/ledger rows without changing existing routing or material generation.",
+            "0", "1", "0", "decision_core");
+        upsertSetting("materialEligibilityGateShadowEnabled", "0", "INTEGER",
+            "Computes the v2 MaterialEligibilityGate verdict (route, tier, technical-entity, evidence sufficiency) for every message/cluster in shadow mode and writes it to semantic_decision_objects. Does NOT change materialization or routing; the legacy MessageUsefulnessClassifier + score thresholds remain authoritative. Enable decisionCoreShadowEnabled too.",
+            "0", "1", "0", "decision_core");
+        upsertSetting("decisionCoreFailOpen", "1", "INTEGER",
+            "Keeps the replay/live pipeline running if decision-core shadow persistence fails.",
+            "0", "1", "1", "decision_core");
+        upsertSetting("decisionCoreRankingShadowEnabled", "0", "INTEGER",
+            "Computes candidate rankings in shadow mode without controlling LLM selection.",
+            "0", "1", "0", "decision_core");
+        upsertSetting("decisionCoreGraphShadowEnabled", "0", "INTEGER",
+            "Computes graph discussion observations in shadow mode without replacing sliding-window discussion segments.",
+            "0", "1", "0", "decision_core");
+        upsertSetting("decisionCoreLinkEnrichmentEnabled", "0", "INTEGER",
+            "Enables link enrichment jobs/results for decision-core shadow processing; material routing remains unchanged unless controlled routing is separately enabled.",
+            "0", "1", "0", "decision_core");
+        upsertSetting("decisionCoreControlledRoutingEnabled", "0", "INTEGER",
+            "Allows decision-core routes to affect bounded allowlisted runs. Keep disabled until shadow validation passes.",
+            "0", "1", "0", "decision_core");
+        upsertSetting("decisionCoreLlmRankedSelectionEnabled", "0", "INTEGER",
+            "Uses CandidateRanker top-N as LLM input for allowlisted scopes. Keep disabled until ranking validation passes.",
+            "0", "1", "0", "decision_core");
+        upsertSetting("decisionCoreMode", "SHADOW", "STRING",
+            "Decision core mode. Valid operational values are SHADOW, CONTROLLED, and ACTIVE; ACTIVE must not be used before quality gates pass.",
+            null, null, "SHADOW", "decision_core");
+        upsertSetting("preferDiscussionOverSingleMessage", "1", "INTEGER",
+            "Skips single-message LLM/materialization for messages already covered by a discussion-segment candidate, so multi-message evidence is preferred over one-message drafts.",
+            "0", "1", "1", "ranking");
+        upsertSetting("allowOtherSingleMessageMaterials", "0", "INTEGER",
+            "Allows OTHER artifact materials from a single source message. Keep disabled to prevent rules/onboarding/weak notes from becoming drafts.",
+            "0", "1", "0", "ranking");
     }
 
     public record SettingDto(

@@ -23,6 +23,7 @@ class Stage1ReadServiceMessagePipelineDetailTest {
         assertThat(detail.get("datasetMessageId")).isEqualTo(1001L);
         assertThat(detail.get("replayRunMessageId")).isEqualTo(456L);
         assertThat(detail.get("pipelineStatus")).isEqualTo("MATERIAL_CREATED");
+        assertThat(detail.get("appMessageUrl")).isEqualTo("/groups?chatId=866341216&message=2902&rawId=2902");
         assertThat(((Map<?, ?>) detail.get("material")).get("materialId")).isEqualTo(23L);
     }
 

@@ -9,6 +9,7 @@ import com.larbcorp.neuroinfogrinder2.replay.classicalml.ClassicalMlStageEvaluat
 import com.larbcorp.neuroinfogrinder2.replay.KnowledgeItemReviewService;
 import com.larbcorp.neuroinfogrinder2.replay.ModelhubProviderGateway;
 import com.larbcorp.neuroinfogrinder2.replay.ModelWorkerClient;
+import com.larbcorp.neuroinfogrinder2.replay.MessageUsefulnessBenchmarkService;
 import com.larbcorp.neuroinfogrinder2.replay.ReplayV2Service;
 import com.larbcorp.neuroinfogrinder2.classifier.ClassificationRuleService;
 import com.larbcorp.neuroinfogrinder2.settings.PipelineSettingsService;
@@ -44,6 +45,7 @@ public class Stage1B2Api {
     private final ClassificationRuleService classificationRuleService;
     private final PipelineSettingsService pipelineSettingsService;
     private final PromptTemplateService promptTemplateService;
+    private final MessageUsefulnessBenchmarkService messageUsefulnessBenchmarkService;
 
     public Stage1B2Api(
             DatasetReplayService datasetReplayService,
@@ -56,7 +58,8 @@ public class Stage1B2Api {
             PipelineLiveService pipelineLiveService,
             ClassificationRuleService classificationRuleService,
             PipelineSettingsService pipelineSettingsService,
-            PromptTemplateService promptTemplateService
+            PromptTemplateService promptTemplateService,
+            MessageUsefulnessBenchmarkService messageUsefulnessBenchmarkService
     ) {
         this.datasetReplayService = datasetReplayService;
         this.aiCatalogService = aiCatalogService;
@@ -69,6 +72,7 @@ public class Stage1B2Api {
         this.classificationRuleService = classificationRuleService;
         this.pipelineSettingsService = pipelineSettingsService;
         this.promptTemplateService = promptTemplateService;
+        this.messageUsefulnessBenchmarkService = messageUsefulnessBenchmarkService;
     }
 
     @GetMapping("/api/v2/datasets")
@@ -513,6 +517,11 @@ public class Stage1B2Api {
     @GetMapping("/api/v2/classical-ml/readiness")
     public Map<String, Object> classicalMlReadiness() {
         return replayV2Service.classicalMlPhaseReadiness();
+    }
+
+    @GetMapping("/api/v2/quality/text-classification-benchmark")
+    public MessageUsefulnessBenchmarkService.BenchmarkReport textClassificationBenchmark() {
+        return messageUsefulnessBenchmarkService.evaluateBundled();
     }
 
     @GetMapping("/api/v2/classifiers/status")

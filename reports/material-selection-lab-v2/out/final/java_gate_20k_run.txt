@@ -1,0 +1,59 @@
+﻿=== Java MaterialEligibilityGate over 20k snapshot (normalization-time, classifier=null, hidden-URL aware) ===
+total messages: 20000
+
+ROUTE distribution:
+  AGGREGATE_ONLY = 150
+  CONTEXT_ONLY = 18853
+  MANUAL_REVIEW = 81
+  NEEDS_ENRICHMENT = 46
+  REJECT_SAFE = 446
+  REVIEW_HIGH_RECALL = 374
+  SIGNAL_ONLY = 50
+
+TIER distribution:
+  REVIEW_SINGLE_SIGNAL = 19963
+  SINGLE_MESSAGE_GUIDE_CANDIDATE = 21
+  SINGLE_MESSAGE_REFERENCE_CANDIDATE = 16
+
+technicalEntity=true: 378
+ELIGIBLE (for LLM Judge): 37
+
+=== ELIGIBLE messages (37) ===
+raw_id     tier                                     strong_entities        preview
+34304      SINGLE_MESSAGE_GUIDE_CANDIDATE           github.com             ╨в╨╡╨┐╨╡╤А╤М ╨Ш╨Ш ╤Б╨░╨╝╨╛╨╛╨▒╤Г╤З╨░╨╡╤В╤Б╤П: ╨┐╨╛╤П╨▓╨╕╨╗╤Б╤П ╤Б╨║╨╕╨╗╨╗ self-learning тАФ ╤Г╤З╨╕╤В ╨░╨│╨╡╨╜╤В╨░ ╨╖╨░╨┐╨╛╨╝╨╕╨╜╨░╤В╤М ╨╛╨┤╨╜╨░╨╢╨┤╤Л ╨╜╨░╨╣╨┤╨╡╨╜╨╜╨╛╨╡ ╤А╨╡╤И╨╡╨╜╨╕╨╡ ╨╕ ╨╜╨╡ ╨╕╤Б╨║╨░╤В╤М ╨╡╨│╨╛
+32327      SINGLE_MESSAGE_REFERENCE_CANDIDATE       github.com,claude.md,githubusercontent.com,install.sh,t.me,claudecode,mcp ЁЯеЗ Caveman SKILLS ЁЯки тАФ why use many token when few do trick ╨б https://github.com/juliusbrussee/caveman ╨╜╨░╤З╨░╨╗╤Б╤П ╨╝╨╛╨╣ ╨┐╤Г╤В╤М 
+32295      SINGLE_MESSAGE_REFERENCE_CANDIDATE       github.com,claude.md,githubusercontent.com,install.sh,claudecode,mcp ЁЯеЗ Caveman SKILLS ЁЯки тАФ why use many token when few do trick ╨б https://github.com/juliusbrussee/caveman ╨╜╨░╤З╨░╨╗╤Б╤П ╨╝╨╛╨╣ ╨┐╤Г╤В╤М 
+32287      SINGLE_MESSAGE_REFERENCE_CANDIDATE       github.com,claude.md,githubusercontent.com,install.sh,claudecode,mcp ЁЯеЗ Caveman SKILLS ЁЯки тАФ why use many token when few do trick ╨б https://github.com/juliusbrussee/caveman ╨╜╨░╤З╨░╨╗╤Б╤П ╨╝╨╛╨╣ ╨┐╤Г╤В╤М 
+32261      SINGLE_MESSAGE_GUIDE_CANDIDATE           serenitiesai.com,opus,gpt-5,codex ╨Ы╨░╨┤╨╜╨╛, ╨╝╨╡╨╗╨║╨╕╨╣, ╨┤╨░╨▓╨░╨╣ ╤А╨░╨╖ ╨╕ ╨╜╨░╨▓╤Б╨╡╨│╨┤╨░ ╨╖╨░╨║╤А╨╛╨╡╨╝ ╤Н╤В╤Г ╤В╨╡╨╝╤Г, ╤А╨░╨╖ ╤Г╨╢ ╤В╤Л ╤В╨░╨║╨╛╨╣ ╨╜╨╡╨┤╨╛╨▓╨╡╤А╤З╨╕╨▓╤Л╨╣. ╨б╨▓╨╡╨╢╨╕╨╡ ╨┤╨░╨╜╨╜╤Л╨╡ ╤Б ╨╕╤О╨╜╤П 2026: ╨┐╨╛╤Б╨╗╨╡╨┤╨╜╤П╤П
+32220      SINGLE_MESSAGE_REFERENCE_CANDIDATE       github.com,t.me,404media.co,codex,claudecode,gemini ╨Я╤А╨╡╨▓╤А╨░╤Й╨░╨╡╨╝ ╨╗╤О╨▒╤Г╤О ╨╜╨╡╨╣╤А╨╛╨╜╨║╤Г ╨▓ ╨┐╨╡╤Й╨╡╤А╨╜╨╛╨│╨╛ ╤З╨╡╨╗╨╛╨▓╨╡╨║╨░ тАФ ╨▓ ╤Б╨╡╤В╨╕ ╨┐╤А╤П╨╝╨╛ ╤Б╨╡╨╣╤З╨░╤Б ╤Е╨░╨╣╨┐╤Г╨╡╤В ╨┐╨╗╨░╨│╨╕╨╜, ╨║╨╛╤В╨╛╤А╤Л╨╣ ╤А╨╡╨░╨╗╤М╨╜╨╛ ╨╛╤В╨║╨╕╨┤╤Л╨▓╨░╨╡╤В ╨Ш╨Ш ╨▓ ╨┤╨╛╨╕
+32216      SINGLE_MESSAGE_REFERENCE_CANDIDATE       github.com,t.me,404media.co,codex,claudecode,gemini ╨Я╤А╨╡╨▓╤А╨░╤Й╨░╨╡╨╝ ╨╗╤О╨▒╤Г╤О ╨╜╨╡╨╣╤А╨╛╨╜╨║╤Г ╨▓ ╨┐╨╡╤Й╨╡╤А╨╜╨╛╨│╨╛ ╤З╨╡╨╗╨╛╨▓╨╡╨║╨░ тАФ ╨▓ ╤Б╨╡╤В╨╕ ╨┐╤А╤П╨╝╨╛ ╤Б╨╡╨╣╤З╨░╤Б ╤Е╨░╨╣╨┐╤Г╨╡╤В ╨┐╨╗╨░╨│╨╕╨╜, ╨║╨╛╤В╨╛╤А╤Л╨╣ ╤А╨╡╨░╨╗╤М╨╜╨╛ ╨╛╤В╨║╨╕╨┤╤Л╨▓╨░╨╡╤В ╨Ш╨Ш ╨▓ ╨┤╨╛╨╕
+31918      SINGLE_MESSAGE_GUIDE_CANDIDATE                                  ╨С╨╗╤П╤В╤М, rikinik, ╤В╤Л ╤З╤С, ╨╜╨░╤Б╤В╨╛╨╗╤М╨║╨╛ ╨╗╨╡╨╜╨╕╨▓╤Л╨╣, ╤З╤В╨╛ ╨┤╨░╨╢╨╡ ╨▒╤А╨░╤Г╨╖╨╡╤А ╨╛╤В╨║╤А╤Л╤В╤М ╨╜╨╡ ╨╝╨╛╨╢╨╡╤И╤М? Notion ╨╜╨░ Linux ╨╜╨╡╤В, ╨╜╨╛ ╨╡╤Б╤В╤М ╨╛╤Е╤Г╨╡╨╜╨╜╤Л╨╡ CLI-
+30098      SINGLE_MESSAGE_REFERENCE_CANDIDATE       github.com             ╨Я╨╛╨╗╨╡╨╖╨╜╨╛╨╡ ╨┤╨╗╤П ╤А╨░╨╖╤А╨░╨▒╨╛╨▓: ╨╜╨░ GitHub ╤Б╨╛╨▒╤А╨░╨╗╨╕ ╨╛╨│╤А╨╛╨╝╨╜╤Л╨╣ ╨║╨░╤В╨░╨╗╨╛╨│ ╨▒╨╡╤Б╨┐╨╗╨░╤В╨╜╤Л╤Е API ╨╜╨░ ╨▓╤Б╨╡ ╤Б╨╗╤Г╤З╨░╨╕ ╨╢╨╕╨╖╨╜╨╕. ╨Ф╨╛╤Б╤В╤Г╨┐╨╜╨╛ 50+ ╨║╨░╤В╨╡╨│╨╛╤А╨╕╨╣: ╨┐╨╛
+29785      SINGLE_MESSAGE_REFERENCE_CANDIDATE       anthropic.com,sonnet,opus,claudecode ЁЯдЦ╨Т╤Л╤И╨╡╨╗ Claude Sonnet 5 ╨а╨░╨╖╤А╤Л╨▓ ╨╝╨╡╨╢╨┤╤Г ╤Б╤А╨╡╨┤╨╜╨╕╨╝ ╨║╨╗╨░╤Б╤Б╨╛╨╝ ╨╕ ╨┤╨╛╤А╨╛╨│╤Г╤Й╨╕╨╝╨╕ ╤Д╨╗╨░╨│╨╝╨░╨╜╨░╨╝╨╕ ╤Б╤В╨╡╤А╤В. ╨Ф╨╛╨│╨╛╨╜╤П╨╡╤В ╨┐╨╛ ╨║╨░╤З╨╡╤Б╤В╨▓╤Г Opus, ╨░ ╨┐╨╛ ╤Ж╨╡╨╜╨╡
+29577      SINGLE_MESSAGE_GUIDE_CANDIDATE           github.com,security.md,config.toml,agents.md,codex,codebase-memory-mcp ╨Ш╨╖╤Г╤З╨╕ ╨▓╨╛╨╖╨╝╨╛╨╢╨╜╨╛╤Б╤В╤М ╨┐╨╛╨┤╨║╨╗╤О╤З╨╡╨╜╨╕╤П codebase-memory-mcp ╨║ ╨Ъ╨╛╨┤╨╡╨║╤Б╤Г. ╨а╨╡╨┐╨╛╨╖╨╕╤В╨╛╤А╨╕╨╣ ╨╕╨╜╤Б╤В╤А╤Г╨╝╨╡╨╜╤В╨░: https://github.com/DeusData/codeba
+28013      SINGLE_MESSAGE_GUIDE_CANDIDATE           gemini,opus            ╨╡╤Б╨╗╨╕ ╤Б╤А╨░╨▓╨╜╨╕╨▓╨░╤В╤М ╤Н╤В╨╕ ╨┤╨▓╨░ ╨▓╨░╤А╨╕╨░╨╜╤В╨░, ╤В╨╛ ╨▓╨░╨╢╨╜╨╛ ╨┐╤А╨╛╤П╤Б╨╜╨╕╤В╤М ╨╜╨╡╤Б╨║╨╛╨╗╤М╨║╨╛ ╨╝╨╛╨╝╨╡╨╜╤В╨╛╨▓, ╤В╨░╨║ ╨║╨░╨║ ╨╛╨╜╨╕ ╨┐╤А╨╡╨┤╤Б╤В╨░╨▓╨╗╤П╤О╤В ╤Б╨╛╨▓╨╡╤А╤И╨╡╨╜╨╜╨╛ ╤А╨░╨╖╨╜╤Л╨╡ ╨║╨╗╨░╤Б
+27612      SINGLE_MESSAGE_GUIDE_CANDIDATE           claudecode             ╨╜╨╡╨╣╤А╨╛╤Б╨╡╤В╤М ╤В╨░╨║ ╨│╨╛╨▓╨╛╤А╨╕╤В ╨н╤В╨╛ ╨┐╤А╨╛╤Ж╨╡╤Б╤Б ╨┐╨╡╤А╨▓╨╛╨╜╨░╤З╨░╨╗╤М╨╜╨╛╨╣ ╨╜╨░╤Б╤В╤А╨╛╨╣╨║╨╕ Claude Code ╨▓ ╨┤╨╡╤Б╨║╤В╨╛╨┐╨╜╨╛╨╝ ╨┐╤А╨╕╨╗╨╛╨╢╨╡╨╜╨╕╨╕. ╨Ф╨░╨▓╨░╨╣╤В╨╡ ╤А╨░╨╖╨▒╨╡╤А╤Г ╨║╨░╨╢╨┤╤Л╨╣ ╤И
+26958      SINGLE_MESSAGE_GUIDE_CANDIDATE           github.com,vimit-gui.exe,codex,droid,claudecode,cursor,vimit ╨Ь╨╛╨╣ ╨┐╤А╨╛╨╡╨║╤В ╨╜╨░ ╨║╨╛╨╜╨║╤Г╤А╤Б: ╨Э╨░╨╖╨▓╨░╨╜╨╕╨╡: vimit ╨з╤В╨╛ ╨┤╨╡╨╗╨░╨╡╤В: ╨┐╨╛╨║╨░╨╖╤Л╨▓╨░╨╡╤В ╨╗╨╕╨╝╨╕╤В╤Л VibeMode ╨┐╤А╤П╨╝╨╛ ╨╜╨░ ╤Н╨║╤А╨░╨╜╨╡ тАФ GUI-╨╛╨║╨╜╨╛, ╨┐╨╗╨░╨▓╨░╤О╤Й╨╕╨╣ ╨╛╨▓╨╡╤А
+26147      SINGLE_MESSAGE_GUIDE_CANDIDATE           deepseek,cursor,qwen   ╨Ф╤Н╨╝╨╜. ╨Т╨╛╨╖╨╝╨╛╨╢╨╜╨╛ ╨╝╤Л ╨╜╨░╨▒╨╗╤О╨┤╨░╨╡╨╝ ╨▓╨╡╨╗╨╕╨║╨╛╨╡ ╨┐╨░╨┤╨╡╨╜╨╕╨╡ Anthropic. ╨Т╤Б╨╡ ╨▒╨╛╨╗╤М╤И╨╡ ╨║╨╛╨╝╨┐╨░╨╜╨╕╨╣ ╤Г╤Е╨╛╨┤╨╕╤В ╨╛╤В ╨╜╨╕╤Е: 1. lindy тЖТ deepseek v4 2. curs
+25811      SINGLE_MESSAGE_GUIDE_CANDIDATE           github.com             ЁЯЪА RTXmacOC тАФ ╨╛╨▒╨╜╨╛╨▓╨╗╨╡╨╜╨╕╨╡ ╨┐╤А╨╛╨│╤А╨╡╤Б╤Б╨░ ╨г╨┤╨░╨╗╨╛╤Б╤М ╨┤╨╛╤Б╤В╨╕╤З╤М ╨╛╨┤╨╜╨╛╨│╨╛ ╨╕╨╖ ╨║╨╗╤О╤З╨╡╨▓╤Л╤Е ╤Н╤В╨░╨┐╨╛╨▓ ╨┐╤А╨╛╨╡╨║╤В╨░ тАФ ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╨▓╤Л╨┐╨╛╨╗╨╜╨╕╤В╤М bring-up GSP ╨╜╨░
+25297      SINGLE_MESSAGE_GUIDE_CANDIDATE           github.com,t.me        ╨Ъ╨░╤З╨░╨╡╨╝ ╨Ы╨о╨С╨л╨Х ╤Д╨░╨╣╨╗╤Л ╨╕╨╖ ╨╕╨╜╤В╨╡╤А╨╜╨╡╤В╨░ ╨┐╨╛ ╨║╨╗╨╕╨║╤Г тАФ ╤Н╨╜╤В╤Г╨╖╨╕╨░╤Б╤В╤Л ╨▓╤Л╨║╨░╤В╨╕╨╗╨╕ ╨╝╨╛╤Й╨╜╤Л╨╣ ╨║╨╛╨╜╤Б╨╛╨╗╤М╨╜╤Л╨╣ ╨║╨╗╨╕╨╡╨╜╤В Torlink. тАв ╨г╤В╨╕╨╗╨╕╤В╨░ ╨┐╤А╨╛╨▓╨╡╤А╤П╨╡╤В ╨▓╤Б╨╡
+25106      SINGLE_MESSAGE_REFERENCE_CANDIDATE       github.com             Vibemode Overlay v2.4 ╤Г╨╢╨╡ ╨▓ main. ╨з╤В╨╛ ╨╛╨▒╨╜╨╛╨▓╨╕╨╗╨╛╤Б╤М: - ╨╕╤Б╨┐╤А╨░╨▓╨╕╨╗ ╨▓╨╛╤Б╤Б╤В╨░╨╜╨╛╨▓╨╗╨╡╨╜╨╕╨╡ ╨┐╨╛╤Б╨╗╨╡ ╤Б╨╜╨░: overlay ╨▒╨╛╨╗╤М╤И╨╡ ╨╜╨╡ ╨┤╨╛╨╗╨╢╨╡╨╜ ╨╖╨░╨╗╨╕╨┐╨░╤В╤М
+24961      SINGLE_MESSAGE_GUIDE_CANDIDATE           droid,codex            ╨┐╨╛╨┐╤А╨╛╨▒╤Г╨╣ ╤Б╨┤╨╡╨╗╨░╤В╤М ╤В╨░╨║: 1. ╤Г╨┤╨░╨╗╨╕ ╨▓╤А╤Г╤З╨╜╤Г╤О Droid 2. ╨╜╨░╨┐╨╕╤И╨╕ ╨▓ Codex ╨╖╨░╨┤╨░╤З╤Г: ╤Г╨┤╨░╨╗╨╕╤В╤М ╨▓╤Б╨╡ ╤Е╨▓╨╛╤Б╤В╤Л ╨╛╤В Factory Droid, ╨▓╤Б╨╡ ╨╜╨░╤Б╤В╤А╨╛╨╣╨║
+24957      SINGLE_MESSAGE_GUIDE_CANDIDATE           handoff.md,droid       ╨┐╨╛ ╨╕╤В╨╛╨│╤Г ╤Б ╨┐╨╛╨╝╨╛╤Й╤М╤О ╤В╨░╨║╨╛╨╣ ╨┐╤А╨╕╨▒╨╗╤Г╨┤╤Л ╨▓╤Б╤С ╨║╨╛╤А╤А╨╡╨║╤В╨╜╨╛ ╨┐╨╡╤А╨╡╨╜╤С╤Б ╨┐╤А╨╛╨▓╨╡╤А╤М ╤З╤В╨╛ ╨▓╤Б╤П ╨╕╨╜╤Д╨╛╤А╨╝╨░╤Ж╨╕╤П ╨╖╨░╨┐╨╕╤Б╨░╨╜╨░ ╨╜╨░ ╤Б╨╡╤А╨▓╨╡╤А╨╡ ╨┐╨╛ ╨Э╨Р╨Ч╨Т╨Р╨Э╨Ш╨Х ╨Я╨а╨Ю╨Х╨Ъ
+24787      SINGLE_MESSAGE_REFERENCE_CANDIDATE       yandex.net,t.me        ╨п╨╜╨┤╨╡╨║╤Б /** ╨Я╨╛╤Б╤В╨░╨╝╨░╤В - ╨░╨▓╤В╨╛╨╝╨░╤В╨╕╤З╨╡╤Б╨║╨░╤П ╤Б╤В╨░╨╜╤Ж╨╕╤П ╨┐╤А╨╕╤С╨╝╨░/╨▓╤Л╨┤╨░╤З╨╕ ╨┐╨╛╤Б╤Л╨╗╨╛╨║. ╨Т ╨╝╨░╤А╨║╨╡╤В╨╡ ╤Д╨╛╤А╨╝╨╕╤А╤Г╤О╤В╤Б╤П ╨╖╨░╨║╨░╨╖╤Л, ╨╕ ╤Е╨╛╤З╨╡╤В╤Б╤П ╨┤╨╛╨▒╨░╨▓╨╕╤В╤М ╨▓╨╛╨╖
+23075      SINGLE_MESSAGE_GUIDE_CANDIDATE           openai-compatible,429,401 ╨Ъ╨░╨║ ╨┐╤А╨╛╨▓╨╡╤А╨╕╤В╤М, ╤З╤В╨╛ OpenAI-compatible API ╤А╨╡╨░╨╗╤М╨╜╨╛ ╤А╨░╨▒╨╛╤В╨░╨╡╤В: ╤Б╨┤╨╡╨╗╨░╤В╤М GET /models ╨┐╤А╨╛╨▓╨╡╤А╨╕╤В╤М, ╤З╤В╨╛ ╨╝╨╛╨┤╨╡╨╗╤М ╨▓╨╕╨┤╨╜╨░ ╨▓ ╤Б╨┐╨╕╤Б╨║╨╡ ╨╛╤В╨┐╤А
+23073      SINGLE_MESSAGE_GUIDE_CANDIDATE           github.com             ЁЯМЯ ╨Т ╨╗╨╛╨║╨░╨╗╤М╨╜╨╛╨│╨╛ ╨Ш╨Ш-╨░╤Б╤Б╨╕╤Б╤В╨╡╨╜╤В╨░ OpenHuman ╨╖╨░╨▓╨╡╨╖╨╗╨╕ ╨╜╨╛╨▓╤Л╨╣ ╤А╨╡╨╢╨╕╨╝ Super Context тАФ ╤В╨╡╨┐╨╡╤А╤М ╨╛╨╜ ╤Г╨╗╨░╨▓╨╗╨╕╨▓╨░╨╡╤В ╨║╨╛╨╜╤В╨╡╨║╤Б╤В ╨┐╤А╨╕ ╨╛╤В╨║╤А╤Л╤В╨╕╨╕ ╨║
+22529      SINGLE_MESSAGE_GUIDE_CANDIDATE           telegra.ph,gemini      ╨С╨╗╤П, ╨║╤В╨╛-╨╜╨╕╨▒╤Г╨┤╤М ╨▓╨╛╨╛╨▒╤Й╨╡ ╨╖╨╜╨░╨╡╤В, ╨║╨░╨║ ╨╜╨╛╤А╨╝╨░╨╗╤М╨╜╨╛ ╨╖╨░╨┐╤Г╤Б╨║╨░╤В╤М ╨░╨│╨╡╨╜╤В╨╛╨▓? ╨Ъ╨░╨╢╨┤╤Л╨╣ ╨┤╨╡╨╜╤М ╨╜╨╛╨▓╤Л╨╣ ╨│╨░╨╣╨┤: Karpathy ╨╜╨╡╨┤╨░╨▓╨╜╨╛ ╨┤╨░╨╗ ╤Е╨╛╤А╨╛╤И╤Г╤О ╤А╨░╨╝╨║
+22390      SINGLE_MESSAGE_GUIDE_CANDIDATE           gpt-5,403              ### 2. GPT-5.5 (╨Ю╤И╨╕╨▒╨║╨░ 403 Forbidden) ╨Ч╨┤╨╡╤Б╤М ╨╛╤И╨╕╨▒╨║╨░ ╨▓╤Л╨╖╨▓╨░╨╜╨░ ╤В╨╡╨╝, ╤З╤В╨╛ ╨╜╨░ ╨║╨╗╤О╤З╨╡ ╨╖╨░╨║╨╛╨╜╤З╨╕╨╗╤Б╤П ╨▒╨░╨╗╨░╨╜╤Б (╨║╨▓╨╛╤В╨░): { "error": { "me
+21018      SINGLE_MESSAGE_REFERENCE_CANDIDATE       deepseek,cline,clinepass Cline has launched ClinePass, a flat monthly subscription that opens access to a curated set of open-weight coding model
+20796      SINGLE_MESSAGE_REFERENCE_CANDIDATE       settings.json,mcp.json,claude.md,core.hookspath,github.com,mcp ╨Ю╨▒╨╜╨╛╨▓╨╕╨╗ holone! +41 ╨┐╤А╨░╨▓╨╕╨╗╨╛ ╨┤╨╡╤В╨╡╨║╤В╨░┬а(╨▓╤Б╨╡╨│╨╛ 75). ╨в╨╡╨┐╨╡╤А╤М holone ╨╗╨╛╨▓╨╕╤В ╤В╨╛, ╤З╤В╨╛ ╤А╨░╨╜╤М╤И╨╡ ╨┐╤А╨╛╨┐╤Г╤Б╨║╨░╨╗: тХнтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФА
+19514      SINGLE_MESSAGE_GUIDE_CANDIDATE           t.me,deepseek,mcp      ЁЯСитАНЁЯТ╗ ╨Р╨▓╤В╨╛╨╜╨╛╨╝╨╜╨╛╨╡ ╨Ш╨Ш-╤Е╤А╨░╨╜╨╕╨╗╨╕╤Й╨╡ ╨▓ ╨▓╨╕╨┤╨╡ 2 ╨┐╤А╨╕╨▓╨░╤В╨╜╤Л╤Е ╤А╨╡╨┐╨╛╨╖╨╕╤В╨╛╤А╨╕╨╡╨▓ ╨┐╨╛╨┤╨║╨╗╤О╤З╨╕╨╗╨╕ тАФ ╤В╨╡╨┐╨╡╤А╤М ╨▓╨░╤И ╨Ш╨Ш ╨╖╨╜╨░╨╡╤В ╨╕ ╨┐╨╡╤А╨╡╨┐╤А╨╛╤И╨╕╨▓╨░╨╡╤В╤Б╤П ╨╜╨░ ╨╕╨╜╤Б╤В
+18212      SINGLE_MESSAGE_REFERENCE_CANDIDATE       t.me                   ЁЯОи ╨а╨░╤Б╤В╨╡╨╜╨╕╤П╨╝ ╨▓╤Л╨┤╨░╨╗╨╕ ╨│╨╛╨╗╨╛╤Б ChatGPT. OpenAI ╨▓╤Л╨╗╨╛╨╢╨╕╨╗╨░ PlantTalk тАФ ╨┐╤А╨╛╨╡╨║╤В, ╨│╨┤╨╡ ╨║╨╛╨╝╨╜╨░╤В╨╜╨╛╨╡ ╤А╨░╤Б╤В╨╡╨╜╨╕╨╡ ╨╝╨╛╨╢╨╜╨╛ ╨┐╤А╨╡╨▓╤А╨░╤В╨╕╤В╤М ╨▓ ╤Б╨╛╨▒╨╡╤Б╨╡╨┤
+17346      SINGLE_MESSAGE_GUIDE_CANDIDATE           cursor,openai-compatible,401,404,429 ╨Ъ╨░╨║ ╨┐╤А╨╛╨▓╨╡╤А╨╕╤В╤М OpenAI-compatible API ╨▓ Cursor: 1) base URL ╨┤╨╛╨╗╨╢╨╡╨╜ ╨╖╨░╨║╨░╨╜╤З╨╕╨▓╨░╤В╤М╤Б╤П ╨╜╨░ /v1; 2) auth header Bearer ╨┤╨╛╨╗╨╢╨╡╨╜ ╨▒╤А╨░╤В
+17139      SINGLE_MESSAGE_REFERENCE_CANDIDATE       coda.ink,opus,sonnet,haiku "coda-ultra": { "npm": "@ai-sdk/anthropic", "name": "Coda.ink Ultra (Anthropic)", "options": { "baseURL": "http://127.0.
+16955      SINGLE_MESSAGE_REFERENCE_CANDIDATE       hermes,deepseek        ╨Ф╨╗╤П ╨╛╨┤╨╜╨╛╨│╨╛ ╨┤╨╡╨╗╨░ (╨╡╨┤╨╕╨╜╨╛╤А╨░╨╖╨╛╨▓╨╛), ╨┐╨╛╤В╤А╨╡╨▒╨╛╨▓╨░╨╗╤Б╤П hermes. ╨б╨╜╨░╤З╨░╨╗╨░ ╤А╤Г╤З╨║╨░╨╝╨╕ ╨┐╤Л╤В╨░╨╗╤Б╤П, ╨▓╨▒╨╕╨╗ ╨▓╤А╨╛╨┤╨╡ ╨▓╤Б╤С, ╤З╨╡╤А╨╡╨╖ ╤А╨░╨╖ ╨░╨┐╨╕ ╨┐╤А╨╕╨╜╨╕╨╝╨░╨╗, ╤Е╨╛╤В
+16394      SINGLE_MESSAGE_REFERENCE_CANDIDATE       ethereal.llc           ╨Э╨╡ ╨┐╨╛╨║╤Г╨┐╨░╨╣╤В╨╡ API ╤Г Ethereal (╨╝╨╜╨╛╨│╨╛ ╨│╨┤╨╡ ╤Б╨╡╨╣╤З╨░╤Б ╨┐╨╕╨░╤А╤О╤В╤Б╤П) ╤Б╨║╨░╨╝╤П╤В ╨╜╨░ ╨╝╨╛╨┤╨╡╨╗╨╕, ╤А╨░╨╖╤А╨░╨▒╨╛╤В╤З╨╕╨║ ╨║╨╕╨╜╤Г╨╗ ╨▓ ╨з╨б, ╨░ ╨╜╨░ ╨▓╤Б╨╡ ╨╝╨╛╨╕ ╨┤╨╛╨║╨░╨╖╨░╤В╨╡╨╗
+16038      SINGLE_MESSAGE_GUIDE_CANDIDATE                                  [NIGTEST-A02] ╨Ь╨╕╨╜╨╕-╤З╨╡╨║╨╗╨╕╤Б╤В: ╨╡╤Б╨╗╨╕ API ╨╜╨░╤З╨░╨╗ ╨╛╤В╨▓╨╡╤З╨░╤В╤М ╨╝╨╡╨┤╨╗╨╡╨╜╨╜╨╛, ╤Б╨╜╨░╤З╨░╨╗╨░ ╨┐╤А╨╛╨▓╨╡╤А╤М ╤Б╤В╨░╤В╤Г╤Б ╨┐╤А╨╛╨▓╨░╨╣╨┤╨╡╤А╨░, ╨╖╨░╤В╨╡╨╝ ╤А╨╡╨│╨╕╨╛╨╜ endpoint, 
+15748      SINGLE_MESSAGE_REFERENCE_CANDIDATE       github.com             ╨Я╤А╨╛╨╡╨║╤В OpenHuman ╨╝╨╡╨╜╨╡╨╡ ╤З╨╡╨╝ ╨╖╨░ ╨╝╨╡╤Б╤П╤Ж ╨╜╨░╨▒╤А╨░╨╗ ╨▒╨╛╨╗╨╡╨╡ 33 ╤В╤Л╤Б╤П╤З ╨╖╨▓╤С╨╖╨┤ ╨╜╨░ GitHub. ╨Ю╨┤╨╜╨╛╨╣ ╨╕╨╖ ╨│╨╗╨░╨▓╨╜╤Л╤Е ╨┐╤А╨╕╤З╨╕╨╜ ╤В╨░╨║╨╛╨│╨╛ ╤А╨╛╤Б╤В╨░ ╤Б╤В╨░╨╗╨░ ╨╜╨╛
+15253      SINGLE_MESSAGE_GUIDE_CANDIDATE           config.toml,agents.md,codex ╨г ╨╜╨╡╨║╨╛╤В╨╛╤А╤Л╤Е ╨┐╨╛╨╗╤М╨╖╨╛╨▓╨░╤В╨╡╨╗╨╡╨╣ Codex ╨╜╨░╤З╨░╨╗ ╨╛╤З╨╡╨╜╤М ╨▒╤Л╤Б╤В╤А╨╛ ╤В╤А╨░╤В╨╕╤В╤М ╨╜╨╡╨┤╨╡╨╗╤М╨╜╤Л╨╡ ╨╗╨╕╨╝╨╕╤В╤Л, ╨┤╨░╨╢╨╡ ╨║╨╛╨│╨┤╨░ ╨╛╨╜╨╕ ╨╜╨╕╤З╨╡╨│╨╛ ╨╜╨╡ ╨┤╨╡╨╗╨░╨╗╨╕. ╨Э╨░╨┐╤А╨╕╨╝╨╡╤А, 
+14699      SINGLE_MESSAGE_GUIDE_CANDIDATE           codex.sale,metr.org,t.me,gpt-5,codex тЬ┤я╕П GPT-5.6 Sol ╨▓╤А╨╡╤В ╨▒╨╛╨╗╤М╤И╨╡ ╨╕ ╤З╨░╤Й╨╡ ╨┤╤А╤Г╨│╨╕╤Е ╨╝╨╛╨┤╨╡╨╗╨╡╨╣ тАФ ╨┐╨╛╨║╨░╨╖╨░╨╗╨╛ ╨╕╤Б╤Б╨╗╨╡╨┤╨╛╨▓╨░╨╜╨╕╨╡ METR. ╨Т╨╛ ╨▓╤А╨╡╨╝╤П ╤В╨╡╤Б╤В╨╛╨▓ ╨╝╨╛╨┤╨╡╨╗╤М ╤Г╤Б╤В╨░╨╜╨╛╨▓╨╕╨╗╨░ ╤А╨╡╨║╨╛╤А╨┤ 

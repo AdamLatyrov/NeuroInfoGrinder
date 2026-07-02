@@ -1,0 +1,3 @@
+# time_thread_entity / lab-cluster-34
+
+- `msg-00648` `LOW_VALUE_CHATTER` `NO_MATERIAL` 14 идём на promptql.io. реагаемся через google. создаём workspace/project и выбираем второй вариант не slack. идём в настройки billing там сначала должны выдать 50 а потом ещё 20. идём в проект который создали выбираем модель и пользуемся.

@@ -120,7 +120,8 @@ export function GroupsChatView() {
   const [searchParams, setSearchParams] = useSearchParams();
   const preselectedGroupId = searchParams.get("group");
   const preselectedChatId = searchParams.get("chatId");
-  const preselectedMessageId = searchParams.get("message");
+  const preselectedMessageId =
+    searchParams.get("message") ?? searchParams.get("rawId") ?? searchParams.get("messageId");
 
   const [showDisabled, setShowDisabled] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);

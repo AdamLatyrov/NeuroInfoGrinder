@@ -33,6 +33,9 @@ public class DefaultRouteIntelligenceEngine implements RouteIntelligenceEngine {
         String assemblyTop = coalesce(modelVotes.path("assemblyTop").asText(null), topLabel(triage.path("predictions").path("assemblyStrategy")));
         String routeTop = coalesce(modelVotes.path("routeTop").asText(null), topLabel(triage.path("predictions").path("materialRoute")), "NO_MATERIAL");
         String uiReasonTop = coalesce(modelVotes.path("uiReasonTop").asText(null), topLabel(triage.path("predictions").path("uiReason")), "LOW_CONFIDENCE_REVIEW");
+        String preprocessingTop = coalesce(modelVotes.path("preprocessingTop").asText(null), topLabel(triage.path("predictions").path("preprocessing")), "CLEAN");
+        String dedupeClusterTop = coalesce(modelVotes.path("dedupeClusterTop").asText(null), topLabel(triage.path("predictions").path("dedupeCluster")), "UNIQUE");
+        String llmJudgeTop = coalesce(modelVotes.path("llmJudgeTop").asText(null), topLabel(triage.path("predictions").path("llmJudge")), "APPROVE_FOR_JUDGE");
 
         ArrayNode shortlist = topPredictions(modelResults.path("materialRoute"), 3);
         ArrayNode policyFlags = json.createArrayNode();
@@ -73,6 +76,27 @@ public class DefaultRouteIntelligenceEngine implements RouteIntelligenceEngine {
             policyFlags.add("ABUSE_FRAUD_REJECTED");
             routeReasons.add("Abuse/fraud content is blocked from auto-materialization.");
         }
+        if ("RISK_SENSITIVE".equalsIgnoreCase(preprocessingTop)) {
+            blocked = true;
+            recommendedRoute = "NO_MATERIAL";
+            finalUiReason = "RISK_REQUIRES_MANUAL_REVIEW";
+            policyFlags.add("RISK_SENSITIVE_MANUAL_REVIEW");
+            routeReasons.add("Risk-sensitive content requires manual review before any judge or generation step.");
+        }
+        if ("NEAR_DUPLICATE".equalsIgnoreCase(dedupeClusterTop) || "DUPLICATE".equalsIgnoreCase(dedupeClusterTop)) {
+            blocked = true;
+            recommendedRoute = "NO_MATERIAL";
+            finalUiReason = "DUPLICATE_SUPPRESSED";
+            policyFlags.add("NEAR_DUPLICATE_SUPPRESSED");
+            routeReasons.add("Classical dedupe/cluster stage suppressed this candidate as duplicate or near-duplicate.");
+        }
+        if ("REJECT_BEFORE_JUDGE".equalsIgnoreCase(llmJudgeTop)) {
+            blocked = true;
+            recommendedRoute = "NO_MATERIAL";
+            finalUiReason = "CLASSICAL_FINAL_GATE_REJECTED";
+            policyFlags.add("CLASSICAL_FINAL_GATE_REJECTED");
+            routeReasons.add("Classical final gate rejected this candidate before LLM Judge.");
+        }
         if ("PROMO_AD".equalsIgnoreCase(meaningTop) && !"REFERENCE".equalsIgnoreCase(recommendedRoute) && !"WARNING".equalsIgnoreCase(recommendedRoute)) {
             blocked = true;
             recommendedRoute = "NO_MATERIAL";
@@ -105,6 +129,7 @@ public class DefaultRouteIntelligenceEngine implements RouteIntelligenceEngine {
             && evidenceConfidence >= 0.35;
 
         ObjectNode reasonBundle = json.createObjectNode();
+        reasonBundle.put("preprocessing", preprocessingTop);
         reasonBundle.put("meaning", meaningTop);
         reasonBundle.put("valueLevel", valueTop);
         reasonBundle.put("usefulnessKind", usefulnessTop);
@@ -112,6 +137,8 @@ public class DefaultRouteIntelligenceEngine implements RouteIntelligenceEngine {
         reasonBundle.put("assemblyStrategy", assemblyTop);
         reasonBundle.put("materialRoute", recommendedRoute);
         reasonBundle.put("uiReason", finalUiReason);
+        reasonBundle.put("dedupeCluster", dedupeClusterTop);
+        reasonBundle.put("llmJudge", llmJudgeTop);
         reasonBundle.put("requiresJudge", requiresJudge);
         reasonBundle.put("blocked", blocked);
         reasonBundle.put("routeConfidence", routeConfidence);

@@ -30,7 +30,9 @@ class ClassicalMlTriageResultTest {
             false,
             0.12,
             predictions,
-            mapper.createArrayNode()
+            mapper.createArrayNode(),
+            mapper.createObjectNode().put("margin", 0.31),
+            0.72
         );
 
         String json = mapper.writeValueAsString(result);
@@ -40,5 +42,7 @@ class ClassicalMlTriageResultTest {
         assertThat(restored.targetId()).isEqualTo("42");
         assertThat(restored.recommendedAction()).isEqualTo("TRACE_ONLY");
         assertThat(restored.predictions().path("meaningTopLabel").asText()).isEqualTo("QUESTION");
+        assertThat(restored.uncertainty().path("margin").asDouble()).isEqualTo(0.31);
+        assertThat(restored.modelAgreement()).isEqualTo(0.72);
     }
 }

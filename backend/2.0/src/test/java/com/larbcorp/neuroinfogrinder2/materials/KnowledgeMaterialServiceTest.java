@@ -102,6 +102,7 @@ class KnowledgeMaterialServiceTest {
         assertThat(((Map<?, ?>) ((List<?>) detail.get("sourceMessages")).get(1)).get("orderIndex")).isEqualTo(1);
         assertThat(((Map<?, ?>) ((List<?>) detail.get("sourceMessages")).get(0)).get("replayRunMessageId")).isEqualTo(501L);
         assertThat(((Map<?, ?>) ((List<?>) detail.get("sourceMessages")).get(0)).get("role")).isEqualTo("question");
+        assertThat(((Map<?, ?>) ((List<?>) detail.get("sourceMessages")).get(0)).get("appMessageUrl")).isEqualTo("/groups?chatId=-100&message=3001&rawId=3001");
         assertThat((List<?>) detail.get("howBuiltSteps")).hasSizeGreaterThanOrEqualTo(5);
     }
 

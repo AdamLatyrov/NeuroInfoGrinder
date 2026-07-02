@@ -35,6 +35,15 @@ function refreshPipelineQueries(payload: PipelineEventPayload) {
     queryClient.invalidateQueries({ queryKey: ["pipeline-status"] });
     queryClient.invalidateQueries({ queryKey: ["pipeline-queue"] });
     queryClient.invalidateQueries({ queryKey: ["pipeline-results"] });
+    queryClient.invalidateQueries({ queryKey: ["pipeline-live-summary"] });
+    queryClient.invalidateQueries({ queryKey: ["pipeline-live-stages"] });
+    queryClient.invalidateQueries({ queryKey: ["pipeline-stage-details"] });
+    queryClient.invalidateQueries({ queryKey: ["pipeline-stage-messages"] });
+    queryClient.invalidateQueries({ queryKey: ["pipeline-live-events"] });
+    queryClient.invalidateQueries({ queryKey: ["pipeline-live-batches"] });
+    queryClient.invalidateQueries({ queryKey: ["pipeline-live-embeddings"] });
+    queryClient.invalidateQueries({ queryKey: ["pipeline-live-llm-judge"] });
+    queryClient.invalidateQueries({ queryKey: ["pipeline-live-material-generation"] });
     queryClient.invalidateQueries({ queryKey: ["traces"] });
     if (payload.stage === "GUIDE_GENERATION" || payload.status === "GUIDE_FOUND") {
       queryClient.invalidateQueries({ queryKey: ["guides"] });

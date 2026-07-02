@@ -1,0 +1,7 @@
+# bm25_token_overlap_baseline / lab-cluster-183
+
+- `msg-08946` `OUTAGE_STATUS` `REVIEW_SIGNAL_OR_DISCUSSION` с chatgpt есть проблема. мы попали в детект кибербезопасности из-за чего упала нам openai замедлили скорость работы. мы сейчас решаем как исправить ситуацию и насколько сильно всё попало под внутренний контроль. выявить кто и что мы не можем мы не пишем ваши з
+- `msg-09235` `OUTAGE_STATUS` `REVIEW_SIGNAL_OR_DISCUSSION` unexpected status 401 unauthorized: authentication is required for the public api. url: URL cf-ray: a12b8b6c9937b655-ist
+- `msg-15932` `OUTAGE_STATUS` `REVIEW_SIGNAL_OR_DISCUSSION` теперь bad gateway сыпет upstream http 502: doctype html -- if lt ie 7 html class no-js ie6 oldie lang en-us endif -- -- if ie 7 html class no-js ie7 oldie lang en-us endif -- -- if ie 8 html class no-js ie8 oldie lang en-us endif -- -- if gt ie 8 -- html clas
+- `msg-16875` `OUTAGE_STATUS` `REVIEW_SIGNAL_OR_DISCUSSION` реально в кодексе снова столкнулся с 403 принял использую именно URL как openai_base_url. сейчас попробую тем же responses-image-generation скриптом с более совместимым http-клиентом и без стриминга потому что предыдущий 403 мог быть на уровне транспорта а не 
+- `msg-19919` `OUTAGE_STATUS` `REVIEW_SIGNAL_OR_DISCUSSION` сорян может чего не догоняю в теории только урл поменять это pi vibemod2-anthropic : baseurl : URL api : anthropic-messages vibemod2-responses : baseurl : URL api : openai-responses vibemod2-openai : baseurl : URL api : openai-completions на старом работало по

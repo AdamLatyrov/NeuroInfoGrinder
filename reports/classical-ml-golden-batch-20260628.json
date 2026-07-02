@@ -1,0 +1,4213 @@
+{
+  "source": "C:\\Users\\Adam\\Documents\\Work\\LarbCorp\\Products\\NeuroInfoGrinder\\reports\\golden-batch-real-posts-20260628.json",
+  "rows": [
+    {
+      "caseId": "GB01",
+      "anchor": 11142,
+      "inputSource": "golden_evidence_snapshot",
+      "inputPreview": "Expected positive candidate; no LOW_SINGLE_MESSAGE_SCORE.",
+      "expected": "ACCEPT_AS_REFERENCE_NOT_GUIDE",
+      "actualFinal": "ABSTAIN",
+      "preprocessing": "CLEAN",
+      "meaning": "RESOURCE_REFERENCE",
+      "valueLevel": "MATERIAL_CANDIDATE",
+      "usefulnessKind": "REFERENCE",
+      "evidenceSufficiency": "ENOUGH_SINGLE_MESSAGE",
+      "assemblyStrategy": "SINGLE_MESSAGE",
+      "materialRoute": "REFERENCE",
+      "uiReason": "LOW_CONFIDENCE_REVIEW",
+      "dedupeCluster": "UNIQUE",
+      "llmJudge": "APPROVE_FOR_JUDGE",
+      "confidenceBand": "MEDIUM",
+      "abstained": true,
+      "abstentionReason": "MODEL_UNCERTAINTY",
+      "modelAgreement": 0.424,
+      "pass": true
+    },
+    {
+      "caseId": "GB02",
+      "anchor": 11484,
+      "inputSource": "golden_evidence_snapshot",
+      "inputPreview": "Expected GitHub/resource candidate including hidden-link-style context. OpenMontage GitHub video-agent system broader_day_candidate_raw=11484; broader_day_message_date=2026-06-27T06:01:19+00:00; hit_count=5 nearest timestamp raw does not match expected content",
+      "expected": "ACCEPT_AS_REFERENCE_NOT_GUIDE",
+      "actualFinal": "ABSTAIN",
+      "preprocessing": "CLEAN",
+      "meaning": "RESOURCE_REFERENCE",
+      "valueLevel": "MATERIAL_CANDIDATE",
+      "usefulnessKind": "REFERENCE",
+      "evidenceSufficiency": "ENOUGH_SINGLE_MESSAGE",
+      "assemblyStrategy": "SINGLE_MESSAGE",
+      "materialRoute": "REFERENCE",
+      "uiReason": "LOW_CONFIDENCE_REVIEW",
+      "dedupeCluster": "UNIQUE",
+      "llmJudge": "APPROVE_FOR_JUDGE",
+      "confidenceBand": "MEDIUM",
+      "abstained": true,
+      "abstentionReason": "MODEL_UNCERTAINTY",
+      "modelAgreement": 0.2927,
+      "pass": true
+    },
+    {
+      "caseId": "GB03",
+      "anchor": 11193,
+      "inputSource": "golden_evidence_snapshot",
+      "inputPreview": "Expected reject; no generic TOO_SHORT.",
+      "expected": "REJECT_LINK_ONLY_NEEDS_ENRICHMENT",
+      "actualFinal": "ABSTAIN",
+      "preprocessing": "CLEAN",
+      "meaning": "RESOURCE_REFERENCE",
+      "valueLevel": "NOT_GARBAGE_NO_MATERIAL",
+      "usefulnessKind": "REFERENCE",
+      "evidenceSufficiency": "NEEDS_LINK_ENRICHMENT",
+      "assemblyStrategy": "LINK_ENRICHED_SINGLE",
+      "materialRoute": "NO_MATERIAL",
+      "uiReason": "LINK_NEEDS_ENRICHMENT",
+      "dedupeCluster": "UNIQUE",
+      "llmJudge": "HOLD_FOR_CONTEXT",
+      "confidenceBand": "MEDIUM",
+      "abstained": true,
+      "abstentionReason": "MODEL_UNCERTAINTY",
+      "modelAgreement": 0.3382,
+      "pass": true
+    },
+    {
+      "caseId": "GB04",
+      "anchor": "CL01",
+      "inputSource": "golden_evidence_snapshot",
+      "inputPreview": "Checklist for diagnosing ModelHub/API slowdowns and model fallback Problem symptoms; endpoint/region check; status/model availability; client fallback strategy; product diagnostics request. Actionable support/product feedback for API users and model fallback. ",
+      "expected": "DISCUSSION_SEGMENT_GUIDE",
+      "actualFinal": "ABSTAIN",
+      "preprocessing": "CLEAN",
+      "meaning": "TROUBLESHOOTING",
+      "valueLevel": "MATERIAL_CANDIDATE",
+      "usefulnessKind": "DIAGNOSTIC",
+      "evidenceSufficiency": "NEEDS_DISCUSSION_CONTEXT",
+      "assemblyStrategy": "DISCUSSION_SEGMENT",
+      "materialRoute": "GUIDE",
+      "uiReason": "NEEDS_LOCAL_CONTEXT",
+      "dedupeCluster": "CLUSTER_MEMBER",
+      "llmJudge": "APPROVE_FOR_JUDGE",
+      "confidenceBand": "LOW",
+      "abstained": true,
+      "abstentionReason": "MODEL_UNCERTAINTY",
+      "modelAgreement": 0.1424,
+      "pass": true
+    },
+    {
+      "caseId": "GB05",
+      "anchor": "CL02",
+      "inputSource": "golden_evidence_snapshot",
+      "inputPreview": "How Claude/Anthropic prompt caching affects limits and API cost Cache write/read; why first request is costly; /new/clear caveat; long context cost; practical rules. Strong practical explanation with examples and user-facing advice. DISCUSSION_SEGMENT and comb",
+      "expected": "DISCUSSION_SEGMENT_GUIDE",
+      "actualFinal": "ABSTAIN",
+      "preprocessing": "CLEAN",
+      "meaning": "PRACTICAL_INSTRUCTION",
+      "valueLevel": "MATERIAL_CANDIDATE",
+      "usefulnessKind": "ACTIONABLE",
+      "evidenceSufficiency": "NEEDS_DISCUSSION_CONTEXT",
+      "assemblyStrategy": "DISCUSSION_SEGMENT",
+      "materialRoute": "GUIDE",
+      "uiReason": "ENOUGH_FOR_DRAFT",
+      "dedupeCluster": "CLUSTER_MEMBER",
+      "llmJudge": "APPROVE_FOR_JUDGE",
+      "confidenceBand": "LOW",
+      "abstained": true,
+      "abstentionReason": "MODEL_UNCERTAINTY",
+      "modelAgreement": 0.1448,
+      "pass": true
+    },
+    {
+      "caseId": "GB06",
+      "anchor": "CL05",
+      "inputSource": "golden_evidence_snapshot",
+      "inputPreview": "How to improve hh.ru resume visibility: activity checklist and AI-filter limitations Disclaimer; checklist of activity signals; contact-data caveat; timing; AI-filter limitation; resume review recommendation. Strong standalone guide-like answer. Fixed by appro",
+      "expected": "GUIDE_OR_STRONG_ANSWER",
+      "actualFinal": "ABSTAIN",
+      "preprocessing": "CLEAN",
+      "meaning": "PRACTICAL_INSTRUCTION",
+      "valueLevel": "MATERIAL_CANDIDATE",
+      "usefulnessKind": "ACTIONABLE",
+      "evidenceSufficiency": "NEEDS_DISCUSSION_CONTEXT",
+      "assemblyStrategy": "DISCUSSION_SEGMENT",
+      "materialRoute": "GUIDE",
+      "uiReason": "ENOUGH_FOR_DRAFT",
+      "dedupeCluster": "CLUSTER_MEMBER",
+      "llmJudge": "APPROVE_FOR_JUDGE",
+      "confidenceBand": "LOW",
+      "abstained": true,
+      "abstentionReason": "MODEL_UNCERTAINTY",
+      "modelAgreement": 0.1701,
+      "pass": true
+    },
+    {
+      "caseId": "GB07",
+      "anchor": "CL07",
+      "inputSource": "golden_evidence_snapshot",
+      "inputPreview": "Psychedelic retreats: cautionary observations and goal-setting alternative Question context; observed harms; goal-setting alternative; caveats and non-medical framing. Coherent Q&A chain but sensitive and context-dependent. DISCUSSION_SEGMENT with safety frami",
+      "expected": "NEEDS_SAFETY_SUMMARY_OR_REJECT",
+      "actualFinal": "BLOCKED_PREPROCESSING",
+      "preprocessing": "RISK_SENSITIVE",
+      "meaning": "RESOURCE_REFERENCE",
+      "valueLevel": "NOT_GARBAGE_NO_MATERIAL",
+      "usefulnessKind": "CONTEXTUAL",
+      "evidenceSufficiency": "NEEDS_DISCUSSION_CONTEXT",
+      "assemblyStrategy": "DISCUSSION_SEGMENT",
+      "materialRoute": "NO_MATERIAL",
+      "uiReason": "NEEDS_LOCAL_CONTEXT",
+      "dedupeCluster": "CLUSTER_MEMBER",
+      "llmJudge": "REJECT_BEFORE_JUDGE",
+      "confidenceBand": "LOW",
+      "abstained": true,
+      "abstentionReason": "MODEL_UNCERTAINTY",
+      "modelAgreement": 0.2001,
+      "pass": true
+    },
+    {
+      "caseId": "GB08",
+      "anchor": "CL10",
+      "inputSource": "golden_evidence_snapshot",
+      "inputPreview": "Hosting promo post N/A Ad/promo, not user knowledge. Promo suppression",
+      "expected": "REJECT_PROMO",
+      "actualFinal": "BLOCKED_PREPROCESSING",
+      "preprocessing": "NOISE",
+      "meaning": "PROMO_AD",
+      "valueLevel": "NOT_GARBAGE_NO_MATERIAL",
+      "usefulnessKind": "CONTEXTUAL",
+      "evidenceSufficiency": "NEEDS_DISCUSSION_CONTEXT",
+      "assemblyStrategy": "DISCUSSION_SEGMENT",
+      "materialRoute": "NO_MATERIAL",
+      "uiReason": "NEEDS_LOCAL_CONTEXT",
+      "dedupeCluster": "CLUSTER_MEMBER",
+      "llmJudge": "REJECT_BEFORE_JUDGE",
+      "confidenceBand": "LOW",
+      "abstained": true,
+      "abstentionReason": "MODEL_UNCERTAINTY",
+      "modelAgreement": 0.2168,
+      "pass": true
+    }
+  ],
+  "details": [
+    {
+      "case": {
+        "caseId": "GB01",
+        "kind": "single_message_reference",
+        "rawId": 11142,
+        "source": "message-usefulness judge dry-run",
+        "expected": "ACCEPT_AS_REFERENCE_NOT_GUIDE",
+        "current": "JUDGE_ACCEPTED_REFERENCE",
+        "evidence": {
+          "classifier": {
+            "sample_type": "TARGET",
+            "raw_id": "11142",
+            "content_class": "NEWS_UPDATE",
+            "candidate_route": "SINGLE_MESSAGE",
+            "proposed_material_type": "REFERENCE",
+            "reject_reason": "",
+            "llm_judge_eligible": "true",
+            "assessment": "Expected positive candidate; no LOW_SINGLE_MESSAGE_SCORE."
+          },
+          "judgeAccepted": true,
+          "sourceRecovery": null
+        }
+      },
+      "inputText": "Expected positive candidate; no LOW_SINGLE_MESSAGE_SCORE.",
+      "row": {
+        "caseId": "GB01",
+        "anchor": 11142,
+        "inputSource": "golden_evidence_snapshot",
+        "inputPreview": "Expected positive candidate; no LOW_SINGLE_MESSAGE_SCORE.",
+        "expected": "ACCEPT_AS_REFERENCE_NOT_GUIDE",
+        "actualFinal": "ABSTAIN",
+        "preprocessing": "CLEAN",
+        "meaning": "RESOURCE_REFERENCE",
+        "valueLevel": "MATERIAL_CANDIDATE",
+        "usefulnessKind": "REFERENCE",
+        "evidenceSufficiency": "ENOUGH_SINGLE_MESSAGE",
+        "assemblyStrategy": "SINGLE_MESSAGE",
+        "materialRoute": "REFERENCE",
+        "uiReason": "LOW_CONFIDENCE_REVIEW",
+        "dedupeCluster": "UNIQUE",
+        "llmJudge": "APPROVE_FOR_JUDGE",
+        "confidenceBand": "MEDIUM",
+        "abstained": true,
+        "abstentionReason": "MODEL_UNCERTAINTY",
+        "modelAgreement": 0.424,
+        "pass": true
+      },
+      "result": {
+        "stage": "MESSAGE_PIPELINE",
+        "targetId": "11142",
+        "predictions": {
+          "preprocessing": [
+            {
+              "label": "CLEAN",
+              "probability": 0.8571,
+              "rank": 1
+            },
+            {
+              "label": "LOW_SIGNAL",
+              "probability": 0.1429,
+              "rank": 2
+            }
+          ],
+          "meaning": [
+            {
+              "label": "RESOURCE_REFERENCE",
+              "probability": 0.7719,
+              "rank": 1
+            },
+            {
+              "label": "RESOURCE_REFERENCE",
+              "probability": 0.1579,
+              "rank": 2
+            },
+            {
+              "label": "CHATTER",
+              "probability": 0.0702,
+              "rank": 3
+            }
+          ],
+          "valueLevel": [
+            {
+              "label": "MATERIAL_CANDIDATE",
+              "probability": 0.5,
+              "rank": 1
+            },
+            {
+              "label": "NOT_GARBAGE_NO_MATERIAL",
+              "probability": 0.1905,
+              "rank": 2
+            },
+            {
+              "label": "AWARENESS_SIGNAL",
+              "probability": 0.1071,
+              "rank": 3
+            },
+            {
+              "label": "CONTEXT_SIGNAL",
+              "probability": 0.0833,
+              "rank": 4
+            },
+            {
+              "label": "MATERIAL_CANDIDATE",
+              "probability": 0.0714,
+              "rank": 5
+            },
+            {
+              "label": "GARBAGE",
+              "probability": 0.0476,
+              "rank": 6
+            }
+          ],
+          "usefulnessKind": [
+            {
+              "label": "REFERENCE",
+              "probability": 0.7611,
+              "rank": 1
+            },
+            {
+              "label": "CONTEXTUAL",
+              "probability": 0.1327,
+              "rank": 2
+            },
+            {
+              "label": "AWARENESS",
+              "probability": 0.1062,
+              "rank": 3
+            }
+          ],
+          "evidenceSufficiency": [
+            {
+              "label": "ENOUGH_SINGLE_MESSAGE",
+              "probability": 0.6038,
+              "rank": 1
+            },
+            {
+              "label": "INSUFFICIENT_CONTEXT",
+              "probability": 0.2264,
+              "rank": 2
+            },
+            {
+              "label": "NEEDS_DISCUSSION_CONTEXT",
+              "probability": 0.1698,
+              "rank": 3
+            }
+          ],
+          "assemblyStrategy": [
+            {
+              "label": "SINGLE_MESSAGE",
+              "probability": 0.8367,
+              "rank": 1
+            },
+            {
+              "label": "REJECT",
+              "probability": 0.1633,
+              "rank": 2
+            }
+          ],
+          "materialRoute": [
+            {
+              "label": "REFERENCE",
+              "probability": 0.4681,
+              "rank": 1
+            },
+            {
+              "label": "REFERENCE",
+              "probability": 0.4322,
+              "rank": 2
+            },
+            {
+              "label": "NO_MATERIAL",
+              "probability": 0.0997,
+              "rank": 3
+            }
+          ],
+          "uiReason": [
+            {
+              "label": "LOW_CONFIDENCE_REVIEW",
+              "probability": 1.0,
+              "rank": 1
+            }
+          ],
+          "dedupeCluster": [
+            {
+              "label": "UNIQUE",
+              "probability": 0.7907,
+              "rank": 1
+            },
+            {
+              "label": "TOPIC_SIGNAL",
+              "probability": 0.2093,
+              "rank": 2
+            }
+          ],
+          "llmJudge": [
+            {
+              "label": "APPROVE_FOR_JUDGE",
+              "probability": 0.525,
+              "rank": 1
+            },
+            {
+              "label": "APPROVE_FOR_JUDGE",
+              "probability": 0.3625,
+              "rank": 2
+            },
+            {
+              "label": "ABSTAIN_LOW_CONFIDENCE",
+              "probability": 0.1125,
+              "rank": 3
+            }
+          ]
+        },
+        "recommendedDecision": {
+          "preprocessing": "CLEAN",
+          "meaning": "RESOURCE_REFERENCE",
+          "valueLevel": "MATERIAL_CANDIDATE",
+          "usefulnessKind": "REFERENCE",
+          "evidenceSufficiency": "ENOUGH_SINGLE_MESSAGE",
+          "assemblyStrategy": "SINGLE_MESSAGE",
+          "materialRoute": "REFERENCE",
+          "uiReason": "LOW_CONFIDENCE_REVIEW",
+          "dedupeCluster": "UNIQUE",
+          "llmJudge": "APPROVE_FOR_JUDGE"
+        },
+        "modelResults": {
+          "preprocessing": [
+            {
+              "label": "CLEAN",
+              "probability": 0.8571,
+              "rank": 1
+            },
+            {
+              "label": "LOW_SIGNAL",
+              "probability": 0.1429,
+              "rank": 2
+            }
+          ],
+          "meaning": [
+            {
+              "label": "RESOURCE_REFERENCE",
+              "probability": 0.7719,
+              "rank": 1
+            },
+            {
+              "label": "RESOURCE_REFERENCE",
+              "probability": 0.1579,
+              "rank": 2
+            },
+            {
+              "label": "CHATTER",
+              "probability": 0.0702,
+              "rank": 3
+            }
+          ],
+          "valueLevel": [
+            {
+              "label": "MATERIAL_CANDIDATE",
+              "probability": 0.5,
+              "rank": 1
+            },
+            {
+              "label": "NOT_GARBAGE_NO_MATERIAL",
+              "probability": 0.1905,
+              "rank": 2
+            },
+            {
+              "label": "AWARENESS_SIGNAL",
+              "probability": 0.1071,
+              "rank": 3
+            },
+            {
+              "label": "CONTEXT_SIGNAL",
+              "probability": 0.0833,
+              "rank": 4
+            },
+            {
+              "label": "MATERIAL_CANDIDATE",
+              "probability": 0.0714,
+              "rank": 5
+            },
+            {
+              "label": "GARBAGE",
+              "probability": 0.0476,
+              "rank": 6
+            }
+          ],
+          "usefulnessKind": [
+            {
+              "label": "REFERENCE",
+              "probability": 0.7611,
+              "rank": 1
+            },
+            {
+              "label": "CONTEXTUAL",
+              "probability": 0.1327,
+              "rank": 2
+            },
+            {
+              "label": "AWARENESS",
+              "probability": 0.1062,
+              "rank": 3
+            }
+          ],
+          "evidenceSufficiency": [
+            {
+              "label": "ENOUGH_SINGLE_MESSAGE",
+              "probability": 0.6038,
+              "rank": 1
+            },
+            {
+              "label": "INSUFFICIENT_CONTEXT",
+              "probability": 0.2264,
+              "rank": 2
+            },
+            {
+              "label": "NEEDS_DISCUSSION_CONTEXT",
+              "probability": 0.1698,
+              "rank": 3
+            }
+          ],
+          "assemblyStrategy": [
+            {
+              "label": "SINGLE_MESSAGE",
+              "probability": 0.8367,
+              "rank": 1
+            },
+            {
+              "label": "REJECT",
+              "probability": 0.1633,
+              "rank": 2
+            }
+          ],
+          "materialRoute": [
+            {
+              "label": "REFERENCE",
+              "probability": 0.4681,
+              "rank": 1
+            },
+            {
+              "label": "REFERENCE",
+              "probability": 0.4322,
+              "rank": 2
+            },
+            {
+              "label": "NO_MATERIAL",
+              "probability": 0.0997,
+              "rank": 3
+            }
+          ],
+          "uiReason": [
+            {
+              "label": "LOW_CONFIDENCE_REVIEW",
+              "probability": 1.0,
+              "rank": 1
+            }
+          ],
+          "dedupeCluster": [
+            {
+              "label": "UNIQUE",
+              "probability": 0.7907,
+              "rank": 1
+            },
+            {
+              "label": "TOPIC_SIGNAL",
+              "probability": 0.2093,
+              "rank": 2
+            }
+          ],
+          "llmJudge": [
+            {
+              "label": "APPROVE_FOR_JUDGE",
+              "probability": 0.525,
+              "rank": 1
+            },
+            {
+              "label": "APPROVE_FOR_JUDGE",
+              "probability": 0.3625,
+              "rank": 2
+            },
+            {
+              "label": "ABSTAIN_LOW_CONFIDENCE",
+              "probability": 0.1125,
+              "rank": 3
+            }
+          ]
+        },
+        "modelVotes": {
+          "preprocessingTop": "CLEAN",
+          "meaningTop": "RESOURCE_REFERENCE",
+          "valueTop": "MATERIAL_CANDIDATE",
+          "usefulnessTop": "REFERENCE",
+          "evidenceTop": "ENOUGH_SINGLE_MESSAGE",
+          "assemblyTop": "SINGLE_MESSAGE",
+          "routeTop": "REFERENCE",
+          "uiReasonTop": "LOW_CONFIDENCE_REVIEW",
+          "dedupeClusterTop": "UNIQUE",
+          "llmJudgeTop": "APPROVE_FOR_JUDGE"
+        },
+        "calibratedProbabilities": {
+          "preprocessing": 0.8571,
+          "meaning": 0.7719,
+          "valueLevel": 0.5,
+          "usefulnessKind": 0.7611,
+          "evidenceSufficiency": 0.6038,
+          "assemblyStrategy": 0.8367,
+          "materialRoute": 0.4681,
+          "uiReason": 1.0,
+          "dedupeCluster": 0.7907,
+          "llmJudge": 0.525
+        },
+        "confidenceBand": "MEDIUM",
+        "abstained": true,
+        "abstentionReason": "MODEL_UNCERTAINTY",
+        "recommendedAction": "TRACE_ONLY",
+        "modelVersion": "classical-ml-bootstrap-v1",
+        "featureVersion": "classical-ml-v1",
+        "trainingDatasetVersion": "bootstrap-reviewed-v0",
+        "inferenceLatencyMs": 6,
+        "fallbackUsed": false,
+        "disagreementRate": 0.1454,
+        "uncertainty": {
+          "averageMargin": 0.5097,
+          "maxEntropy": 1.4421,
+          "scoreStdDev": 0.1682,
+          "lowMarginStages": [
+            "materialRoute"
+          ],
+          "highDisagreement": false,
+          "abstainRecommended": true,
+          "modelAgreement": 0.424
+        },
+        "modelAgreement": 0.424,
+        "reasons": [
+          "targetType=MESSAGE",
+          "preprocessing=CLEAN",
+          "meaning=RESOURCE_REFERENCE",
+          "valueLevel=MATERIAL_CANDIDATE",
+          "route=REFERENCE",
+          "dedupeCluster=UNIQUE",
+          "llmJudge=APPROVE_FOR_JUDGE"
+        ]
+      }
+    },
+    {
+      "case": {
+        "caseId": "GB02",
+        "kind": "single_message_reference",
+        "rawId": 11484,
+        "source": "message-usefulness judge dry-run",
+        "expected": "ACCEPT_AS_REFERENCE_NOT_GUIDE",
+        "current": "JUDGE_ACCEPTED_REFERENCE",
+        "evidence": {
+          "classifier": {
+            "sample_type": "TARGET",
+            "raw_id": "11484",
+            "content_class": "RESOURCE_REFERENCE",
+            "candidate_route": "SINGLE_MESSAGE",
+            "proposed_material_type": "REFERENCE",
+            "reject_reason": "",
+            "llm_judge_eligible": "true",
+            "assessment": "Expected GitHub/resource candidate including hidden-link-style context."
+          },
+          "judgeAccepted": true,
+          "overnight": {
+            "manual_id": "M09",
+            "expected_name": "OpenMontage GitHub video-agent system",
+            "expected_verdict": "SHOULD_BECOME_MATERIAL",
+            "specified_window_status": "EXPECTED_CONTENT_NOT_FOUND_IN_SPECIFIED_WINDOW",
+            "raw_id": null,
+            "nearest_raw_id": 11266,
+            "nearest_dataset_message_id": 10179,
+            "nearest_replay_run_message_id": 7455,
+            "nearest_run_id": 5103,
+            "nearest_message_date": "2026-06-27T00:55:02+00:00",
+            "nearest_chat_id": -1003922856266,
+            "nearest_chat_title": null,
+            "processable": true,
+            "active_dialog": true,
+            "auto_pipeline_enabled": null,
+            "pipeline_status": "PROCESSED",
+            "intake_reason": "NO_MATERIAL_CANDIDATES",
+            "queue_status": "PROCESSED",
+            "queue_reason": "NO_MATERIAL_CANDIDATES",
+            "single_message_score": null,
+            "final_decision": "REJECTED_SINGLE_MESSAGE",
+            "single_message_rejection_reason": "SUPPRESSED_BY_CLASSIFIER",
+            "discussion_segment_ids": [],
+            "cluster_membership": "",
+            "llm_judge_calls": 0,
+            "generation_calls": 0,
+            "material_id": null,
+            "skip_or_reject_reason": "nearest timestamp raw does not match expected content; nearest_delta_seconds=2",
+            "correct": "NO_DECISION_ON_EXPECTED_CONTENT_IN_WINDOW",
+            "notes": "broader_day_candidate_raw=11484; broader_day_message_date=2026-06-27T06:01:19+00:00; hit_count=5",
+            "nearest_text_preview": "",
+            "broader_day_candidate_raw_id": 11484,
+            "broader_day_candidate_message_date": "2026-06-27T06:01:19+00:00",
+            "broader_day_candidate_hit_count": 5
+          }
+        }
+      },
+      "inputText": "Expected GitHub/resource candidate including hidden-link-style context.\nOpenMontage GitHub video-agent system\nbroader_day_candidate_raw=11484; broader_day_message_date=2026-06-27T06:01:19+00:00; hit_count=5\nnearest timestamp raw does not match expected content; nearest_delta_seconds=2",
+      "row": {
+        "caseId": "GB02",
+        "anchor": 11484,
+        "inputSource": "golden_evidence_snapshot",
+        "inputPreview": "Expected GitHub/resource candidate including hidden-link-style context. OpenMontage GitHub video-agent system broader_day_candidate_raw=11484; broader_day_message_date=2026-06-27T06:01:19+00:00; hit_count=5 nearest timestamp raw does not match expected content",
+        "expected": "ACCEPT_AS_REFERENCE_NOT_GUIDE",
+        "actualFinal": "ABSTAIN",
+        "preprocessing": "CLEAN",
+        "meaning": "RESOURCE_REFERENCE",
+        "valueLevel": "MATERIAL_CANDIDATE",
+        "usefulnessKind": "REFERENCE",
+        "evidenceSufficiency": "ENOUGH_SINGLE_MESSAGE",
+        "assemblyStrategy": "SINGLE_MESSAGE",
+        "materialRoute": "REFERENCE",
+        "uiReason": "LOW_CONFIDENCE_REVIEW",
+        "dedupeCluster": "UNIQUE",
+        "llmJudge": "APPROVE_FOR_JUDGE",
+        "confidenceBand": "MEDIUM",
+        "abstained": true,
+        "abstentionReason": "MODEL_UNCERTAINTY",
+        "modelAgreement": 0.2927,
+        "pass": true
+      },
+      "result": {
+        "stage": "MESSAGE_PIPELINE",
+        "targetId": "11484",
+        "predictions": {
+          "preprocessing": [
+            {
+              "label": "CLEAN",
+              "probability": 0.8571,
+              "rank": 1
+            },
+            {
+              "label": "LOW_SIGNAL",
+              "probability": 0.1429,
+              "rank": 2
+            }
+          ],
+          "meaning": [
+            {
+              "label": "RESOURCE_REFERENCE",
+              "probability": 0.4583,
+              "rank": 1
+            },
+            {
+              "label": "PRACTICAL_INSTRUCTION",
+              "probability": 0.4063,
+              "rank": 2
+            },
+            {
+              "label": "RESOURCE_REFERENCE",
+              "probability": 0.0938,
+              "rank": 3
+            },
+            {
+              "label": "CHATTER",
+              "probability": 0.0417,
+              "rank": 4
+            }
+          ],
+          "valueLevel": [
+            {
+              "label": "MATERIAL_CANDIDATE",
+              "probability": 0.35,
+              "rank": 1
+            },
+            {
+              "label": "MATERIAL_CANDIDATE",
+              "probability": 0.3,
+              "rank": 2
+            },
+            {
+              "label": "NOT_GARBAGE_NO_MATERIAL",
+              "probability": 0.1333,
+              "rank": 3
+            },
+            {
+              "label": "AWARENESS_SIGNAL",
+              "probability": 0.075,
+              "rank": 4
+            },
+            {
+              "label": "CONTEXT_SIGNAL",
+              "probability": 0.0583,
+              "rank": 5
+            },
+            {
+              "label": "MATERIAL_CANDIDATE",
+              "probability": 0.05,
+              "rank": 6
+            },
+            {
+              "label": "GARBAGE",
+              "probability": 0.0333,
+              "rank": 7
+            }
+          ],
+          "usefulnessKind": [
+            {
+              "label": "REFERENCE",
+              "probability": 0.455,
+              "rank": 1
+            },
+            {
+              "label": "REFERENCE",
+              "probability": 0.4021,
+              "rank": 2
+            },
+            {
+              "label": "CONTEXTUAL",
+              "probability": 0.0794,
+              "rank": 3
+            },
+            {
+              "label": "AWARENESS",
+              "probability": 0.0635,
+              "rank": 4
+            }
+          ],
+          "evidenceSufficiency": [
+            {
+              "label": "ENOUGH_SINGLE_MESSAGE",
+              "probability": 0.4176,
+              "rank": 1
+            },
+            {
+              "label": "ENOUGH_SINGLE_MESSAGE",
+              "probability": 0.3516,
+              "rank": 2
+            },
+            {
+              "label": "INSUFFICIENT_CONTEXT",
+              "probability": 0.1319,
+              "rank": 3
+            },
+            {
+              "label": "NEEDS_DISCUSSION_CONTEXT",
+              "probability": 0.0989,
+              "rank": 4
+            }
+          ],
+          "assemblyStrategy": [
+            {
+              "label": "SINGLE_MESSAGE",
+              "probability": 0.8367,
+              "rank": 1
+            },
+            {
+              "label": "REJECT",
+              "probability": 0.1633,
+              "rank": 2
+            }
+          ],
+          "materialRoute": [
+            {
+              "label": "REFERENCE",
+              "probability": 0.4681,
+              "rank": 1
+            },
+            {
+              "label": "REFERENCE",
+              "probability": 0.4322,
+              "rank": 2
+            },
+            {
+              "label": "NO_MATERIAL",
+              "probability": 0.0997,
+              "rank": 3
+            }
+          ],
+          "uiReason": [
+            {
+              "label": "LOW_CONFIDENCE_REVIEW",
+              "probability": 1.0,
+              "rank": 1
+            }
+          ],
+          "dedupeCluster": [
+            {
+              "label": "UNIQUE",
+              "probability": 0.7907,
+              "rank": 1
+            },
+            {
+              "label": "TOPIC_SIGNAL",
+              "probability": 0.2093,
+              "rank": 2
+            }
+          ],
+          "llmJudge": [
+            {
+              "label": "APPROVE_FOR_JUDGE",
+              "probability": 0.7632,
+              "rank": 1
+            },
+            {
+              "label": "ABSTAIN_LOW_CONFIDENCE",
+              "probability": 0.2368,
+              "rank": 2
+            }
+          ]
+        },
+        "recommendedDecision": {
+          "preprocessing": "CLEAN",
+          "meaning": "RESOURCE_REFERENCE",
+          "valueLevel": "MATERIAL_CANDIDATE",
+          "usefulnessKind": "REFERENCE",
+          "evidenceSufficiency": "ENOUGH_SINGLE_MESSAGE",
+          "assemblyStrategy": "SINGLE_MESSAGE",
+          "materialRoute": "REFERENCE",
+          "uiReason": "LOW_CONFIDENCE_REVIEW",
+          "dedupeCluster": "UNIQUE",
+          "llmJudge": "APPROVE_FOR_JUDGE"
+        },
+        "modelResults": {
+          "preprocessing": [
+            {
+              "label": "CLEAN",
+              "probability": 0.8571,
+              "rank": 1
+            },
+            {
+              "label": "LOW_SIGNAL",
+              "probability": 0.1429,
+              "rank": 2
+            }
+          ],
+          "meaning": [
+            {
+              "label": "RESOURCE_REFERENCE",
+              "probability": 0.4583,
+              "rank": 1
+            },
+            {
+              "label": "PRACTICAL_INSTRUCTION",
+              "probability": 0.4063,
+              "rank": 2
+            },
+            {
+              "label": "RESOURCE_REFERENCE",
+              "probability": 0.0938,
+              "rank": 3
+            },
+            {
+              "label": "CHATTER",
+              "probability": 0.0417,
+              "rank": 4
+            }
+          ],
+          "valueLevel": [
+            {
+              "label": "MATERIAL_CANDIDATE",
+              "probability": 0.35,
+              "rank": 1
+            },
+            {
+              "label": "MATERIAL_CANDIDATE",
+              "probability": 0.3,
+              "rank": 2
+            },
+            {
+              "label": "NOT_GARBAGE_NO_MATERIAL",
+              "probability": 0.1333,
+              "rank": 3
+            },
+            {
+              "label": "AWARENESS_SIGNAL",
+              "probability": 0.075,
+              "rank": 4
+            },
+            {
+              "label": "CONTEXT_SIGNAL",
+              "probability": 0.0583,
+              "rank": 5
+            },
+            {
+              "label": "MATERIAL_CANDIDATE",
+              "probability": 0.05,
+              "rank": 6
+            },
+            {
+              "label": "GARBAGE",
+              "probability": 0.0333,
+              "rank": 7
+            }
+          ],
+          "usefulnessKind": [
+            {
+              "label": "REFERENCE",
+              "probability": 0.455,
+              "rank": 1
+            },
+            {
+              "label": "REFERENCE",
+              "probability": 0.4021,
+              "rank": 2
+            },
+            {
+              "label": "CONTEXTUAL",
+              "probability": 0.0794,
+              "rank": 3
+            },
+            {
+              "label": "AWARENESS",
+              "probability": 0.0635,
+              "rank": 4
+            }
+          ],
+          "evidenceSufficiency": [
+            {
+              "label": "ENOUGH_SINGLE_MESSAGE",
+              "probability": 0.4176,
+              "rank": 1
+            },
+            {
+              "label": "ENOUGH_SINGLE_MESSAGE",
+              "probability": 0.3516,
+              "rank": 2
+            },
+            {
+              "label": "INSUFFICIENT_CONTEXT",
+              "probability": 0.1319,
+              "rank": 3
+            },
+            {
+              "label": "NEEDS_DISCUSSION_CONTEXT",
+              "probability": 0.0989,
+              "rank": 4
+            }
+          ],
+          "assemblyStrategy": [
+            {
+              "label": "SINGLE_MESSAGE",
+              "probability": 0.8367,
+              "rank": 1
+            },
+            {
+              "label": "REJECT",
+              "probability": 0.1633,
+              "rank": 2
+            }
+          ],
+          "materialRoute": [
+            {
+              "label": "REFERENCE",
+              "probability": 0.4681,
+              "rank": 1
+            },
+            {
+              "label": "REFERENCE",
+              "probability": 0.4322,
+              "rank": 2
+            },
+            {
+              "label": "NO_MATERIAL",
+              "probability": 0.0997,
+              "rank": 3
+            }
+          ],
+          "uiReason": [
+            {
+              "label": "LOW_CONFIDENCE_REVIEW",
+              "probability": 1.0,
+              "rank": 1
+            }
+          ],
+          "dedupeCluster": [
+            {
+              "label": "UNIQUE",
+              "probability": 0.7907,
+              "rank": 1
+            },
+            {
+              "label": "TOPIC_SIGNAL",
+              "probability": 0.2093,
+              "rank": 2
+            }
+          ],
+          "llmJudge": [
+            {
+              "label": "APPROVE_FOR_JUDGE",
+              "probability": 0.7632,
+              "rank": 1
+            },
+            {
+              "label": "ABSTAIN_LOW_CONFIDENCE",
+              "probability": 0.2368,
+              "rank": 2
+            }
+          ]
+        },
+        "modelVotes": {
+          "preprocessingTop": "CLEAN",
+          "meaningTop": "RESOURCE_REFERENCE",
+          "valueTop": "MATERIAL_CANDIDATE",
+          "usefulnessTop": "REFERENCE",
+          "evidenceTop": "ENOUGH_SINGLE_MESSAGE",
+          "assemblyTop": "SINGLE_MESSAGE",
+          "routeTop": "REFERENCE",
+          "uiReasonTop": "LOW_CONFIDENCE_REVIEW",
+          "dedupeClusterTop": "UNIQUE",
+          "llmJudgeTop": "APPROVE_FOR_JUDGE"
+        },
+        "calibratedProbabilities": {
+          "preprocessing": 0.8571,
+          "meaning": 0.4583,
+          "valueLevel": 0.35,
+          "usefulnessKind": 0.455,
+          "evidenceSufficiency": 0.4176,
+          "assemblyStrategy": 0.8367,
+          "materialRoute": 0.4681,
+          "uiReason": 1.0,
+          "dedupeCluster": 0.7907,
+          "llmJudge": 0.7632
+        },
+        "confidenceBand": "MEDIUM",
+        "abstained": true,
+        "abstentionReason": "MODEL_UNCERTAINTY",
+        "recommendedAction": "TRACE_ONLY",
+        "modelVersion": "classical-ml-bootstrap-v1",
+        "featureVersion": "classical-ml-v1",
+        "trainingDatasetVersion": "bootstrap-reviewed-v0",
+        "inferenceLatencyMs": 3,
+        "fallbackUsed": false,
+        "disagreementRate": 0.1942,
+        "uncertainty": {
+          "averageMargin": 0.3752,
+          "maxEntropy": 1.6203,
+          "scoreStdDev": 0.2199,
+          "lowMarginStages": [
+            "meaning",
+            "valueLevel",
+            "usefulnessKind",
+            "evidenceSufficiency",
+            "materialRoute"
+          ],
+          "highDisagreement": true,
+          "abstainRecommended": true,
+          "modelAgreement": 0.2927
+        },
+        "modelAgreement": 0.2927,
+        "reasons": [
+          "targetType=MESSAGE",
+          "preprocessing=CLEAN",
+          "meaning=RESOURCE_REFERENCE",
+          "valueLevel=MATERIAL_CANDIDATE",
+          "route=REFERENCE",
+          "dedupeCluster=UNIQUE",
+          "llmJudge=APPROVE_FOR_JUDGE"
+        ]
+      }
+    },
+    {
+      "case": {
+        "caseId": "GB03",
+        "kind": "single_message_negative_control",
+        "rawId": 11193,
+        "source": "message-usefulness judge dry-run",
+        "expected": "REJECT_LINK_ONLY_NEEDS_ENRICHMENT",
+        "current": "PRE_GATE_REJECTED",
+        "evidence": {
+          "classifier": {
+            "sample_type": "TARGET",
+            "raw_id": "11193",
+            "content_class": "LINK_ONLY",
+            "candidate_route": "REJECT",
+            "proposed_material_type": "",
+            "reject_reason": "NEEDS_LINK_ENRICHMENT",
+            "llm_judge_eligible": "false",
+            "assessment": "Expected reject; no generic TOO_SHORT."
+          },
+          "judgeRejected": false,
+          "sourceRecovery": null
+        }
+      },
+      "inputText": "Expected reject; no generic TOO_SHORT.",
+      "row": {
+        "caseId": "GB03",
+        "anchor": 11193,
+        "inputSource": "golden_evidence_snapshot",
+        "inputPreview": "Expected reject; no generic TOO_SHORT.",
+        "expected": "REJECT_LINK_ONLY_NEEDS_ENRICHMENT",
+        "actualFinal": "ABSTAIN",
+        "preprocessing": "CLEAN",
+        "meaning": "RESOURCE_REFERENCE",
+        "valueLevel": "NOT_GARBAGE_NO_MATERIAL",
+        "usefulnessKind": "REFERENCE",
+        "evidenceSufficiency": "NEEDS_LINK_ENRICHMENT",
+        "assemblyStrategy": "LINK_ENRICHED_SINGLE",
+        "materialRoute": "NO_MATERIAL",
+        "uiReason": "LINK_NEEDS_ENRICHMENT",
+        "dedupeCluster": "UNIQUE",
+        "llmJudge": "HOLD_FOR_CONTEXT",
+        "confidenceBand": "MEDIUM",
+        "abstained": true,
+        "abstentionReason": "MODEL_UNCERTAINTY",
+        "modelAgreement": 0.3382,
+        "pass": true
+      },
+      "result": {
+        "stage": "MESSAGE_PIPELINE",
+        "targetId": "11193",
+        "predictions": {
+          "preprocessing": [
+            {
+              "label": "CLEAN",
+              "probability": 0.8571,
+              "rank": 1
+            },
+            {
+              "label": "LOW_SIGNAL",
+              "probability": 0.1429,
+              "rank": 2
+            }
+          ],
+          "meaning": [
+            {
+              "label": "RESOURCE_REFERENCE",
+              "probability": 0.7719,
+              "rank": 1
+            },
+            {
+              "label": "RESOURCE_REFERENCE",
+              "probability": 0.1579,
+              "rank": 2
+            },
+            {
+              "label": "CHATTER",
+              "probability": 0.0702,
+              "rank": 3
+            }
+          ],
+          "valueLevel": [
+            {
+              "label": "NOT_GARBAGE_NO_MATERIAL",
+              "probability": 0.494,
+              "rank": 1
+            },
+            {
+              "label": "NOT_GARBAGE_NO_MATERIAL",
+              "probability": 0.1928,
+              "rank": 2
+            },
+            {
+              "label": "AWARENESS_SIGNAL",
+              "probability": 0.1084,
+              "rank": 3
+            },
+            {
+              "label": "CONTEXT_SIGNAL",
+              "probability": 0.0843,
+              "rank": 4
+            },
+            {
+              "label": "MATERIAL_CANDIDATE",
+              "probability": 0.0723,
+              "rank": 5
+            },
+            {
+              "label": "GARBAGE",
+              "probability": 0.0482,
+              "rank": 6
+            }
+          ],
+          "usefulnessKind": [
+            {
+              "label": "REFERENCE",
+              "probability": 0.7611,
+              "rank": 1
+            },
+            {
+              "label": "CONTEXTUAL",
+              "probability": 0.1327,
+              "rank": 2
+            },
+            {
+              "label": "AWARENESS",
+              "probability": 0.1062,
+              "rank": 3
+            }
+          ],
+          "evidenceSufficiency": [
+            {
+              "label": "NEEDS_LINK_ENRICHMENT",
+              "probability": 0.6818,
+              "rank": 1
+            },
+            {
+              "label": "INSUFFICIENT_CONTEXT",
+              "probability": 0.1818,
+              "rank": 2
+            },
+            {
+              "label": "NEEDS_DISCUSSION_CONTEXT",
+              "probability": 0.1364,
+              "rank": 3
+            }
+          ],
+          "assemblyStrategy": [
+            {
+              "label": "LINK_ENRICHED_SINGLE",
+              "probability": 0.8261,
+              "rank": 1
+            },
+            {
+              "label": "REJECT",
+              "probability": 0.1739,
+              "rank": 2
+            }
+          ],
+          "materialRoute": [
+            {
+              "label": "NO_MATERIAL",
+              "probability": 0.4624,
+              "rank": 1
+            },
+            {
+              "label": "REFERENCE",
+              "probability": 0.4368,
+              "rank": 2
+            },
+            {
+              "label": "NO_MATERIAL",
+              "probability": 0.1008,
+              "rank": 3
+            }
+          ],
+          "uiReason": [
+            {
+              "label": "LINK_NEEDS_ENRICHMENT",
+              "probability": 0.4027,
+              "rank": 1
+            },
+            {
+              "label": "SIGNAL_ONLY_STATUS",
+              "probability": 0.3547,
+              "rank": 2
+            },
+            {
+              "label": "LOW_CONFIDENCE_REVIEW",
+              "probability": 0.2426,
+              "rank": 3
+            }
+          ],
+          "dedupeCluster": [
+            {
+              "label": "UNIQUE",
+              "probability": 0.7907,
+              "rank": 1
+            },
+            {
+              "label": "TOPIC_SIGNAL",
+              "probability": 0.2093,
+              "rank": 2
+            }
+          ],
+          "llmJudge": [
+            {
+              "label": "HOLD_FOR_CONTEXT",
+              "probability": 0.3551,
+              "rank": 1
+            },
+            {
+              "label": "ABSTAIN_LOW_CONFIDENCE",
+              "probability": 0.2897,
+              "rank": 2
+            },
+            {
+              "label": "APPROVE_FOR_JUDGE",
+              "probability": 0.271,
+              "rank": 3
+            },
+            {
+              "label": "ABSTAIN_LOW_CONFIDENCE",
+              "probability": 0.0841,
+              "rank": 4
+            }
+          ]
+        },
+        "recommendedDecision": {
+          "preprocessing": "CLEAN",
+          "meaning": "RESOURCE_REFERENCE",
+          "valueLevel": "NOT_GARBAGE_NO_MATERIAL",
+          "usefulnessKind": "REFERENCE",
+          "evidenceSufficiency": "NEEDS_LINK_ENRICHMENT",
+          "assemblyStrategy": "LINK_ENRICHED_SINGLE",
+          "materialRoute": "NO_MATERIAL",
+          "uiReason": "LINK_NEEDS_ENRICHMENT",
+          "dedupeCluster": "UNIQUE",
+          "llmJudge": "HOLD_FOR_CONTEXT"
+        },
+        "modelResults": {
+          "preprocessing": [
+            {
+              "label": "CLEAN",
+              "probability": 0.8571,
+              "rank": 1
+            },
+            {
+              "label": "LOW_SIGNAL",
+              "probability": 0.1429,
+              "rank": 2
+            }
+          ],
+          "meaning": [
+            {
+              "label": "RESOURCE_REFERENCE",
+              "probability": 0.7719,
+              "rank": 1
+            },
+            {
+              "label": "RESOURCE_REFERENCE",
+              "probability": 0.1579,
+              "rank": 2
+            },
+            {
+              "label": "CHATTER",
+              "probability": 0.0702,
+              "rank": 3
+            }
+          ],
+          "valueLevel": [
+            {
+              "label": "NOT_GARBAGE_NO_MATERIAL",
+              "probability": 0.494,
+              "rank": 1
+            },
+            {
+              "label": "NOT_GARBAGE_NO_MATERIAL",
+              "probability": 0.1928,
+              "rank": 2
+            },
+            {
+              "label": "AWARENESS_SIGNAL",
+              "probability": 0.1084,
+              "rank": 3
+            },
+            {
+              "label": "CONTEXT_SIGNAL",
+              "probability": 0.0843,
+              "rank": 4
+            },
+            {
+              "label": "MATERIAL_CANDIDATE",
+              "probability": 0.0723,
+              "rank": 5
+            },
+            {
+              "label": "GARBAGE",
+              "probability": 0.0482,
+              "rank": 6
+            }
+          ],
+          "usefulnessKind": [
+            {
+              "label": "REFERENCE",
+              "probability": 0.7611,
+              "rank": 1
+            },
+            {
+              "label": "CONTEXTUAL",
+              "probability": 0.1327,
+              "rank": 2
+            },
+            {
+              "label": "AWARENESS",
+              "probability": 0.1062,
+              "rank": 3
+            }
+          ],
+          "evidenceSufficiency": [
+            {
+              "label": "NEEDS_LINK_ENRICHMENT",
+              "probability": 0.6818,
+              "rank": 1
+            },
+            {
+              "label": "INSUFFICIENT_CONTEXT",
+              "probability": 0.1818,
+              "rank": 2
+            },
+            {
+              "label": "NEEDS_DISCUSSION_CONTEXT",
+              "probability": 0.1364,
+              "rank": 3
+            }
+          ],
+          "assemblyStrategy": [
+            {
+              "label": "LINK_ENRICHED_SINGLE",
+              "probability": 0.8261,
+              "rank": 1
+            },
+            {
+              "label": "REJECT",
+              "probability": 0.1739,
+              "rank": 2
+            }
+          ],
+          "materialRoute": [
+            {
+              "label": "NO_MATERIAL",
+              "probability": 0.4624,
+              "rank": 1
+            },
+            {
+              "label": "REFERENCE",
+              "probability": 0.4368,
+              "rank": 2
+            },
+            {
+              "label": "NO_MATERIAL",
+              "probability": 0.1008,
+              "rank": 3
+            }
+          ],
+          "uiReason": [
+            {
+              "label": "LINK_NEEDS_ENRICHMENT",
+              "probability": 0.4027,
+              "rank": 1
+            },
+            {
+              "label": "SIGNAL_ONLY_STATUS",
+              "probability": 0.3547,
+              "rank": 2
+            },
+            {
+              "label": "LOW_CONFIDENCE_REVIEW",
+              "probability": 0.2426,
+              "rank": 3
+            }
+          ],
+          "dedupeCluster": [
+            {
+              "label": "UNIQUE",
+              "probability": 0.7907,
+              "rank": 1
+            },
+            {
+              "label": "TOPIC_SIGNAL",
+              "probability": 0.2093,
+              "rank": 2
+            }
+          ],
+          "llmJudge": [
+            {
+              "label": "HOLD_FOR_CONTEXT",
+              "probability": 0.3551,
+              "rank": 1
+            },
+            {
+              "label": "ABSTAIN_LOW_CONFIDENCE",
+              "probability": 0.2897,
+              "rank": 2
+            },
+            {
+              "label": "APPROVE_FOR_JUDGE",
+              "probability": 0.271,
+              "rank": 3
+            },
+            {
+              "label": "ABSTAIN_LOW_CONFIDENCE",
+              "probability": 0.0841,
+              "rank": 4
+            }
+          ]
+        },
+        "modelVotes": {
+          "preprocessingTop": "CLEAN",
+          "meaningTop": "RESOURCE_REFERENCE",
+          "valueTop": "NOT_GARBAGE_NO_MATERIAL",
+          "usefulnessTop": "REFERENCE",
+          "evidenceTop": "NEEDS_LINK_ENRICHMENT",
+          "assemblyTop": "LINK_ENRICHED_SINGLE",
+          "routeTop": "NO_MATERIAL",
+          "uiReasonTop": "LINK_NEEDS_ENRICHMENT",
+          "dedupeClusterTop": "UNIQUE",
+          "llmJudgeTop": "HOLD_FOR_CONTEXT"
+        },
+        "calibratedProbabilities": {
+          "preprocessing": 0.8571,
+          "meaning": 0.7719,
+          "valueLevel": 0.494,
+          "usefulnessKind": 0.7611,
+          "evidenceSufficiency": 0.6818,
+          "assemblyStrategy": 0.8261,
+          "materialRoute": 0.4624,
+          "uiReason": 0.4027,
+          "dedupeCluster": 0.7907,
+          "llmJudge": 0.3551
+        },
+        "confidenceBand": "MEDIUM",
+        "abstained": true,
+        "abstentionReason": "MODEL_UNCERTAINTY",
+        "recommendedAction": "TRACE_ONLY",
+        "modelVersion": "classical-ml-bootstrap-v1",
+        "featureVersion": "classical-ml-v1",
+        "trainingDatasetVersion": "bootstrap-reviewed-v0",
+        "inferenceLatencyMs": 4,
+        "fallbackUsed": false,
+        "disagreementRate": 0.1719,
+        "uncertainty": {
+          "averageMargin": 0.413,
+          "maxEntropy": 1.4512,
+          "scoreStdDev": 0.1813,
+          "lowMarginStages": [
+            "materialRoute",
+            "uiReason",
+            "llmJudge"
+          ],
+          "highDisagreement": true,
+          "abstainRecommended": true,
+          "modelAgreement": 0.3382
+        },
+        "modelAgreement": 0.3382,
+        "reasons": [
+          "targetType=MESSAGE",
+          "preprocessing=CLEAN",
+          "meaning=RESOURCE_REFERENCE",
+          "valueLevel=NOT_GARBAGE_NO_MATERIAL",
+          "route=NO_MATERIAL",
+          "dedupeCluster=UNIQUE",
+          "llmJudge=HOLD_FOR_CONTEXT"
+        ]
+      }
+    },
+    {
+      "case": {
+        "caseId": "GB04",
+        "kind": "discussion_segment_guide",
+        "clusterId": "CL01",
+        "source": "manual expected materials",
+        "expected": "DISCUSSION_SEGMENT_GUIDE",
+        "current": "NOT_CAUGHT_TODAY",
+        "evidence": {
+          "expected_id": "E01",
+          "title": "Checklist for diagnosing ModelHub/API slowdowns and model fallback",
+          "type": "NEEDS_DISCUSSION_SEGMENT",
+          "raw_ids": "6034 6042 6052 6062 6069 6070 6078 6079 6105",
+          "cluster_id": "CL01",
+          "single_or_multi": "multi",
+          "expected_structure": "Problem symptoms; endpoint/region check; status/model availability; client fallback strategy; product diagnostics request.",
+          "why_useful": "Actionable support/product feedback for API users and model fallback.",
+          "expected_quality": "medium",
+          "should_system_catch_today": "no",
+          "needed_feature": "DISCUSSION_SEGMENT plus API/status signal aggregation"
+        }
+      },
+      "inputText": "Checklist for diagnosing ModelHub/API slowdowns and model fallback\nProblem symptoms; endpoint/region check; status/model availability; client fallback strategy; product diagnostics request.\nActionable support/product feedback for API users and model fallback.\nDISCUSSION_SEGMENT plus API/status signal aggregation",
+      "row": {
+        "caseId": "GB04",
+        "anchor": "CL01",
+        "inputSource": "golden_evidence_snapshot",
+        "inputPreview": "Checklist for diagnosing ModelHub/API slowdowns and model fallback Problem symptoms; endpoint/region check; status/model availability; client fallback strategy; product diagnostics request. Actionable support/product feedback for API users and model fallback. ",
+        "expected": "DISCUSSION_SEGMENT_GUIDE",
+        "actualFinal": "ABSTAIN",
+        "preprocessing": "CLEAN",
+        "meaning": "TROUBLESHOOTING",
+        "valueLevel": "MATERIAL_CANDIDATE",
+        "usefulnessKind": "DIAGNOSTIC",
+        "evidenceSufficiency": "NEEDS_DISCUSSION_CONTEXT",
+        "assemblyStrategy": "DISCUSSION_SEGMENT",
+        "materialRoute": "GUIDE",
+        "uiReason": "NEEDS_LOCAL_CONTEXT",
+        "dedupeCluster": "CLUSTER_MEMBER",
+        "llmJudge": "APPROVE_FOR_JUDGE",
+        "confidenceBand": "LOW",
+        "abstained": true,
+        "abstentionReason": "MODEL_UNCERTAINTY",
+        "modelAgreement": 0.1424,
+        "pass": true
+      },
+      "result": {
+        "stage": "DISCUSSION_SEGMENT_PIPELINE",
+        "targetId": "CL01",
+        "predictions": {
+          "preprocessing": [
+            {
+              "label": "CLEAN",
+              "probability": 0.8571,
+              "rank": 1
+            },
+            {
+              "label": "LOW_SIGNAL",
+              "probability": 0.1429,
+              "rank": 2
+            }
+          ],
+          "meaning": [
+            {
+              "label": "TROUBLESHOOTING",
+              "probability": 0.3139,
+              "rank": 1
+            },
+            {
+              "label": "PRACTICAL_INSTRUCTION",
+              "probability": 0.3066,
+              "rank": 2
+            },
+            {
+              "label": "PRACTICAL_INSTRUCTION",
+              "probability": 0.2847,
+              "rank": 3
+            },
+            {
+              "label": "RESOURCE_REFERENCE",
+              "probability": 0.0657,
+              "rank": 4
+            },
+            {
+              "label": "CHATTER",
+              "probability": 0.0292,
+              "rank": 5
+            }
+          ],
+          "valueLevel": [
+            {
+              "label": "MATERIAL_CANDIDATE",
+              "probability": 0.3333,
+              "rank": 1
+            },
+            {
+              "label": "MATERIAL_CANDIDATE",
+              "probability": 0.3077,
+              "rank": 2
+            },
+            {
+              "label": "NOT_GARBAGE_NO_MATERIAL",
+              "probability": 0.1368,
+              "rank": 3
+            },
+            {
+              "label": "AWARENESS_SIGNAL",
+              "probability": 0.0769,
+              "rank": 4
+            },
+            {
+              "label": "CONTEXT_SIGNAL",
+              "probability": 0.0598,
+              "rank": 5
+            },
+            {
+              "label": "MATERIAL_CANDIDATE",
+              "probability": 0.0513,
+              "rank": 6
+            },
+            {
+              "label": "GARBAGE",
+              "probability": 0.0342,
+              "rank": 7
+            }
+          ],
+          "usefulnessKind": [
+            {
+              "label": "DIAGNOSTIC",
+              "probability": 0.5091,
+              "rank": 1
+            },
+            {
+              "label": "ACTIONABLE",
+              "probability": 0.3273,
+              "rank": 2
+            },
+            {
+              "label": "CONTEXTUAL",
+              "probability": 0.0909,
+              "rank": 3
+            },
+            {
+              "label": "AWARENESS",
+              "probability": 0.0727,
+              "rank": 4
+            }
+          ],
+          "evidenceSufficiency": [
+            {
+              "label": "NEEDS_DISCUSSION_CONTEXT",
+              "probability": 0.3106,
+              "rank": 1
+            },
+            {
+              "label": "ENOUGH_SINGLE_MESSAGE",
+              "probability": 0.2879,
+              "rank": 2
+            },
+            {
+              "label": "ENOUGH_SINGLE_MESSAGE",
+              "probability": 0.2424,
+              "rank": 3
+            },
+            {
+              "label": "INSUFFICIENT_CONTEXT",
+              "probability": 0.0909,
+              "rank": 4
+            },
+            {
+              "label": "NEEDS_DISCUSSION_CONTEXT",
+              "probability": 0.0682,
+              "rank": 5
+            }
+          ],
+          "assemblyStrategy": [
+            {
+              "label": "DISCUSSION_SEGMENT",
+              "probability": 0.4835,
+              "rank": 1
+            },
+            {
+              "label": "DISCUSSION_SEGMENT",
+              "probability": 0.4286,
+              "rank": 2
+            },
+            {
+              "label": "REJECT",
+              "probability": 0.0879,
+              "rank": 3
+            }
+          ],
+          "materialRoute": [
+            {
+              "label": "GUIDE",
+              "probability": 0.4505,
+              "rank": 1
+            },
+            {
+              "label": "ANSWER",
+              "probability": 0.4419,
+              "rank": 2
+            },
+            {
+              "label": "NO_MATERIAL",
+              "probability": 0.1075,
+              "rank": 3
+            }
+          ],
+          "uiReason": [
+            {
+              "label": "NEEDS_LOCAL_CONTEXT",
+              "probability": 0.5928,
+              "rank": 1
+            },
+            {
+              "label": "LOW_CONFIDENCE_REVIEW",
+              "probability": 0.4072,
+              "rank": 2
+            }
+          ],
+          "dedupeCluster": [
+            {
+              "label": "CLUSTER_MEMBER",
+              "probability": 0.3248,
+              "rank": 1
+            },
+            {
+              "label": "CLUSTER_MEMBER",
+              "probability": 0.3077,
+              "rank": 2
+            },
+            {
+              "label": "UNIQUE",
+              "probability": 0.2906,
+              "rank": 3
+            },
+            {
+              "label": "TOPIC_SIGNAL",
+              "probability": 0.0769,
+              "rank": 4
+            }
+          ],
+          "llmJudge": [
+            {
+              "label": "APPROVE_FOR_JUDGE",
+              "probability": 0.7632,
+              "rank": 1
+            },
+            {
+              "label": "ABSTAIN_LOW_CONFIDENCE",
+              "probability": 0.2368,
+              "rank": 2
+            }
+          ]
+        },
+        "recommendedDecision": {
+          "preprocessing": "CLEAN",
+          "meaning": "TROUBLESHOOTING",
+          "valueLevel": "MATERIAL_CANDIDATE",
+          "usefulnessKind": "DIAGNOSTIC",
+          "evidenceSufficiency": "NEEDS_DISCUSSION_CONTEXT",
+          "assemblyStrategy": "DISCUSSION_SEGMENT",
+          "materialRoute": "GUIDE",
+          "uiReason": "NEEDS_LOCAL_CONTEXT",
+          "dedupeCluster": "CLUSTER_MEMBER",
+          "llmJudge": "APPROVE_FOR_JUDGE"
+        },
+        "modelResults": {
+          "preprocessing": [
+            {
+              "label": "CLEAN",
+              "probability": 0.8571,
+              "rank": 1
+            },
+            {
+              "label": "LOW_SIGNAL",
+              "probability": 0.1429,
+              "rank": 2
+            }
+          ],
+          "meaning": [
+            {
+              "label": "TROUBLESHOOTING",
+              "probability": 0.3139,
+              "rank": 1
+            },
+            {
+              "label": "PRACTICAL_INSTRUCTION",
+              "probability": 0.3066,
+              "rank": 2
+            },
+            {
+              "label": "PRACTICAL_INSTRUCTION",
+              "probability": 0.2847,
+              "rank": 3
+            },
+            {
+              "label": "RESOURCE_REFERENCE",
+              "probability": 0.0657,
+              "rank": 4
+            },
+            {
+              "label": "CHATTER",
+              "probability": 0.0292,
+              "rank": 5
+            }
+          ],
+          "valueLevel": [
+            {
+              "label": "MATERIAL_CANDIDATE",
+              "probability": 0.3333,
+              "rank": 1
+            },
+            {
+              "label": "MATERIAL_CANDIDATE",
+              "probability": 0.3077,
+              "rank": 2
+            },
+            {
+              "label": "NOT_GARBAGE_NO_MATERIAL",
+              "probability": 0.1368,
+              "rank": 3
+            },
+            {
+              "label": "AWARENESS_SIGNAL",
+              "probability": 0.0769,
+              "rank": 4
+            },
+            {
+              "label": "CONTEXT_SIGNAL",
+              "probability": 0.0598,
+              "rank": 5
+            },
+            {
+              "label": "MATERIAL_CANDIDATE",
+              "probability": 0.0513,
+              "rank": 6
+            },
+            {
+              "label": "GARBAGE",
+              "probability": 0.0342,
+              "rank": 7
+            }
+          ],
+          "usefulnessKind": [
+            {
+              "label": "DIAGNOSTIC",
+              "probability": 0.5091,
+              "rank": 1
+            },
+            {
+              "label": "ACTIONABLE",
+              "probability": 0.3273,
+              "rank": 2
+            },
+            {
+              "label": "CONTEXTUAL",
+              "probability": 0.0909,
+              "rank": 3
+            },
+            {
+              "label": "AWARENESS",
+              "probability": 0.0727,
+              "rank": 4
+            }
+          ],
+          "evidenceSufficiency": [
+            {
+              "label": "NEEDS_DISCUSSION_CONTEXT",
+              "probability": 0.3106,
+              "rank": 1
+            },
+            {
+              "label": "ENOUGH_SINGLE_MESSAGE",
+              "probability": 0.2879,
+              "rank": 2
+            },
+            {
+              "label": "ENOUGH_SINGLE_MESSAGE",
+              "probability": 0.2424,
+              "rank": 3
+            },
+            {
+              "label": "INSUFFICIENT_CONTEXT",
+              "probability": 0.0909,
+              "rank": 4
+            },
+            {
+              "label": "NEEDS_DISCUSSION_CONTEXT",
+              "probability": 0.0682,
+              "rank": 5
+            }
+          ],
+          "assemblyStrategy": [
+            {
+              "label": "DISCUSSION_SEGMENT",
+              "probability": 0.4835,
+              "rank": 1
+            },
+            {
+              "label": "DISCUSSION_SEGMENT",
+              "probability": 0.4286,
+              "rank": 2
+            },
+            {
+              "label": "REJECT",
+              "probability": 0.0879,
+              "rank": 3
+            }
+          ],
+          "materialRoute": [
+            {
+              "label": "GUIDE",
+              "probability": 0.4505,
+              "rank": 1
+            },
+            {
+              "label": "ANSWER",
+              "probability": 0.4419,
+              "rank": 2
+            },
+            {
+              "label": "NO_MATERIAL",
+              "probability": 0.1075,
+              "rank": 3
+            }
+          ],
+          "uiReason": [
+            {
+              "label": "NEEDS_LOCAL_CONTEXT",
+              "probability": 0.5928,
+              "rank": 1
+            },
+            {
+              "label": "LOW_CONFIDENCE_REVIEW",
+              "probability": 0.4072,
+              "rank": 2
+            }
+          ],
+          "dedupeCluster": [
+            {
+              "label": "CLUSTER_MEMBER",
+              "probability": 0.3248,
+              "rank": 1
+            },
+            {
+              "label": "CLUSTER_MEMBER",
+              "probability": 0.3077,
+              "rank": 2
+            },
+            {
+              "label": "UNIQUE",
+              "probability": 0.2906,
+              "rank": 3
+            },
+            {
+              "label": "TOPIC_SIGNAL",
+              "probability": 0.0769,
+              "rank": 4
+            }
+          ],
+          "llmJudge": [
+            {
+              "label": "APPROVE_FOR_JUDGE",
+              "probability": 0.7632,
+              "rank": 1
+            },
+            {
+              "label": "ABSTAIN_LOW_CONFIDENCE",
+              "probability": 0.2368,
+              "rank": 2
+            }
+          ]
+        },
+        "modelVotes": {
+          "preprocessingTop": "CLEAN",
+          "meaningTop": "TROUBLESHOOTING",
+          "valueTop": "MATERIAL_CANDIDATE",
+          "usefulnessTop": "DIAGNOSTIC",
+          "evidenceTop": "NEEDS_DISCUSSION_CONTEXT",
+          "assemblyTop": "DISCUSSION_SEGMENT",
+          "routeTop": "GUIDE",
+          "uiReasonTop": "NEEDS_LOCAL_CONTEXT",
+          "dedupeClusterTop": "CLUSTER_MEMBER",
+          "llmJudgeTop": "APPROVE_FOR_JUDGE"
+        },
+        "calibratedProbabilities": {
+          "preprocessing": 0.8571,
+          "meaning": 0.3139,
+          "valueLevel": 0.3333,
+          "usefulnessKind": 0.5091,
+          "evidenceSufficiency": 0.3106,
+          "assemblyStrategy": 0.4835,
+          "materialRoute": 0.4505,
+          "uiReason": 0.5928,
+          "dedupeCluster": 0.3248,
+          "llmJudge": 0.7632
+        },
+        "confidenceBand": "LOW",
+        "abstained": true,
+        "abstentionReason": "MODEL_UNCERTAINTY",
+        "recommendedAction": "TRACE_ONLY",
+        "modelVersion": "classical-ml-bootstrap-v1",
+        "featureVersion": "classical-ml-v1",
+        "trainingDatasetVersion": "bootstrap-reviewed-v0",
+        "inferenceLatencyMs": 3,
+        "fallbackUsed": false,
+        "disagreementRate": 0.1903,
+        "uncertainty": {
+          "averageMargin": 0.1744,
+          "maxEntropy": 1.6345,
+          "scoreStdDev": 0.1835,
+          "lowMarginStages": [
+            "meaning",
+            "valueLevel",
+            "evidenceSufficiency",
+            "assemblyStrategy",
+            "materialRoute",
+            "dedupeCluster"
+          ],
+          "highDisagreement": true,
+          "abstainRecommended": true,
+          "modelAgreement": 0.1424
+        },
+        "modelAgreement": 0.1424,
+        "reasons": [
+          "targetType=DISCUSSION_SEGMENT",
+          "preprocessing=CLEAN",
+          "meaning=TROUBLESHOOTING",
+          "valueLevel=MATERIAL_CANDIDATE",
+          "route=GUIDE",
+          "dedupeCluster=CLUSTER_MEMBER",
+          "llmJudge=APPROVE_FOR_JUDGE"
+        ]
+      }
+    },
+    {
+      "case": {
+        "caseId": "GB05",
+        "kind": "discussion_segment_guide",
+        "clusterId": "CL02",
+        "source": "manual expected materials",
+        "expected": "DISCUSSION_SEGMENT_GUIDE",
+        "current": "NOT_CAUGHT_TODAY",
+        "evidence": {
+          "expected_id": "E02",
+          "title": "How Claude/Anthropic prompt caching affects limits and API cost",
+          "type": "SHOULD_BE_GUIDE",
+          "raw_ids": "6765 6776 6778 6799 6803 6805 6817 6826 6836 6850 6876",
+          "cluster_id": "CL02",
+          "single_or_multi": "multi",
+          "expected_structure": "Cache write/read; why first request is costly; /new/clear caveat; long context cost; practical rules.",
+          "why_useful": "Strong practical explanation with examples and user-facing advice.",
+          "expected_quality": "high",
+          "should_system_catch_today": "no",
+          "needed_feature": "DISCUSSION_SEGMENT and combined technical explanation scoring"
+        }
+      },
+      "inputText": "How Claude/Anthropic prompt caching affects limits and API cost\nCache write/read; why first request is costly; /new/clear caveat; long context cost; practical rules.\nStrong practical explanation with examples and user-facing advice.\nDISCUSSION_SEGMENT and combined technical explanation scoring",
+      "row": {
+        "caseId": "GB05",
+        "anchor": "CL02",
+        "inputSource": "golden_evidence_snapshot",
+        "inputPreview": "How Claude/Anthropic prompt caching affects limits and API cost Cache write/read; why first request is costly; /new/clear caveat; long context cost; practical rules. Strong practical explanation with examples and user-facing advice. DISCUSSION_SEGMENT and comb",
+        "expected": "DISCUSSION_SEGMENT_GUIDE",
+        "actualFinal": "ABSTAIN",
+        "preprocessing": "CLEAN",
+        "meaning": "PRACTICAL_INSTRUCTION",
+        "valueLevel": "MATERIAL_CANDIDATE",
+        "usefulnessKind": "ACTIONABLE",
+        "evidenceSufficiency": "NEEDS_DISCUSSION_CONTEXT",
+        "assemblyStrategy": "DISCUSSION_SEGMENT",
+        "materialRoute": "GUIDE",
+        "uiReason": "ENOUGH_FOR_DRAFT",
+        "dedupeCluster": "CLUSTER_MEMBER",
+        "llmJudge": "APPROVE_FOR_JUDGE",
+        "confidenceBand": "LOW",
+        "abstained": true,
+        "abstentionReason": "MODEL_UNCERTAINTY",
+        "modelAgreement": 0.1448,
+        "pass": true
+      },
+      "result": {
+        "stage": "DISCUSSION_SEGMENT_PIPELINE",
+        "targetId": "CL02",
+        "predictions": {
+          "preprocessing": [
+            {
+              "label": "CLEAN",
+              "probability": 0.8571,
+              "rank": 1
+            },
+            {
+              "label": "LOW_SIGNAL",
+              "probability": 0.1429,
+              "rank": 2
+            }
+          ],
+          "meaning": [
+            {
+              "label": "PRACTICAL_INSTRUCTION",
+              "probability": 0.2428,
+              "rank": 1
+            },
+            {
+              "label": "QUESTION",
+              "probability": 0.237,
+              "rank": 2
+            },
+            {
+              "label": "PRACTICAL_INSTRUCTION",
+              "probability": 0.2254,
+              "rank": 3
+            },
+            {
+              "label": "RESOURCE_REFERENCE",
+              "probability": 0.2197,
+              "rank": 4
+            },
+            {
+              "label": "RESOURCE_REFERENCE",
+              "probability": 0.052,
+              "rank": 5
+            },
+            {
+              "label": "CHATTER",
+              "probability": 0.0231,
+              "rank": 6
+            }
+          ],
+          "valueLevel": [
+            {
+              "label": "MATERIAL_CANDIDATE",
+              "probability": 0.3333,
+              "rank": 1
+            },
+            {
+              "label": "MATERIAL_CANDIDATE",
+              "probability": 0.3077,
+              "rank": 2
+            },
+            {
+              "label": "NOT_GARBAGE_NO_MATERIAL",
+              "probability": 0.1368,
+              "rank": 3
+            },
+            {
+              "label": "AWARENESS_SIGNAL",
+              "probability": 0.0769,
+              "rank": 4
+            },
+            {
+              "label": "CONTEXT_SIGNAL",
+              "probability": 0.0598,
+              "rank": 5
+            },
+            {
+              "label": "MATERIAL_CANDIDATE",
+              "probability": 0.0513,
+              "rank": 6
+            },
+            {
+              "label": "GARBAGE",
+              "probability": 0.0342,
+              "rank": 7
+            }
+          ],
+          "usefulnessKind": [
+            {
+              "label": "ACTIONABLE",
+              "probability": 0.491,
+              "rank": 1
+            },
+            {
+              "label": "EDUCATIONAL",
+              "probability": 0.3473,
+              "rank": 2
+            },
+            {
+              "label": "CONTEXTUAL",
+              "probability": 0.0898,
+              "rank": 3
+            },
+            {
+              "label": "AWARENESS",
+              "probability": 0.0719,
+              "rank": 4
+            }
+          ],
+          "evidenceSufficiency": [
+            {
+              "label": "NEEDS_DISCUSSION_CONTEXT",
+              "probability": 0.3106,
+              "rank": 1
+            },
+            {
+              "label": "ENOUGH_SINGLE_MESSAGE",
+              "probability": 0.2879,
+              "rank": 2
+            },
+            {
+              "label": "ENOUGH_SINGLE_MESSAGE",
+              "probability": 0.2424,
+              "rank": 3
+            },
+            {
+              "label": "INSUFFICIENT_CONTEXT",
+              "probability": 0.0909,
+              "rank": 4
+            },
+            {
+              "label": "NEEDS_DISCUSSION_CONTEXT",
+              "probability": 0.0682,
+              "rank": 5
+            }
+          ],
+          "assemblyStrategy": [
+            {
+              "label": "DISCUSSION_SEGMENT",
+              "probability": 0.4835,
+              "rank": 1
+            },
+            {
+              "label": "DISCUSSION_SEGMENT",
+              "probability": 0.4286,
+              "rank": 2
+            },
+            {
+              "label": "REJECT",
+              "probability": 0.0879,
+              "rank": 3
+            }
+          ],
+          "materialRoute": [
+            {
+              "label": "GUIDE",
+              "probability": 0.8235,
+              "rank": 1
+            },
+            {
+              "label": "NO_MATERIAL",
+              "probability": 0.1765,
+              "rank": 2
+            }
+          ],
+          "uiReason": [
+            {
+              "label": "ENOUGH_FOR_DRAFT",
+              "probability": 0.4516,
+              "rank": 1
+            },
+            {
+              "label": "NEEDS_LOCAL_CONTEXT",
+              "probability": 0.4387,
+              "rank": 2
+            },
+            {
+              "label": "LOW_CONFIDENCE_REVIEW",
+              "probability": 0.1097,
+              "rank": 3
+            }
+          ],
+          "dedupeCluster": [
+            {
+              "label": "CLUSTER_MEMBER",
+              "probability": 0.3248,
+              "rank": 1
+            },
+            {
+              "label": "CLUSTER_MEMBER",
+              "probability": 0.3077,
+              "rank": 2
+            },
+            {
+              "label": "UNIQUE",
+              "probability": 0.2906,
+              "rank": 3
+            },
+            {
+              "label": "TOPIC_SIGNAL",
+              "probability": 0.0769,
+              "rank": 4
+            }
+          ],
+          "llmJudge": [
+            {
+              "label": "APPROVE_FOR_JUDGE",
+              "probability": 0.525,
+              "rank": 1
+            },
+            {
+              "label": "APPROVE_FOR_JUDGE",
+              "probability": 0.3625,
+              "rank": 2
+            },
+            {
+              "label": "ABSTAIN_LOW_CONFIDENCE",
+              "probability": 0.1125,
+              "rank": 3
+            }
+          ]
+        },
+        "recommendedDecision": {
+          "preprocessing": "CLEAN",
+          "meaning": "PRACTICAL_INSTRUCTION",
+          "valueLevel": "MATERIAL_CANDIDATE",
+          "usefulnessKind": "ACTIONABLE",
+          "evidenceSufficiency": "NEEDS_DISCUSSION_CONTEXT",
+          "assemblyStrategy": "DISCUSSION_SEGMENT",
+          "materialRoute": "GUIDE",
+          "uiReason": "ENOUGH_FOR_DRAFT",
+          "dedupeCluster": "CLUSTER_MEMBER",
+          "llmJudge": "APPROVE_FOR_JUDGE"
+        },
+        "modelResults": {
+          "preprocessing": [
+            {
+              "label": "CLEAN",
+              "probability": 0.8571,
+              "rank": 1
+            },
+            {
+              "label": "LOW_SIGNAL",
+              "probability": 0.1429,
+              "rank": 2
+            }
+          ],
+          "meaning": [
+            {
+              "label": "PRACTICAL_INSTRUCTION",
+              "probability": 0.2428,
+              "rank": 1
+            },
+            {
+              "label": "QUESTION",
+              "probability": 0.237,
+              "rank": 2
+            },
+            {
+              "label": "PRACTICAL_INSTRUCTION",
+              "probability": 0.2254,
+              "rank": 3
+            },
+            {
+              "label": "RESOURCE_REFERENCE",
+              "probability": 0.2197,
+              "rank": 4
+            },
+            {
+              "label": "RESOURCE_REFERENCE",
+              "probability": 0.052,
+              "rank": 5
+            },
+            {
+              "label": "CHATTER",
+              "probability": 0.0231,
+              "rank": 6
+            }
+          ],
+          "valueLevel": [
+            {
+              "label": "MATERIAL_CANDIDATE",
+              "probability": 0.3333,
+              "rank": 1
+            },
+            {
+              "label": "MATERIAL_CANDIDATE",
+              "probability": 0.3077,
+              "rank": 2
+            },
+            {
+              "label": "NOT_GARBAGE_NO_MATERIAL",
+              "probability": 0.1368,
+              "rank": 3
+            },
+            {
+              "label": "AWARENESS_SIGNAL",
+              "probability": 0.0769,
+              "rank": 4
+            },
+            {
+              "label": "CONTEXT_SIGNAL",
+              "probability": 0.0598,
+              "rank": 5
+            },
+            {
+              "label": "MATERIAL_CANDIDATE",
+              "probability": 0.0513,
+              "rank": 6
+            },
+            {
+              "label": "GARBAGE",
+              "probability": 0.0342,
+              "rank": 7
+            }
+          ],
+          "usefulnessKind": [
+            {
+              "label": "ACTIONABLE",
+              "probability": 0.491,
+              "rank": 1
+            },
+            {
+              "label": "EDUCATIONAL",
+              "probability": 0.3473,
+              "rank": 2
+            },
+            {
+              "label": "CONTEXTUAL",
+              "probability": 0.0898,
+              "rank": 3
+            },
+            {
+              "label": "AWARENESS",
+              "probability": 0.0719,
+              "rank": 4
+            }
+          ],
+          "evidenceSufficiency": [
+            {
+              "label": "NEEDS_DISCUSSION_CONTEXT",
+              "probability": 0.3106,
+              "rank": 1
+            },
+            {
+              "label": "ENOUGH_SINGLE_MESSAGE",
+              "probability": 0.2879,
+              "rank": 2
+            },
+            {
+              "label": "ENOUGH_SINGLE_MESSAGE",
+              "probability": 0.2424,
+              "rank": 3
+            },
+            {
+              "label": "INSUFFICIENT_CONTEXT",
+              "probability": 0.0909,
+              "rank": 4
+            },
+            {
+              "label": "NEEDS_DISCUSSION_CONTEXT",
+              "probability": 0.0682,
+              "rank": 5
+            }
+          ],
+          "assemblyStrategy": [
+            {
+              "label": "DISCUSSION_SEGMENT",
+              "probability": 0.4835,
+              "rank": 1
+            },
+            {
+              "label": "DISCUSSION_SEGMENT",
+              "probability": 0.4286,
+              "rank": 2
+            },
+            {
+              "label": "REJECT",
+              "probability": 0.0879,
+              "rank": 3
+            }
+          ],
+          "materialRoute": [
+            {
+              "label": "GUIDE",
+              "probability": 0.8235,
+              "rank": 1
+            },
+            {
+              "label": "NO_MATERIAL",
+              "probability": 0.1765,
+              "rank": 2
+            }
+          ],
+          "uiReason": [
+            {
+              "label": "ENOUGH_FOR_DRAFT",
+              "probability": 0.4516,
+              "rank": 1
+            },
+            {
+              "label": "NEEDS_LOCAL_CONTEXT",
+              "probability": 0.4387,
+              "rank": 2
+            },
+            {
+              "label": "LOW_CONFIDENCE_REVIEW",
+              "probability": 0.1097,
+              "rank": 3
+            }
+          ],
+          "dedupeCluster": [
+            {
+              "label": "CLUSTER_MEMBER",
+              "probability": 0.3248,
+              "rank": 1
+            },
+            {
+              "label": "CLUSTER_MEMBER",
+              "probability": 0.3077,
+              "rank": 2
+            },
+            {
+              "label": "UNIQUE",
+              "probability": 0.2906,
+              "rank": 3
+            },
+            {
+              "label": "TOPIC_SIGNAL",
+              "probability": 0.0769,
+              "rank": 4
+            }
+          ],
+          "llmJudge": [
+            {
+              "label": "APPROVE_FOR_JUDGE",
+              "probability": 0.525,
+              "rank": 1
+            },
+            {
+              "label": "APPROVE_FOR_JUDGE",
+              "probability": 0.3625,
+              "rank": 2
+            },
+            {
+              "label": "ABSTAIN_LOW_CONFIDENCE",
+              "probability": 0.1125,
+              "rank": 3
+            }
+          ]
+        },
+        "modelVotes": {
+          "preprocessingTop": "CLEAN",
+          "meaningTop": "PRACTICAL_INSTRUCTION",
+          "valueTop": "MATERIAL_CANDIDATE",
+          "usefulnessTop": "ACTIONABLE",
+          "evidenceTop": "NEEDS_DISCUSSION_CONTEXT",
+          "assemblyTop": "DISCUSSION_SEGMENT",
+          "routeTop": "GUIDE",
+          "uiReasonTop": "ENOUGH_FOR_DRAFT",
+          "dedupeClusterTop": "CLUSTER_MEMBER",
+          "llmJudgeTop": "APPROVE_FOR_JUDGE"
+        },
+        "calibratedProbabilities": {
+          "preprocessing": 0.8571,
+          "meaning": 0.2428,
+          "valueLevel": 0.3333,
+          "usefulnessKind": 0.491,
+          "evidenceSufficiency": 0.3106,
+          "assemblyStrategy": 0.4835,
+          "materialRoute": 0.8235,
+          "uiReason": 0.4516,
+          "dedupeCluster": 0.3248,
+          "llmJudge": 0.525
+        },
+        "confidenceBand": "LOW",
+        "abstained": true,
+        "abstentionReason": "MODEL_UNCERTAINTY",
+        "recommendedAction": "TRACE_ONLY",
+        "modelVersion": "classical-ml-bootstrap-v1",
+        "featureVersion": "classical-ml-v1",
+        "trainingDatasetVersion": "bootstrap-reviewed-v0",
+        "inferenceLatencyMs": 4,
+        "fallbackUsed": false,
+        "disagreementRate": 0.2088,
+        "uncertainty": {
+          "averageMargin": 0.1806,
+          "maxEntropy": 1.6345,
+          "scoreStdDev": 0.1984,
+          "lowMarginStages": [
+            "meaning",
+            "valueLevel",
+            "evidenceSufficiency",
+            "assemblyStrategy",
+            "uiReason",
+            "dedupeCluster"
+          ],
+          "highDisagreement": true,
+          "abstainRecommended": true,
+          "modelAgreement": 0.1448
+        },
+        "modelAgreement": 0.1448,
+        "reasons": [
+          "targetType=DISCUSSION_SEGMENT",
+          "preprocessing=CLEAN",
+          "meaning=PRACTICAL_INSTRUCTION",
+          "valueLevel=MATERIAL_CANDIDATE",
+          "route=GUIDE",
+          "dedupeCluster=CLUSTER_MEMBER",
+          "llmJudge=APPROVE_FOR_JUDGE"
+        ]
+      }
+    },
+    {
+      "case": {
+        "caseId": "GB06",
+        "kind": "single_or_pair_resume_answer",
+        "clusterId": "CL05",
+        "source": "manual expected materials",
+        "expected": "GUIDE_OR_STRONG_ANSWER",
+        "current": "SHOULD_BE_CAUGHT_TODAY_PER_MANUAL_AUDIT",
+        "evidence": {
+          "expected_id": "E05",
+          "title": "How to improve hh.ru resume visibility: activity checklist and AI-filter limitations",
+          "type": "SHOULD_BE_GUIDE",
+          "raw_ids": "6716 6861",
+          "cluster_id": "CL05",
+          "single_or_multi": "single_or_pair",
+          "expected_structure": "Disclaimer; checklist of activity signals; contact-data caveat; timing; AI-filter limitation; resume review recommendation.",
+          "why_useful": "Strong standalone guide-like answer.",
+          "expected_quality": "high",
+          "should_system_catch_today": "yes",
+          "needed_feature": "Fixed by approvedJudgeDecision bugfix; optional controlled reprocess for raw 6861"
+        }
+      },
+      "inputText": "How to improve hh.ru resume visibility: activity checklist and AI-filter limitations\nDisclaimer; checklist of activity signals; contact-data caveat; timing; AI-filter limitation; resume review recommendation.\nStrong standalone guide-like answer.\nFixed by approvedJudgeDecision bugfix; optional controlled reprocess for raw 6861",
+      "row": {
+        "caseId": "GB06",
+        "anchor": "CL05",
+        "inputSource": "golden_evidence_snapshot",
+        "inputPreview": "How to improve hh.ru resume visibility: activity checklist and AI-filter limitations Disclaimer; checklist of activity signals; contact-data caveat; timing; AI-filter limitation; resume review recommendation. Strong standalone guide-like answer. Fixed by appro",
+        "expected": "GUIDE_OR_STRONG_ANSWER",
+        "actualFinal": "ABSTAIN",
+        "preprocessing": "CLEAN",
+        "meaning": "PRACTICAL_INSTRUCTION",
+        "valueLevel": "MATERIAL_CANDIDATE",
+        "usefulnessKind": "ACTIONABLE",
+        "evidenceSufficiency": "NEEDS_DISCUSSION_CONTEXT",
+        "assemblyStrategy": "DISCUSSION_SEGMENT",
+        "materialRoute": "GUIDE",
+        "uiReason": "ENOUGH_FOR_DRAFT",
+        "dedupeCluster": "CLUSTER_MEMBER",
+        "llmJudge": "APPROVE_FOR_JUDGE",
+        "confidenceBand": "LOW",
+        "abstained": true,
+        "abstentionReason": "MODEL_UNCERTAINTY",
+        "modelAgreement": 0.1701,
+        "pass": true
+      },
+      "result": {
+        "stage": "DISCUSSION_SEGMENT_PIPELINE",
+        "targetId": "CL05",
+        "predictions": {
+          "preprocessing": [
+            {
+              "label": "CLEAN",
+              "probability": 0.8571,
+              "rank": 1
+            },
+            {
+              "label": "LOW_SIGNAL",
+              "probability": 0.1429,
+              "rank": 2
+            }
+          ],
+          "meaning": [
+            {
+              "label": "PRACTICAL_INSTRUCTION",
+              "probability": 0.3134,
+              "rank": 1
+            },
+            {
+              "label": "QUESTION",
+              "probability": 0.306,
+              "rank": 2
+            },
+            {
+              "label": "RESOURCE_REFERENCE",
+              "probability": 0.2836,
+              "rank": 3
+            },
+            {
+              "label": "RESOURCE_REFERENCE",
+              "probability": 0.0672,
+              "rank": 4
+            },
+            {
+              "label": "CHATTER",
+              "probability": 0.0299,
+              "rank": 5
+            }
+          ],
+          "valueLevel": [
+            {
+              "label": "MATERIAL_CANDIDATE",
+              "probability": 0.4815,
+              "rank": 1
+            },
+            {
+              "label": "NOT_GARBAGE_NO_MATERIAL",
+              "probability": 0.1975,
+              "rank": 2
+            },
+            {
+              "label": "AWARENESS_SIGNAL",
+              "probability": 0.1111,
+              "rank": 3
+            },
+            {
+              "label": "CONTEXT_SIGNAL",
+              "probability": 0.0864,
+              "rank": 4
+            },
+            {
+              "label": "MATERIAL_CANDIDATE",
+              "probability": 0.0741,
+              "rank": 5
+            },
+            {
+              "label": "GARBAGE",
+              "probability": 0.0494,
+              "rank": 6
+            }
+          ],
+          "usefulnessKind": [
+            {
+              "label": "ACTIONABLE",
+              "probability": 0.491,
+              "rank": 1
+            },
+            {
+              "label": "EDUCATIONAL",
+              "probability": 0.3473,
+              "rank": 2
+            },
+            {
+              "label": "CONTEXTUAL",
+              "probability": 0.0898,
+              "rank": 3
+            },
+            {
+              "label": "AWARENESS",
+              "probability": 0.0719,
+              "rank": 4
+            }
+          ],
+          "evidenceSufficiency": [
+            {
+              "label": "NEEDS_DISCUSSION_CONTEXT",
+              "probability": 0.3154,
+              "rank": 1
+            },
+            {
+              "label": "NEEDS_EXTERNAL_VERIFICATION",
+              "probability": 0.2769,
+              "rank": 2
+            },
+            {
+              "label": "ENOUGH_SINGLE_MESSAGE",
+              "probability": 0.2462,
+              "rank": 3
+            },
+            {
+              "label": "INSUFFICIENT_CONTEXT",
+              "probability": 0.0923,
+              "rank": 4
+            },
+            {
+              "label": "NEEDS_DISCUSSION_CONTEXT",
+              "probability": 0.0692,
+              "rank": 5
+            }
+          ],
+          "assemblyStrategy": [
+            {
+              "label": "DISCUSSION_SEGMENT",
+              "probability": 0.4835,
+              "rank": 1
+            },
+            {
+              "label": "DISCUSSION_SEGMENT",
+              "probability": 0.4286,
+              "rank": 2
+            },
+            {
+              "label": "REJECT",
+              "probability": 0.0879,
+              "rank": 3
+            }
+          ],
+          "materialRoute": [
+            {
+              "label": "GUIDE",
+              "probability": 0.8235,
+              "rank": 1
+            },
+            {
+              "label": "NO_MATERIAL",
+              "probability": 0.1765,
+              "rank": 2
+            }
+          ],
+          "uiReason": [
+            {
+              "label": "ENOUGH_FOR_DRAFT",
+              "probability": 0.4516,
+              "rank": 1
+            },
+            {
+              "label": "NEEDS_LOCAL_CONTEXT",
+              "probability": 0.4387,
+              "rank": 2
+            },
+            {
+              "label": "LOW_CONFIDENCE_REVIEW",
+              "probability": 0.1097,
+              "rank": 3
+            }
+          ],
+          "dedupeCluster": [
+            {
+              "label": "CLUSTER_MEMBER",
+              "probability": 0.3248,
+              "rank": 1
+            },
+            {
+              "label": "CLUSTER_MEMBER",
+              "probability": 0.3077,
+              "rank": 2
+            },
+            {
+              "label": "UNIQUE",
+              "probability": 0.2906,
+              "rank": 3
+            },
+            {
+              "label": "TOPIC_SIGNAL",
+              "probability": 0.0769,
+              "rank": 4
+            }
+          ],
+          "llmJudge": [
+            {
+              "label": "APPROVE_FOR_JUDGE",
+              "probability": 0.525,
+              "rank": 1
+            },
+            {
+              "label": "APPROVE_FOR_JUDGE",
+              "probability": 0.3625,
+              "rank": 2
+            },
+            {
+              "label": "ABSTAIN_LOW_CONFIDENCE",
+              "probability": 0.1125,
+              "rank": 3
+            }
+          ]
+        },
+        "recommendedDecision": {
+          "preprocessing": "CLEAN",
+          "meaning": "PRACTICAL_INSTRUCTION",
+          "valueLevel": "MATERIAL_CANDIDATE",
+          "usefulnessKind": "ACTIONABLE",
+          "evidenceSufficiency": "NEEDS_DISCUSSION_CONTEXT",
+          "assemblyStrategy": "DISCUSSION_SEGMENT",
+          "materialRoute": "GUIDE",
+          "uiReason": "ENOUGH_FOR_DRAFT",
+          "dedupeCluster": "CLUSTER_MEMBER",
+          "llmJudge": "APPROVE_FOR_JUDGE"
+        },
+        "modelResults": {
+          "preprocessing": [
+            {
+              "label": "CLEAN",
+              "probability": 0.8571,
+              "rank": 1
+            },
+            {
+              "label": "LOW_SIGNAL",
+              "probability": 0.1429,
+              "rank": 2
+            }
+          ],
+          "meaning": [
+            {
+              "label": "PRACTICAL_INSTRUCTION",
+              "probability": 0.3134,
+              "rank": 1
+            },
+            {
+              "label": "QUESTION",
+              "probability": 0.306,
+              "rank": 2
+            },
+            {
+              "label": "RESOURCE_REFERENCE",
+              "probability": 0.2836,
+              "rank": 3
+            },
+            {
+              "label": "RESOURCE_REFERENCE",
+              "probability": 0.0672,
+              "rank": 4
+            },
+            {
+              "label": "CHATTER",
+              "probability": 0.0299,
+              "rank": 5
+            }
+          ],
+          "valueLevel": [
+            {
+              "label": "MATERIAL_CANDIDATE",
+              "probability": 0.4815,
+              "rank": 1
+            },
+            {
+              "label": "NOT_GARBAGE_NO_MATERIAL",
+              "probability": 0.1975,
+              "rank": 2
+            },
+            {
+              "label": "AWARENESS_SIGNAL",
+              "probability": 0.1111,
+              "rank": 3
+            },
+            {
+              "label": "CONTEXT_SIGNAL",
+              "probability": 0.0864,
+              "rank": 4
+            },
+            {
+              "label": "MATERIAL_CANDIDATE",
+              "probability": 0.0741,
+              "rank": 5
+            },
+            {
+              "label": "GARBAGE",
+              "probability": 0.0494,
+              "rank": 6
+            }
+          ],
+          "usefulnessKind": [
+            {
+              "label": "ACTIONABLE",
+              "probability": 0.491,
+              "rank": 1
+            },
+            {
+              "label": "EDUCATIONAL",
+              "probability": 0.3473,
+              "rank": 2
+            },
+            {
+              "label": "CONTEXTUAL",
+              "probability": 0.0898,
+              "rank": 3
+            },
+            {
+              "label": "AWARENESS",
+              "probability": 0.0719,
+              "rank": 4
+            }
+          ],
+          "evidenceSufficiency": [
+            {
+              "label": "NEEDS_DISCUSSION_CONTEXT",
+              "probability": 0.3154,
+              "rank": 1
+            },
+            {
+              "label": "NEEDS_EXTERNAL_VERIFICATION",
+              "probability": 0.2769,
+              "rank": 2
+            },
+            {
+              "label": "ENOUGH_SINGLE_MESSAGE",
+              "probability": 0.2462,
+              "rank": 3
+            },
+            {
+              "label": "INSUFFICIENT_CONTEXT",
+              "probability": 0.0923,
+              "rank": 4
+            },
+            {
+              "label": "NEEDS_DISCUSSION_CONTEXT",
+              "probability": 0.0692,
+              "rank": 5
+            }
+          ],
+          "assemblyStrategy": [
+            {
+              "label": "DISCUSSION_SEGMENT",
+              "probability": 0.4835,
+              "rank": 1
+            },
+            {
+              "label": "DISCUSSION_SEGMENT",
+              "probability": 0.4286,
+              "rank": 2
+            },
+            {
+              "label": "REJECT",
+              "probability": 0.0879,
+              "rank": 3
+            }
+          ],
+          "materialRoute": [
+            {
+              "label": "GUIDE",
+              "probability": 0.8235,
+              "rank": 1
+            },
+            {
+              "label": "NO_MATERIAL",
+              "probability": 0.1765,
+              "rank": 2
+            }
+          ],
+          "uiReason": [
+            {
+              "label": "ENOUGH_FOR_DRAFT",
+              "probability": 0.4516,
+              "rank": 1
+            },
+            {
+              "label": "NEEDS_LOCAL_CONTEXT",
+              "probability": 0.4387,
+              "rank": 2
+            },
+            {
+              "label": "LOW_CONFIDENCE_REVIEW",
+              "probability": 0.1097,
+              "rank": 3
+            }
+          ],
+          "dedupeCluster": [
+            {
+              "label": "CLUSTER_MEMBER",
+              "probability": 0.3248,
+              "rank": 1
+            },
+            {
+              "label": "CLUSTER_MEMBER",
+              "probability": 0.3077,
+              "rank": 2
+            },
+            {
+              "label": "UNIQUE",
+              "probability": 0.2906,
+              "rank": 3
+            },
+            {
+              "label": "TOPIC_SIGNAL",
+              "probability": 0.0769,
+              "rank": 4
+            }
+          ],
+          "llmJudge": [
+            {
+              "label": "APPROVE_FOR_JUDGE",
+              "probability": 0.525,
+              "rank": 1
+            },
+            {
+              "label": "APPROVE_FOR_JUDGE",
+              "probability": 0.3625,
+              "rank": 2
+            },
+            {
+              "label": "ABSTAIN_LOW_CONFIDENCE",
+              "probability": 0.1125,
+              "rank": 3
+            }
+          ]
+        },
+        "modelVotes": {
+          "preprocessingTop": "CLEAN",
+          "meaningTop": "PRACTICAL_INSTRUCTION",
+          "valueTop": "MATERIAL_CANDIDATE",
+          "usefulnessTop": "ACTIONABLE",
+          "evidenceTop": "NEEDS_DISCUSSION_CONTEXT",
+          "assemblyTop": "DISCUSSION_SEGMENT",
+          "routeTop": "GUIDE",
+          "uiReasonTop": "ENOUGH_FOR_DRAFT",
+          "dedupeClusterTop": "CLUSTER_MEMBER",
+          "llmJudgeTop": "APPROVE_FOR_JUDGE"
+        },
+        "calibratedProbabilities": {
+          "preprocessing": 0.8571,
+          "meaning": 0.3134,
+          "valueLevel": 0.4815,
+          "usefulnessKind": 0.491,
+          "evidenceSufficiency": 0.3154,
+          "assemblyStrategy": 0.4835,
+          "materialRoute": 0.8235,
+          "uiReason": 0.4516,
+          "dedupeCluster": 0.3248,
+          "llmJudge": 0.525
+        },
+        "confidenceBand": "LOW",
+        "abstained": true,
+        "abstentionReason": "MODEL_UNCERTAINTY",
+        "recommendedAction": "TRACE_ONLY",
+        "modelVersion": "classical-ml-bootstrap-v1",
+        "featureVersion": "classical-ml-v1",
+        "trainingDatasetVersion": "bootstrap-reviewed-v0",
+        "inferenceLatencyMs": 3,
+        "fallbackUsed": false,
+        "disagreementRate": 0.192,
+        "uncertainty": {
+          "averageMargin": 0.2082,
+          "maxEntropy": 1.4694,
+          "scoreStdDev": 0.183,
+          "lowMarginStages": [
+            "meaning",
+            "evidenceSufficiency",
+            "assemblyStrategy",
+            "uiReason",
+            "dedupeCluster"
+          ],
+          "highDisagreement": true,
+          "abstainRecommended": true,
+          "modelAgreement": 0.1701
+        },
+        "modelAgreement": 0.1701,
+        "reasons": [
+          "targetType=DISCUSSION_SEGMENT",
+          "preprocessing=CLEAN",
+          "meaning=PRACTICAL_INSTRUCTION",
+          "valueLevel=MATERIAL_CANDIDATE",
+          "route=GUIDE",
+          "dedupeCluster=CLUSTER_MEMBER",
+          "llmJudge=APPROVE_FOR_JUDGE"
+        ]
+      }
+    },
+    {
+      "case": {
+        "caseId": "GB07",
+        "kind": "safety_sensitive_context",
+        "clusterId": "CL07",
+        "source": "manual expected materials",
+        "expected": "NEEDS_SAFETY_SUMMARY_OR_REJECT",
+        "current": "CORRECT_TO_KEEP_BLOCKED",
+        "evidence": {
+          "expected_id": "E07",
+          "title": "Psychedelic retreats: cautionary observations and goal-setting alternative",
+          "type": "NEEDS_DISCUSSION_SEGMENT",
+          "raw_ids": "6341 6540 6543 6592 6688 6820",
+          "cluster_id": "CL07",
+          "single_or_multi": "multi",
+          "expected_structure": "Question context; observed harms; goal-setting alternative; caveats and non-medical framing.",
+          "why_useful": "Coherent Q&A chain but sensitive and context-dependent.",
+          "expected_quality": "medium",
+          "should_system_catch_today": "no",
+          "needed_feature": "DISCUSSION_SEGMENT with safety framing and health-topic caution"
+        }
+      },
+      "inputText": "Psychedelic retreats: cautionary observations and goal-setting alternative\nQuestion context; observed harms; goal-setting alternative; caveats and non-medical framing.\nCoherent Q&A chain but sensitive and context-dependent.\nDISCUSSION_SEGMENT with safety framing and health-topic caution",
+      "row": {
+        "caseId": "GB07",
+        "anchor": "CL07",
+        "inputSource": "golden_evidence_snapshot",
+        "inputPreview": "Psychedelic retreats: cautionary observations and goal-setting alternative Question context; observed harms; goal-setting alternative; caveats and non-medical framing. Coherent Q&A chain but sensitive and context-dependent. DISCUSSION_SEGMENT with safety frami",
+        "expected": "NEEDS_SAFETY_SUMMARY_OR_REJECT",
+        "actualFinal": "BLOCKED_PREPROCESSING",
+        "preprocessing": "RISK_SENSITIVE",
+        "meaning": "RESOURCE_REFERENCE",
+        "valueLevel": "NOT_GARBAGE_NO_MATERIAL",
+        "usefulnessKind": "CONTEXTUAL",
+        "evidenceSufficiency": "NEEDS_DISCUSSION_CONTEXT",
+        "assemblyStrategy": "DISCUSSION_SEGMENT",
+        "materialRoute": "NO_MATERIAL",
+        "uiReason": "NEEDS_LOCAL_CONTEXT",
+        "dedupeCluster": "CLUSTER_MEMBER",
+        "llmJudge": "REJECT_BEFORE_JUDGE",
+        "confidenceBand": "LOW",
+        "abstained": true,
+        "abstentionReason": "MODEL_UNCERTAINTY",
+        "modelAgreement": 0.2001,
+        "pass": true
+      },
+      "result": {
+        "stage": "DISCUSSION_SEGMENT_PIPELINE",
+        "targetId": "CL07",
+        "predictions": {
+          "preprocessing": [
+            {
+              "label": "RISK_SENSITIVE",
+              "probability": 0.5172,
+              "rank": 1
+            },
+            {
+              "label": "CLEAN",
+              "probability": 0.4138,
+              "rank": 2
+            },
+            {
+              "label": "LOW_SIGNAL",
+              "probability": 0.069,
+              "rank": 3
+            }
+          ],
+          "meaning": [
+            {
+              "label": "RESOURCE_REFERENCE",
+              "probability": 0.6923,
+              "rank": 1
+            },
+            {
+              "label": "CHATTER",
+              "probability": 0.3077,
+              "rank": 2
+            }
+          ],
+          "valueLevel": [
+            {
+              "label": "NOT_GARBAGE_NO_MATERIAL",
+              "probability": 0.381,
+              "rank": 1
+            },
+            {
+              "label": "AWARENESS_SIGNAL",
+              "probability": 0.2143,
+              "rank": 2
+            },
+            {
+              "label": "CONTEXT_SIGNAL",
+              "probability": 0.1667,
+              "rank": 3
+            },
+            {
+              "label": "MATERIAL_CANDIDATE",
+              "probability": 0.1429,
+              "rank": 4
+            },
+            {
+              "label": "GARBAGE",
+              "probability": 0.0952,
+              "rank": 5
+            }
+          ],
+          "usefulnessKind": [
+            {
+              "label": "CONTEXTUAL",
+              "probability": 0.5556,
+              "rank": 1
+            },
+            {
+              "label": "AWARENESS",
+              "probability": 0.4444,
+              "rank": 2
+            }
+          ],
+          "evidenceSufficiency": [
+            {
+              "label": "NEEDS_DISCUSSION_CONTEXT",
+              "probability": 0.6613,
+              "rank": 1
+            },
+            {
+              "label": "INSUFFICIENT_CONTEXT",
+              "probability": 0.1935,
+              "rank": 2
+            },
+            {
+              "label": "NEEDS_DISCUSSION_CONTEXT",
+              "probability": 0.1452,
+              "rank": 3
+            }
+          ],
+          "assemblyStrategy": [
+            {
+              "label": "DISCUSSION_SEGMENT",
+              "probability": 0.4835,
+              "rank": 1
+            },
+            {
+              "label": "DISCUSSION_SEGMENT",
+              "probability": 0.4286,
+              "rank": 2
+            },
+            {
+              "label": "REJECT",
+              "probability": 0.0879,
+              "rank": 3
+            }
+          ],
+          "materialRoute": [
+            {
+              "label": "NO_MATERIAL",
+              "probability": 1.0,
+              "rank": 1
+            }
+          ],
+          "uiReason": [
+            {
+              "label": "NEEDS_LOCAL_CONTEXT",
+              "probability": 0.4598,
+              "rank": 1
+            },
+            {
+              "label": "SIGNAL_ONLY_STATUS",
+              "probability": 0.4253,
+              "rank": 2
+            },
+            {
+              "label": "LOW_CONFIDENCE_REVIEW",
+              "probability": 0.1149,
+              "rank": 3
+            }
+          ],
+          "dedupeCluster": [
+            {
+              "label": "CLUSTER_MEMBER",
+              "probability": 0.3248,
+              "rank": 1
+            },
+            {
+              "label": "CLUSTER_MEMBER",
+              "probability": 0.3077,
+              "rank": 2
+            },
+            {
+              "label": "UNIQUE",
+              "probability": 0.2906,
+              "rank": 3
+            },
+            {
+              "label": "TOPIC_SIGNAL",
+              "probability": 0.0769,
+              "rank": 4
+            }
+          ],
+          "llmJudge": [
+            {
+              "label": "REJECT_BEFORE_JUDGE",
+              "probability": 0.3947,
+              "rank": 1
+            },
+            {
+              "label": "ABSTAIN_LOW_CONFIDENCE",
+              "probability": 0.2719,
+              "rank": 2
+            },
+            {
+              "label": "APPROVE_FOR_JUDGE",
+              "probability": 0.2544,
+              "rank": 3
+            },
+            {
+              "label": "ABSTAIN_LOW_CONFIDENCE",
+              "probability": 0.0789,
+              "rank": 4
+            }
+          ]
+        },
+        "recommendedDecision": {
+          "preprocessing": "RISK_SENSITIVE",
+          "meaning": "RESOURCE_REFERENCE",
+          "valueLevel": "NOT_GARBAGE_NO_MATERIAL",
+          "usefulnessKind": "CONTEXTUAL",
+          "evidenceSufficiency": "NEEDS_DISCUSSION_CONTEXT",
+          "assemblyStrategy": "DISCUSSION_SEGMENT",
+          "materialRoute": "NO_MATERIAL",
+          "uiReason": "NEEDS_LOCAL_CONTEXT",
+          "dedupeCluster": "CLUSTER_MEMBER",
+          "llmJudge": "REJECT_BEFORE_JUDGE"
+        },
+        "modelResults": {
+          "preprocessing": [
+            {
+              "label": "RISK_SENSITIVE",
+              "probability": 0.5172,
+              "rank": 1
+            },
+            {
+              "label": "CLEAN",
+              "probability": 0.4138,
+              "rank": 2
+            },
+            {
+              "label": "LOW_SIGNAL",
+              "probability": 0.069,
+              "rank": 3
+            }
+          ],
+          "meaning": [
+            {
+              "label": "RESOURCE_REFERENCE",
+              "probability": 0.6923,
+              "rank": 1
+            },
+            {
+              "label": "CHATTER",
+              "probability": 0.3077,
+              "rank": 2
+            }
+          ],
+          "valueLevel": [
+            {
+              "label": "NOT_GARBAGE_NO_MATERIAL",
+              "probability": 0.381,
+              "rank": 1
+            },
+            {
+              "label": "AWARENESS_SIGNAL",
+              "probability": 0.2143,
+              "rank": 2
+            },
+            {
+              "label": "CONTEXT_SIGNAL",
+              "probability": 0.1667,
+              "rank": 3
+            },
+            {
+              "label": "MATERIAL_CANDIDATE",
+              "probability": 0.1429,
+              "rank": 4
+            },
+            {
+              "label": "GARBAGE",
+              "probability": 0.0952,
+              "rank": 5
+            }
+          ],
+          "usefulnessKind": [
+            {
+              "label": "CONTEXTUAL",
+              "probability": 0.5556,
+              "rank": 1
+            },
+            {
+              "label": "AWARENESS",
+              "probability": 0.4444,
+              "rank": 2
+            }
+          ],
+          "evidenceSufficiency": [
+            {
+              "label": "NEEDS_DISCUSSION_CONTEXT",
+              "probability": 0.6613,
+              "rank": 1
+            },
+            {
+              "label": "INSUFFICIENT_CONTEXT",
+              "probability": 0.1935,
+              "rank": 2
+            },
+            {
+              "label": "NEEDS_DISCUSSION_CONTEXT",
+              "probability": 0.1452,
+              "rank": 3
+            }
+          ],
+          "assemblyStrategy": [
+            {
+              "label": "DISCUSSION_SEGMENT",
+              "probability": 0.4835,
+              "rank": 1
+            },
+            {
+              "label": "DISCUSSION_SEGMENT",
+              "probability": 0.4286,
+              "rank": 2
+            },
+            {
+              "label": "REJECT",
+              "probability": 0.0879,
+              "rank": 3
+            }
+          ],
+          "materialRoute": [
+            {
+              "label": "NO_MATERIAL",
+              "probability": 1.0,
+              "rank": 1
+            }
+          ],
+          "uiReason": [
+            {
+              "label": "NEEDS_LOCAL_CONTEXT",
+              "probability": 0.4598,
+              "rank": 1
+            },
+            {
+              "label": "SIGNAL_ONLY_STATUS",
+              "probability": 0.4253,
+              "rank": 2
+            },
+            {
+              "label": "LOW_CONFIDENCE_REVIEW",
+              "probability": 0.1149,
+              "rank": 3
+            }
+          ],
+          "dedupeCluster": [
+            {
+              "label": "CLUSTER_MEMBER",
+              "probability": 0.3248,
+              "rank": 1
+            },
+            {
+              "label": "CLUSTER_MEMBER",
+              "probability": 0.3077,
+              "rank": 2
+            },
+            {
+              "label": "UNIQUE",
+              "probability": 0.2906,
+              "rank": 3
+            },
+            {
+              "label": "TOPIC_SIGNAL",
+              "probability": 0.0769,
+              "rank": 4
+            }
+          ],
+          "llmJudge": [
+            {
+              "label": "REJECT_BEFORE_JUDGE",
+              "probability": 0.3947,
+              "rank": 1
+            },
+            {
+              "label": "ABSTAIN_LOW_CONFIDENCE",
+              "probability": 0.2719,
+              "rank": 2
+            },
+            {
+              "label": "APPROVE_FOR_JUDGE",
+              "probability": 0.2544,
+              "rank": 3
+            },
+            {
+              "label": "ABSTAIN_LOW_CONFIDENCE",
+              "probability": 0.0789,
+              "rank": 4
+            }
+          ]
+        },
+        "modelVotes": {
+          "preprocessingTop": "RISK_SENSITIVE",
+          "meaningTop": "RESOURCE_REFERENCE",
+          "valueTop": "NOT_GARBAGE_NO_MATERIAL",
+          "usefulnessTop": "CONTEXTUAL",
+          "evidenceTop": "NEEDS_DISCUSSION_CONTEXT",
+          "assemblyTop": "DISCUSSION_SEGMENT",
+          "routeTop": "NO_MATERIAL",
+          "uiReasonTop": "NEEDS_LOCAL_CONTEXT",
+          "dedupeClusterTop": "CLUSTER_MEMBER",
+          "llmJudgeTop": "REJECT_BEFORE_JUDGE"
+        },
+        "calibratedProbabilities": {
+          "preprocessing": 0.5172,
+          "meaning": 0.6923,
+          "valueLevel": 0.381,
+          "usefulnessKind": 0.5556,
+          "evidenceSufficiency": 0.6613,
+          "assemblyStrategy": 0.4835,
+          "materialRoute": 1.0,
+          "uiReason": 0.4598,
+          "dedupeCluster": 0.3248,
+          "llmJudge": 0.3947
+        },
+        "confidenceBand": "LOW",
+        "abstained": true,
+        "abstentionReason": "MODEL_UNCERTAINTY",
+        "recommendedAction": "TRACE_ONLY",
+        "modelVersion": "classical-ml-bootstrap-v1",
+        "featureVersion": "classical-ml-v1",
+        "trainingDatasetVersion": "bootstrap-reviewed-v0",
+        "inferenceLatencyMs": 3,
+        "fallbackUsed": false,
+        "disagreementRate": 0.1954,
+        "uncertainty": {
+          "averageMargin": 0.2463,
+          "maxEntropy": 1.4983,
+          "scoreStdDev": 0.1876,
+          "lowMarginStages": [
+            "preprocessing",
+            "usefulnessKind",
+            "assemblyStrategy",
+            "uiReason",
+            "dedupeCluster"
+          ],
+          "highDisagreement": true,
+          "abstainRecommended": true,
+          "modelAgreement": 0.2001
+        },
+        "modelAgreement": 0.2001,
+        "reasons": [
+          "targetType=DISCUSSION_SEGMENT",
+          "preprocessing=RISK_SENSITIVE",
+          "meaning=RESOURCE_REFERENCE",
+          "valueLevel=NOT_GARBAGE_NO_MATERIAL",
+          "route=NO_MATERIAL",
+          "dedupeCluster=CLUSTER_MEMBER",
+          "llmJudge=REJECT_BEFORE_JUDGE"
+        ]
+      }
+    },
+    {
+      "case": {
+        "caseId": "GB08",
+        "kind": "promo_noise",
+        "clusterId": "CL10",
+        "source": "manual expected materials",
+        "expected": "REJECT_PROMO",
+        "current": "CORRECT_TO_REJECT",
+        "evidence": {
+          "expected_id": "E10",
+          "title": "Hosting promo post",
+          "type": "NOISE",
+          "raw_ids": "6306 6307",
+          "cluster_id": "CL10",
+          "single_or_multi": "single",
+          "expected_structure": "N/A",
+          "why_useful": "Ad/promo, not user knowledge.",
+          "expected_quality": "low",
+          "should_system_catch_today": "no",
+          "needed_feature": "Promo suppression"
+        }
+      },
+      "inputText": "Hosting promo post\nN/A\nAd/promo, not user knowledge.\nPromo suppression",
+      "row": {
+        "caseId": "GB08",
+        "anchor": "CL10",
+        "inputSource": "golden_evidence_snapshot",
+        "inputPreview": "Hosting promo post N/A Ad/promo, not user knowledge. Promo suppression",
+        "expected": "REJECT_PROMO",
+        "actualFinal": "BLOCKED_PREPROCESSING",
+        "preprocessing": "NOISE",
+        "meaning": "PROMO_AD",
+        "valueLevel": "NOT_GARBAGE_NO_MATERIAL",
+        "usefulnessKind": "CONTEXTUAL",
+        "evidenceSufficiency": "NEEDS_DISCUSSION_CONTEXT",
+        "assemblyStrategy": "DISCUSSION_SEGMENT",
+        "materialRoute": "NO_MATERIAL",
+        "uiReason": "NEEDS_LOCAL_CONTEXT",
+        "dedupeCluster": "CLUSTER_MEMBER",
+        "llmJudge": "REJECT_BEFORE_JUDGE",
+        "confidenceBand": "LOW",
+        "abstained": true,
+        "abstentionReason": "MODEL_UNCERTAINTY",
+        "modelAgreement": 0.2168,
+        "pass": true
+      },
+      "result": {
+        "stage": "DISCUSSION_SEGMENT_PIPELINE",
+        "targetId": "CL10",
+        "predictions": {
+          "preprocessing": [
+            {
+              "label": "NOISE",
+              "probability": 0.3417,
+              "rank": 1
+            },
+            {
+              "label": "PROMO_OR_AD",
+              "probability": 0.3083,
+              "rank": 2
+            },
+            {
+              "label": "CLEAN",
+              "probability": 0.3,
+              "rank": 3
+            },
+            {
+              "label": "LOW_SIGNAL",
+              "probability": 0.05,
+              "rank": 4
+            }
+          ],
+          "meaning": [
+            {
+              "label": "PROMO_AD",
+              "probability": 0.7636,
+              "rank": 1
+            },
+            {
+              "label": "RESOURCE_REFERENCE",
+              "probability": 0.1636,
+              "rank": 2
+            },
+            {
+              "label": "CHATTER",
+              "probability": 0.0727,
+              "rank": 3
+            }
+          ],
+          "valueLevel": [
+            {
+              "label": "NOT_GARBAGE_NO_MATERIAL",
+              "probability": 0.4684,
+              "rank": 1
+            },
+            {
+              "label": "NOT_GARBAGE_NO_MATERIAL",
+              "probability": 0.2025,
+              "rank": 2
+            },
+            {
+              "label": "AWARENESS_SIGNAL",
+              "probability": 0.1139,
+              "rank": 3
+            },
+            {
+              "label": "CONTEXT_SIGNAL",
+              "probability": 0.0886,
+              "rank": 4
+            },
+            {
+              "label": "MATERIAL_CANDIDATE",
+              "probability": 0.0759,
+              "rank": 5
+            },
+            {
+              "label": "GARBAGE",
+              "probability": 0.0506,
+              "rank": 6
+            }
+          ],
+          "usefulnessKind": [
+            {
+              "label": "CONTEXTUAL",
+              "probability": 0.5556,
+              "rank": 1
+            },
+            {
+              "label": "AWARENESS",
+              "probability": 0.4444,
+              "rank": 2
+            }
+          ],
+          "evidenceSufficiency": [
+            {
+              "label": "NEEDS_DISCUSSION_CONTEXT",
+              "probability": 0.6613,
+              "rank": 1
+            },
+            {
+              "label": "INSUFFICIENT_CONTEXT",
+              "probability": 0.1935,
+              "rank": 2
+            },
+            {
+              "label": "NEEDS_DISCUSSION_CONTEXT",
+              "probability": 0.1452,
+              "rank": 3
+            }
+          ],
+          "assemblyStrategy": [
+            {
+              "label": "DISCUSSION_SEGMENT",
+              "probability": 0.4835,
+              "rank": 1
+            },
+            {
+              "label": "DISCUSSION_SEGMENT",
+              "probability": 0.4286,
+              "rank": 2
+            },
+            {
+              "label": "REJECT",
+              "probability": 0.0879,
+              "rank": 3
+            }
+          ],
+          "materialRoute": [
+            {
+              "label": "NO_MATERIAL",
+              "probability": 1.0,
+              "rank": 1
+            }
+          ],
+          "uiReason": [
+            {
+              "label": "NEEDS_LOCAL_CONTEXT",
+              "probability": 0.4598,
+              "rank": 1
+            },
+            {
+              "label": "SIGNAL_ONLY_STATUS",
+              "probability": 0.4253,
+              "rank": 2
+            },
+            {
+              "label": "LOW_CONFIDENCE_REVIEW",
+              "probability": 0.1149,
+              "rank": 3
+            }
+          ],
+          "dedupeCluster": [
+            {
+              "label": "CLUSTER_MEMBER",
+              "probability": 0.3248,
+              "rank": 1
+            },
+            {
+              "label": "CLUSTER_MEMBER",
+              "probability": 0.3077,
+              "rank": 2
+            },
+            {
+              "label": "UNIQUE",
+              "probability": 0.2906,
+              "rank": 3
+            },
+            {
+              "label": "TOPIC_SIGNAL",
+              "probability": 0.0769,
+              "rank": 4
+            }
+          ],
+          "llmJudge": [
+            {
+              "label": "REJECT_BEFORE_JUDGE",
+              "probability": 0.3947,
+              "rank": 1
+            },
+            {
+              "label": "ABSTAIN_LOW_CONFIDENCE",
+              "probability": 0.2719,
+              "rank": 2
+            },
+            {
+              "label": "APPROVE_FOR_JUDGE",
+              "probability": 0.2544,
+              "rank": 3
+            },
+            {
+              "label": "ABSTAIN_LOW_CONFIDENCE",
+              "probability": 0.0789,
+              "rank": 4
+            }
+          ]
+        },
+        "recommendedDecision": {
+          "preprocessing": "NOISE",
+          "meaning": "PROMO_AD",
+          "valueLevel": "NOT_GARBAGE_NO_MATERIAL",
+          "usefulnessKind": "CONTEXTUAL",
+          "evidenceSufficiency": "NEEDS_DISCUSSION_CONTEXT",
+          "assemblyStrategy": "DISCUSSION_SEGMENT",
+          "materialRoute": "NO_MATERIAL",
+          "uiReason": "NEEDS_LOCAL_CONTEXT",
+          "dedupeCluster": "CLUSTER_MEMBER",
+          "llmJudge": "REJECT_BEFORE_JUDGE"
+        },
+        "modelResults": {
+          "preprocessing": [
+            {
+              "label": "NOISE",
+              "probability": 0.3417,
+              "rank": 1
+            },
+            {
+              "label": "PROMO_OR_AD",
+              "probability": 0.3083,
+              "rank": 2
+            },
+            {
+              "label": "CLEAN",
+              "probability": 0.3,
+              "rank": 3
+            },
+            {
+              "label": "LOW_SIGNAL",
+              "probability": 0.05,
+              "rank": 4
+            }
+          ],
+          "meaning": [
+            {
+              "label": "PROMO_AD",
+              "probability": 0.7636,
+              "rank": 1
+            },
+            {
+              "label": "RESOURCE_REFERENCE",
+              "probability": 0.1636,
+              "rank": 2
+            },
+            {
+              "label": "CHATTER",
+              "probability": 0.0727,
+              "rank": 3
+            }
+          ],
+          "valueLevel": [
+            {
+              "label": "NOT_GARBAGE_NO_MATERIAL",
+              "probability": 0.4684,
+              "rank": 1
+            },
+            {
+              "label": "NOT_GARBAGE_NO_MATERIAL",
+              "probability": 0.2025,
+              "rank": 2
+            },
+            {
+              "label": "AWARENESS_SIGNAL",
+              "probability": 0.1139,
+              "rank": 3
+            },
+            {
+              "label": "CONTEXT_SIGNAL",
+              "probability": 0.0886,
+              "rank": 4
+            },
+            {
+              "label": "MATERIAL_CANDIDATE",
+              "probability": 0.0759,
+              "rank": 5
+            },
+            {
+              "label": "GARBAGE",
+              "probability": 0.0506,
+              "rank": 6
+            }
+          ],
+          "usefulnessKind": [
+            {
+              "label": "CONTEXTUAL",
+              "probability": 0.5556,
+              "rank": 1
+            },
+            {
+              "label": "AWARENESS",
+              "probability": 0.4444,
+              "rank": 2
+            }
+          ],
+          "evidenceSufficiency": [
+            {
+              "label": "NEEDS_DISCUSSION_CONTEXT",
+              "probability": 0.6613,
+              "rank": 1
+            },
+            {
+              "label": "INSUFFICIENT_CONTEXT",
+              "probability": 0.1935,
+              "rank": 2
+            },
+            {
+              "label": "NEEDS_DISCUSSION_CONTEXT",
+              "probability": 0.1452,
+              "rank": 3
+            }
+          ],
+          "assemblyStrategy": [
+            {
+              "label": "DISCUSSION_SEGMENT",
+              "probability": 0.4835,
+              "rank": 1
+            },
+            {
+              "label": "DISCUSSION_SEGMENT",
+              "probability": 0.4286,
+              "rank": 2
+            },
+            {
+              "label": "REJECT",
+              "probability": 0.0879,
+              "rank": 3
+            }
+          ],
+          "materialRoute": [
+            {
+              "label": "NO_MATERIAL",
+              "probability": 1.0,
+              "rank": 1
+            }
+          ],
+          "uiReason": [
+            {
+              "label": "NEEDS_LOCAL_CONTEXT",
+              "probability": 0.4598,
+              "rank": 1
+            },
+            {
+              "label": "SIGNAL_ONLY_STATUS",
+              "probability": 0.4253,
+              "rank": 2
+            },
+            {
+              "label": "LOW_CONFIDENCE_REVIEW",
+              "probability": 0.1149,
+              "rank": 3
+            }
+          ],
+          "dedupeCluster": [
+            {
+              "label": "CLUSTER_MEMBER",
+              "probability": 0.3248,
+              "rank": 1
+            },
+            {
+              "label": "CLUSTER_MEMBER",
+              "probability": 0.3077,
+              "rank": 2
+            },
+            {
+              "label": "UNIQUE",
+              "probability": 0.2906,
+              "rank": 3
+            },
+            {
+              "label": "TOPIC_SIGNAL",
+              "probability": 0.0769,
+              "rank": 4
+            }
+          ],
+          "llmJudge": [
+            {
+              "label": "REJECT_BEFORE_JUDGE",
+              "probability": 0.3947,
+              "rank": 1
+            },
+            {
+              "label": "ABSTAIN_LOW_CONFIDENCE",
+              "probability": 0.2719,
+              "rank": 2
+            },
+            {
+              "label": "APPROVE_FOR_JUDGE",
+              "probability": 0.2544,
+              "rank": 3
+            },
+            {
+              "label": "ABSTAIN_LOW_CONFIDENCE",
+              "probability": 0.0789,
+              "rank": 4
+            }
+          ]
+        },
+        "modelVotes": {
+          "preprocessingTop": "NOISE",
+          "meaningTop": "PROMO_AD",
+          "valueTop": "NOT_GARBAGE_NO_MATERIAL",
+          "usefulnessTop": "CONTEXTUAL",
+          "evidenceTop": "NEEDS_DISCUSSION_CONTEXT",
+          "assemblyTop": "DISCUSSION_SEGMENT",
+          "routeTop": "NO_MATERIAL",
+          "uiReasonTop": "NEEDS_LOCAL_CONTEXT",
+          "dedupeClusterTop": "CLUSTER_MEMBER",
+          "llmJudgeTop": "REJECT_BEFORE_JUDGE"
+        },
+        "calibratedProbabilities": {
+          "preprocessing": 0.3417,
+          "meaning": 0.7636,
+          "valueLevel": 0.4684,
+          "usefulnessKind": 0.5556,
+          "evidenceSufficiency": 0.6613,
+          "assemblyStrategy": 0.4835,
+          "materialRoute": 1.0,
+          "uiReason": 0.4598,
+          "dedupeCluster": 0.3248,
+          "llmJudge": 0.3947
+        },
+        "confidenceBand": "LOW",
+        "abstained": true,
+        "abstentionReason": "MODEL_UNCERTAINTY",
+        "recommendedAction": "TRACE_ONLY",
+        "modelVersion": "classical-ml-bootstrap-v1",
+        "featureVersion": "classical-ml-v1",
+        "trainingDatasetVersion": "bootstrap-reviewed-v0",
+        "inferenceLatencyMs": 3,
+        "fallbackUsed": false,
+        "disagreementRate": 0.2081,
+        "uncertainty": {
+          "averageMargin": 0.2708,
+          "maxEntropy": 1.4875,
+          "scoreStdDev": 0.1994,
+          "lowMarginStages": [
+            "preprocessing",
+            "usefulnessKind",
+            "assemblyStrategy",
+            "uiReason",
+            "dedupeCluster"
+          ],
+          "highDisagreement": true,
+          "abstainRecommended": true,
+          "modelAgreement": 0.2168
+        },
+        "modelAgreement": 0.2168,
+        "reasons": [
+          "targetType=DISCUSSION_SEGMENT",
+          "preprocessing=NOISE",
+          "meaning=PROMO_AD",
+          "valueLevel=NOT_GARBAGE_NO_MATERIAL",
+          "route=NO_MATERIAL",
+          "dedupeCluster=CLUSTER_MEMBER",
+          "llmJudge=REJECT_BEFORE_JUDGE"
+        ]
+      }
+    }
+  ]
+}

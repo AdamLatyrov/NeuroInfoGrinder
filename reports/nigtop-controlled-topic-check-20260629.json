@@ -1,0 +1,54 @@
+{
+  "date": "2026-06-29",
+  "environment": "production",
+  "status": "passed",
+  "datasetId": 8400,
+  "runId": 8420,
+  "runStatus": "COMPLETED",
+  "totalMessages": 10,
+  "processedMessages": 10,
+  "providerCallsTotal": 10,
+  "error": null,
+  "activeOutputsLeftForReview": {
+    "materials": 5,
+    "signals": 2,
+    "materialTopicLinks": 14,
+    "signalTopicLinks": 3
+  },
+  "scenarios": [
+    { "id": "NIGTOP-S01-GUIDE", "expected": "GUIDE material", "actual": "material 87 GUIDE", "topics": ["agents-prompts", "api-integrations", "outages-limits", "providers-routers"], "disposition": "pass" },
+    { "id": "NIGTOP-S02-GENERATION", "expected": "GENERATION material", "actual": "material 88 GENERATION", "topics": ["agents-prompts", "models-releases"], "disposition": "pass" },
+    { "id": "NIGTOP-S03-ANSWER", "expected": "ANSWER material", "actual": "material 89 ANSWER", "topics": ["api-integrations", "providers-routers"], "disposition": "pass" },
+    { "id": "NIGTOP-S04-SUMMARY", "expected": "SUMMARY material", "actual": "material 90 SUMMARY", "topics": ["api-integrations", "free-tokens-quotas", "outages-limits", "providers-routers"], "disposition": "pass" },
+    { "id": "NIGTOP-S05-REFERENCE", "expected": "REFERENCE material", "actual": "material 91 REFERENCE", "topics": ["security-privacy", "tools-repos"], "disposition": "pass" },
+    { "id": "NIGTOP-S06-LINK-ONLY", "expected": "signal only", "actual": "signal 44 LINK_ONLY NEEDS_LINK_ENRICHMENT", "topics": ["free-tokens-quotas"], "disposition": "pass" },
+    { "id": "NIGTOP-S07-PROMO", "expected": "no material, no signal", "actual": "REJECTED_SINGLE_MESSAGE PROMO_ALONE", "topics": [], "disposition": "pass" },
+    { "id": "NIGTOP-S08-RISK", "expected": "risk signal only", "actual": "signal 45 RISK_OR_REFERRAL_SIGNAL ABUSE_OR_FRAUD", "topics": ["abuse-risk", "outages-limits"], "disposition": "pass" },
+    { "id": "NIGTOP-S09-LOW-VALUE", "expected": "no material, no signal", "actual": "REJECTED_SINGLE_MESSAGE CHAT_CONTEXT_ONLY", "topics": [], "disposition": "pass" },
+    { "id": "NIGTOP-S10-DUPLICATE", "expected": "no separate material", "actual": "llm_skip_reason=DUPLICATE, dedupe group 85, no material", "topics": [], "disposition": "pass" }
+  ],
+  "materials": [
+    { "id": 87, "artifactType": "GUIDE", "source": "NIGTOP-S01-GUIDE" },
+    { "id": 88, "artifactType": "GENERATION", "source": "NIGTOP-S02-GENERATION" },
+    { "id": 89, "artifactType": "ANSWER", "source": "NIGTOP-S03-ANSWER" },
+    { "id": 90, "artifactType": "SUMMARY", "source": "NIGTOP-S04-SUMMARY" },
+    { "id": 91, "artifactType": "REFERENCE", "source": "NIGTOP-S05-REFERENCE" }
+  ],
+  "signals": [
+    { "id": 44, "signalType": "LINK_ONLY", "status": "NEEDS_LINK_ENRICHMENT", "source": "NIGTOP-S06-LINK-ONLY", "topics": ["free-tokens-quotas"] },
+    { "id": 45, "signalType": "RISK_OR_REFERRAL_SIGNAL", "status": "ABUSE_OR_FRAUD", "source": "NIGTOP-S08-RISK", "topics": ["abuse-risk", "outages-limits"] }
+  ],
+  "fixesApplied": [
+    "knowledge_item_topics assignment for generated materials",
+    "explicit summary status material type preservation",
+    "safe reference wording no longer creates false abuse-risk signal",
+    "risk detection for rate-limit bypass/account farming/referral/anti-abuse patterns",
+    "MessageUsefulnessBenchmarkService restored for existing endpoint/test",
+    "duplicate canonicalization and duplicate row skip before single-message materialization"
+  ],
+  "verification": {
+    "targetedTests": "passed",
+    "fullBackendTests": "mvn -q test passed",
+    "productionHealth": "backend/frontend/model-worker/postgres/redis/ssh-socks/tor healthy; public HTTP 200"
+  }
+}

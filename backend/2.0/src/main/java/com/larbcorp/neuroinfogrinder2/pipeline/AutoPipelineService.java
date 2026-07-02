@@ -37,7 +37,8 @@ public class AutoPipelineService {
             return;
         }
         AutoPipelineSetting setting = effectiveSetting(accountId, telegramChatId, topicId);
-        long batchId = collectingBatch(accountId, telegramChatId, topicId, setting);
+        Long batchTopicId = batchTopicId(topicId, setting);
+        long batchId = collectingBatch(accountId, telegramChatId, batchTopicId, setting);
         jdbc.update("""
                 INSERT INTO auto_pipeline_queue (raw_message_id, account_id, telegram_chat_id, topic_id, batch_id, status, reason)
                 VALUES (?, ?, ?, ?, ?, 'PENDING', 'AUTO_PIPELINE_ENABLED')
@@ -164,6 +165,13 @@ public class AutoPipelineService {
     private AutoPipelineSetting effectiveSetting(long accountId, long telegramChatId, Long topicId) {
         AutoPipelineSetting setting = explicitSetting(accountId, telegramChatId, topicId);
         return setting != null ? setting : new AutoPipelineSetting(accountId, telegramChatId, topicId, true, 30, 10, 10, BigDecimal.ONE);
+    }
+
+    private Long batchTopicId(Long messageTopicId, AutoPipelineSetting setting) {
+        if (setting == null) {
+            return messageTopicId;
+        }
+        return setting.topicId() == null ? null : messageTopicId;
     }
 
     private AutoPipelineSetting settingForBatch(long batchId) {

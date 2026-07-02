@@ -508,11 +508,11 @@ public class KnowledgeMaterialService {
     }
 
     private String appMessageUrl(Long telegramChatId, Long telegramMessageId, Long rawId) {
+        if (telegramChatId != null && rawId != null) {
+            return "/groups?chatId=" + telegramChatId + "&message=" + rawId + "&rawId=" + rawId;
+        }
         if (telegramChatId == null) return rawId == null ? null : "/messages?rawId=" + rawId;
-        StringBuilder url = new StringBuilder("/groups?chatId=").append(telegramChatId);
-        if (telegramMessageId != null) url.append("&messageId=").append(telegramMessageId);
-        if (rawId != null) url.append("&rawId=").append(rawId);
-        return url.toString();
+        return "/groups?chatId=" + telegramChatId;
     }
 
     private String telegramUrl(String username, Long telegramMessageId, String chatType, String tdlibChatType) {

@@ -1,0 +1,5 @@
+# simhash_near_duplicate / lab-cluster-386
+
+- `msg-15855` `MODEL_RUMOR_OR_PRICING_CLAIM` `RETAIN_CONTEXT_ONLY` prismaticapi # URL и prismaticapi.com - апи. # карты и тд не нужны # рега через google oauth. если регать просто через майл то письмо с подтверждение не приходит. после реги переходим сюда URL тыкаем на ползунок payg access и billing order # на фри плане дают 
+- `msg-18272` `MODEL_RUMOR_OR_PRICING_CLAIM` `RETAIN_CONTEXT_ONLY` prismaticapi # URL и prismaticapi.com - апи. # карты и тд не нужны # рега через google oauth. если регать просто через майл то письмо с подтверждение не приходит. после реги переходим сюда URL тыкаем на ползунок payg access и billing order # на фри плане дают 
+- `msg-18787` `MODEL_RUMOR_OR_PRICING_CLAIM` `RETAIN_CONTEXT_ONLY` prismaticapi # URL и prismaticapi.com - апи. # карты и тд не нужны # рега через google oauth. если регать просто через майл то письмо с подтверждение не приходит. после реги переходим сюда URL тыкаем на ползунок payg access и billing order # на фри плане дают 

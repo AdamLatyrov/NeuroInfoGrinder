@@ -1,0 +1,3 @@
+# tfidf_cosine_baseline / lab-cluster-381
+
+- `msg-19253` `LOW_VALUE_CHATTER` `NO_MATERIAL` полно. я из vs code использую codex. он вызывает другие нейронки для помощи. в том числе и gemini cli. сейчас пробую настроить ему в помощь antigravity cli но есть проблема с геолокацией. либо codex через прокси либо антигравити без прокси...

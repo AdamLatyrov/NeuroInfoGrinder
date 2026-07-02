@@ -1,0 +1,3 @@
+# simhash_near_duplicate / lab-cluster-26
+
+- `msg-00490` `LOW_VALUE_CHATTER` `NO_MATERIAL` но я читал расследования что частенко они подменяют модель ты заказываешь claude а тебе какой то гугл отвечает или glm

@@ -10,6 +10,7 @@ import org.springframework.jdbc.core.RowMapper;
 import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -121,6 +122,49 @@ class AutoPipelineServiceTest {
 
         assertThat(updates).anySatisfy(sql -> assertThat(sql).contains("INSERT INTO auto_pipeline_queue"));
         verify(pipelineLiveService, times(1)).canProcessChat(1L, 100500L, null, "TELEGRAM_LIVE");
+    }
+
+    @Test
+    void onRawMessageStoredUsesChatLevelBatchScopeForTopicMessage() {
+        JdbcTemplate jdbc = mock(JdbcTemplate.class);
+        PipelineLiveService pipelineLiveService = mock(PipelineLiveService.class);
+        List<Object[]> batchInsertArgs = new ArrayList<>();
+
+        when(jdbc.query(anyString(), any(ResultSetExtractor.class), any(Object[].class))).thenAnswer(invocation -> null);
+        when(jdbc.query(anyString(), any(RowMapper.class), any(Object[].class))).thenAnswer(invocation -> {
+            RowMapper<?> mapper = invocation.getArgument(1);
+            ResultSet rs = mock(ResultSet.class);
+            when(rs.getLong("account_id")).thenReturn(1L);
+            when(rs.getLong("telegram_chat_id")).thenReturn(100500L);
+            when(rs.getLong("topic_id")).thenReturn(0L);
+            when(rs.wasNull()).thenReturn(false, true);
+            when(rs.getBoolean("enabled")).thenReturn(true);
+            when(rs.getInt("debounce_seconds")).thenReturn(30);
+            when(rs.getInt("batch_size")).thenReturn(10);
+            when(rs.getInt("max_provider_calls")).thenReturn(5);
+            when(rs.getBigDecimal("max_cost_usd")).thenReturn(new BigDecimal("0.25"));
+            return List.of(mapper.mapRow(rs, 0));
+        });
+        when(jdbc.queryForList(anyString(), eq(Long.class), any(Object[].class))).thenReturn(List.of());
+        when(jdbc.queryForObject(anyString(), eq(Long.class), any(Object[].class))).thenAnswer(invocation -> {
+            String sql = invocation.getArgument(0);
+            if (sql.contains("INSERT INTO auto_pipeline_batches")) {
+                batchInsertArgs.add(Arrays.copyOfRange(invocation.getArguments(), 2, invocation.getArguments().length));
+                return 77L;
+            }
+            return null;
+        });
+        when(jdbc.queryForObject(anyString(), eq(Integer.class), any(Object[].class))).thenReturn(1);
+        when(pipelineLiveService.canProcessChat(1L, 100500L, 56463L, "TELEGRAM_LIVE")).thenReturn(true);
+
+        AutoPipelineService service = new AutoPipelineService(jdbc, pipelineLiveService, objectMapper);
+        service.onRawMessageStored(123L, 1L, 100500L, 56463L);
+
+        Object[] insertedBatchArgs = batchInsertArgs.stream()
+                .filter(args -> args.length >= 4 && Long.valueOf(1L).equals(args[0]) && Long.valueOf(100500L).equals(args[1]))
+                .findFirst()
+                .orElseThrow();
+        assertThat(insertedBatchArgs[2]).isNull();
     }
 
     @Test

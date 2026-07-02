@@ -1156,11 +1156,13 @@ public class Stage1ReadService {
     }
 
     private String appMessageUrl(Long telegramChatId, Long telegramMessageId, Long rawId) {
-        List<String> parts = new ArrayList<>();
-        if (telegramChatId != null) parts.add("chatId=" + telegramChatId);
-        if (telegramMessageId != null) parts.add("messageId=" + telegramMessageId);
-        if (rawId != null) parts.add("rawId=" + rawId);
-        return parts.isEmpty() ? "/groups" : "/groups?" + String.join("&", parts);
+        if (telegramChatId != null && rawId != null) {
+            return "/groups?chatId=" + telegramChatId + "&message=" + rawId + "&rawId=" + rawId;
+        }
+        if (telegramChatId != null) {
+            return "/groups?chatId=" + telegramChatId;
+        }
+        return rawId == null ? "/groups" : "/messages?rawId=" + rawId;
     }
 
     private String telegramUrl(String username, Long telegramMessageId, String chatType, String tdlibChatType) {

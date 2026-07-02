@@ -7,6 +7,8 @@ import {
   FileText,
   Info,
   MagnifyingGlass,
+  Sparkle,
+  Tag,
   Trash,
 } from "@phosphor-icons/react";
 import { EmptyState } from "@/components/domain/empty-state";
@@ -19,9 +21,10 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { useDeleteMaterialMutation, useMaterialsQuery, type GuidesSort } from "@/shared/api/guidesApi";
+import { useKnowledgeTopicsQuery, type KnowledgeTopic } from "@/shared/api/signalsApi";
 import { displayGuideStatus, type ContentType, type Guide } from "@/shared/types";
 
-type MaterialTab = "ALL" | "GUIDE" | "GENERATION" | "ANSWER" | "SUMMARY" | "OTHER";
+type MaterialTab = "ALL" | "GUIDE" | "GENERATION" | "ANSWER" | "SUMMARY" | "OTHER" | "SIGNALS";
 type StatusTab = "all" | "DRAFT" | "PUBLISHED";
 
 const MATERIAL_TABS: Array<{
@@ -36,6 +39,7 @@ const MATERIAL_TABS: Array<{
   { value: "ANSWER", label: "Ответы", types: ["ANSWER"], queryValue: "ANSWER" },
   { value: "SUMMARY", label: "Сводки", types: ["SUMMARY"], queryValue: "SUMMARY" },
   { value: "OTHER", label: "Другое", types: ["OTHER"], queryValue: "OTHER" },
+  { value: "SIGNALS", label: "Сигналы" },
 ];
 
 const SORTS: Array<{ value: GuidesSort; label: string }> = [
@@ -102,6 +106,7 @@ function materialTabFromSearch(value: string | null): MaterialTab {
   if (normalized === "CLUSTER_SUMMARY") return "OTHER";
   if (normalized === "SUMMARY") return "SUMMARY";
   if (normalized === "OTHER") return "OTHER";
+  if (normalized === "SIGNALS") return "SIGNALS";
   return (
     MATERIAL_TABS.find(
       (tab) => tab.value === normalized || (tab.queryValue != null && tab.queryValue.toUpperCase() === normalized)
@@ -263,14 +268,14 @@ function ScorePill({ label, value }: { label: string; value: number | null }) {
   );
 }
 
-function MaterialTabTrigger({ tab, status }: { tab: (typeof MATERIAL_TABS)[number]; status?: string }) {
+function MaterialTabTrigger({ tab, status, countOverride }: { tab: (typeof MATERIAL_TABS)[number]; status?: string; countOverride?: number }) {
   const countQuery = useMaterialsQuery({
     page: 0,
     size: 1,
     contentType: tab.queryValue,
     status,
   });
-  const count = countQuery.data?.totalElements;
+  const count = countOverride ?? countQuery.data?.totalElements;
   if (tab.value === "OTHER" && !countQuery.isLoading && (count ?? 0) <= 0) {
     return null;
   }
@@ -282,9 +287,37 @@ function MaterialTabTrigger({ tab, status }: { tab: (typeof MATERIAL_TABS)[numbe
     >
       <span>{tab.label}</span>
       <span className="ml-1.5 inline-flex min-w-5 items-center justify-center rounded-full bg-brand-blue-soft px-1.5 py-0.5 text-[11px] font-semibold leading-none text-brand-blue">
-        {countQuery.isLoading ? "..." : count ?? 0}
+        {countOverride == null && countQuery.isLoading ? "..." : count ?? 0}
       </span>
     </TabsTrigger>
+  );
+}
+
+function TopicCard({ topic, signalsOnly = false }: { topic: KnowledgeTopic; signalsOnly?: boolean }) {
+  const navigate = useNavigate();
+  const totalFindings = signalsOnly ? topic.signalCount : topic.materialCount + topic.signalCount;
+  const badge = totalFindings > 0 ? String(totalFindings) : "тема";
+  return (
+    <button
+      type="button"
+      onClick={() => navigate(`/materials/topics/${topic.slug}`)}
+      className="group rounded-xl border border-border-subtle bg-bg-card p-4 text-left transition hover:-translate-y-0.5 hover:border-brand-blue/40 hover:shadow-[0_18px_50px_rgba(28,92,255,0.10)]"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-blue-soft text-brand-blue">
+          <Tag size={19} />
+        </div>
+        <span className="rounded-full bg-bg-elevated px-2 py-1 text-xs font-medium text-text-muted">{badge}</span>
+      </div>
+      <h3 className="mt-3 line-clamp-1 font-semibold text-text-strong transition group-hover:text-brand-blue">{topic.name}</h3>
+      <p className="mt-1 line-clamp-2 text-xs leading-5 text-text-muted">{topic.description}</p>
+      <div className="mt-3 flex flex-wrap gap-1.5 text-[11px]">
+        {!signalsOnly ? <span className="rounded-full border border-border-subtle bg-bg-elevated px-2 py-1 text-text-muted">{topic.materialCount} материалов</span> : null}
+        <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-1 text-amber-700">{topic.signalCount} сигналов</span>
+        {topic.reviewCount > 0 ? <span className="rounded-full border border-orange-200 bg-orange-50 px-2 py-1 text-orange-700">{topic.reviewCount} проверка</span> : null}
+        {topic.riskCount > 0 ? <span className="rounded-full border border-red-200 bg-red-50 px-2 py-1 text-red-700">{topic.riskCount} risk</span> : null}
+      </div>
+    </button>
   );
 }
 
@@ -388,6 +421,16 @@ export function MaterialsPage() {
   const activeStatus = statusTabFromSearch(searchParams.get("status"));
   const activeTabConfig = MATERIAL_TABS.find((tab) => tab.value === activeTab) ?? MATERIAL_TABS[0];
   const activeStatusConfig = STATUS_TABS.find((tab) => tab.value === activeStatus) ?? STATUS_TABS[0];
+  const topicsQuery = useKnowledgeTopicsQuery();
+  const topics = topicsQuery.data?.content ?? [];
+  const signalCount = topics.reduce((sum, topic) => sum + topic.signalCount, 0);
+  const filteredTopics = useMemo(() => {
+    const needle = search.trim().toLowerCase();
+    if (!needle) return topics;
+    return topics.filter((topic) =>
+      [topic.name, topic.description, topic.slug].some((value) => value.toLowerCase().includes(needle)),
+    );
+  }, [search, topics]);
 
   const materialsQuery = useMaterialsQuery({
     page: 0,
@@ -400,6 +443,7 @@ export function MaterialsPage() {
   const totalMaterials = materialsQuery.data?.totalElements ?? materials.length;
   const filtered = useMemo(() => {
     const needle = search.trim().toLowerCase();
+    if (activeTab === "SIGNALS") return [];
     return materials
       .filter((material) => typeMatches(activeTab, material))
       .filter((material) => {
@@ -423,10 +467,14 @@ export function MaterialsPage() {
     const tab = MATERIAL_TABS.find((item) => item.value === value);
     if (tab?.queryValue) {
       next.set("contentType", tab.queryValue);
+      next.delete("type");
+    } else if (value === "SIGNALS") {
+      next.delete("contentType");
+      next.set("type", "SIGNALS");
     } else {
       next.delete("contentType");
+      next.delete("type");
     }
-    next.delete("type");
     setSearchParams(next, { replace: true });
   };
 
@@ -447,7 +495,7 @@ export function MaterialsPage() {
     <div className="flex flex-col gap-6">
       <PageHeaderCard
         title="Материалы"
-        description="Гайды и полезные заметки, собранные конвейером."
+        description="Гайды, полезные заметки и тематические сигналы из Telegram-потока."
         pipelineNote={`Всего: ${formatMaterialCount(totalMaterials)}`}
         actions={{ onRefresh: () => materialsQuery.refetch(), refreshPending: materialsQuery.isFetching }}
       />
@@ -495,7 +543,7 @@ export function MaterialsPage() {
               <Tabs value={activeTab} onValueChange={(value) => updateTab(value as MaterialTab)}>
                 <TabsList className="flex h-auto flex-wrap justify-start gap-1 bg-transparent p-0">
                   {MATERIAL_TABS.map((tab) => (
-                    <MaterialTabTrigger key={tab.value} tab={tab} status={activeStatusConfig.apiStatus} />
+                    <MaterialTabTrigger key={tab.value} tab={tab} status={activeStatusConfig.apiStatus} countOverride={tab.value === "SIGNALS" ? signalCount : undefined} />
                   ))}
                 </TabsList>
               </Tabs>
@@ -517,7 +565,36 @@ export function MaterialsPage() {
         </CardContent>
       </Card>
 
-      {materialsQuery.isLoading ? (
+      {activeTab === "SIGNALS" ? (
+        <Card className="overflow-hidden border-border-subtle bg-bg-card">
+          <CardContent className="p-5">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <div className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700">
+                  <Sparkle size={14} />
+                  Темы сигналов
+                </div>
+                <h2 className="mt-3 text-xl font-semibold text-text-strong">Карта сигналов</h2>
+                <p className="mt-1 max-w-3xl text-sm leading-6 text-text-muted">
+                  В теме показаны только сырые полезные сигналы и сообщения на проверке. Сейчас сигналов по темам: {formatMaterialCount(signalCount)}.
+                </p>
+              </div>
+              <Button variant="outline" size="sm" onClick={() => topicsQuery.refetch()} disabled={topicsQuery.isFetching}>
+                <ArrowClockwise size={15} />
+                Обновить темы
+              </Button>
+            </div>
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-sm text-text-muted">
+              <span>Показано {formatMaterialCount(filteredTopics.length)} из {formatMaterialCount(topics.length)} тем</span>
+              <span>Вкладка показывает карту сигналов.</span>
+            </div>
+            <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+              {filteredTopics.map((topic) => <TopicCard key={topic.slug} topic={topic} signalsOnly />)}
+              {topicsQuery.isLoading ? Array.from({ length: 5 }).map((_, index) => <div key={index} className="h-40 animate-pulse rounded-xl border border-border-subtle bg-bg-app" />) : null}
+            </div>
+          </CardContent>
+        </Card>
+      ) : materialsQuery.isLoading ? (
         <div className="grid gap-3">
           {Array.from({ length: 4 }).map((_, index) => (
             <div key={index} className="h-44 animate-pulse rounded-lg border border-border-subtle bg-bg-card" />

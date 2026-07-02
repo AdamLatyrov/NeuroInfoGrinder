@@ -22,6 +22,9 @@ const GroupsPage = lazy(() =>
 const MaterialsPage = lazy(() =>
   import("@/pages/materials/MaterialsPage").then((module) => ({ default: module.MaterialsPage }))
 );
+const TopicSignalsPage = lazy(() =>
+  import("@/pages/materials/TopicSignalsPage").then((module) => ({ default: module.TopicSignalsPage }))
+);
 const GuideDetailPage = lazy(() =>
   import("@/pages/guides/GuideDetailPage").then((module) => ({ default: module.GuideDetailPage }))
 );
@@ -124,6 +127,7 @@ export function AppRouter() {
             <Route path="/pipeline/clusters-map-mockup" element={<Navigate to="/pipeline" replace />} />
             <Route path="/pipeline" element={<PipelinePage />} />
             <Route path="/materials" element={<MaterialsPage />} />
+            <Route path="/materials/topics/:slug" element={<TopicSignalsPage />} />
             <Route path="/materials/:guideId" element={<GuideDetailPage />} />
             <Route path="/guides" element={<Navigate to="/materials?contentType=GUIDE" replace />} />
             <Route path="/guides/:guideId" element={<GuideDetailPage />} />

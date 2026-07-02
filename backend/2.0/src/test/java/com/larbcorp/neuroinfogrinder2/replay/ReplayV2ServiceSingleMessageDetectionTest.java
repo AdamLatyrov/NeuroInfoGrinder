@@ -75,6 +75,27 @@ class ReplayV2ServiceSingleMessageDetectionTest {
     }
 
     @Test
+    void hiddenCaptionReferralLinkIsRejectedAsNeedsLinkEnrichmentInsteadOfChatContextOnly() throws Exception {
+        ReplayV2Service service = service();
+        Object message = message(
+                15541L,
+                null,
+                "7 млн токенов в сутки дают тут на бесплатные модели Сюда тыкай",
+                """
+                        {"content":{"@type":"MessagePhoto","caption":{"text":"7 млн токенов в сутки дают тут на бесплатные модели Сюда тыкай","entities":[{"@type":"textEntity","offset":52,"length":10,"type":{"@type":"textEntityTypeTextUrl","url":"https://router.bynara.id/register?ref=5RWD9UQV"}}]}}}
+                        """
+        );
+        com.fasterxml.jackson.databind.JsonNode features = features(service, message, "7 млн токенов в сутки дают тут на бесплатные модели Сюда тыкай");
+        Object intel = intel(message, "7 млн токенов в сутки дают тут на бесплатные модели Сюда тыкай", true, "CANDIDATE", features);
+        Map<String, BigDecimal> metrics = new HashMap<>();
+
+        List<?> candidates = singleMessageDetection(service, 6001L, List.of(intel), List.of(), metrics);
+
+        assertThat(candidates).isEmpty();
+        assertThat(singleMessageRejectionReason(service)).isEqualTo("NEEDS_LINK_ENRICHMENT");
+    }
+
+    @Test
     void hardSignalWithoutExplanationDoesNotBecomeCandidate() throws Exception {
         ReplayV2Service service = service();
         Object intel = intel(3L, "401 404 bearer token base url", true, "CANDIDATE");
@@ -96,6 +117,19 @@ class ReplayV2ServiceSingleMessageDetectionTest {
         List<?> candidates = singleMessageDetection(service, 4L, List.of(intel), List.of(embedding), metrics);
 
         assertThat(candidates).hasSize(1);
+    }
+
+    @Test
+    void generationCandidateKeepsRequiredArtifactType() throws Exception {
+        ReplayV2Service service = service();
+        Object intel = intel(51L, "Шаблон для генерации release notes: сначала собери merged PR, затем сгруппируй по Features, Fixes и Risks, после этого сгенерируй changelog и rollback notes.", true, "CANDIDATE");
+        Object embedding = embedding(51L, 51L);
+        Map<String, BigDecimal> metrics = new HashMap<>();
+
+        List<?> candidates = singleMessageDetection(service, 51L, List.of(intel), List.of(embedding), metrics);
+
+        assertThat(candidates).hasSize(1);
+        assertThat(requiredArtifactType(candidates.get(0))).isEqualTo("GENERATION");
     }
 
     @Test
@@ -154,18 +188,34 @@ class ReplayV2ServiceSingleMessageDetectionTest {
 
     private static Object intel(long messageId, String text, boolean hardSignal, String ruleDecision) throws Exception {
         Object message = message(messageId, text);
+        return intel(message, text, hardSignal, ruleDecision, new ObjectMapper().createObjectNode());
+    }
+
+    private static Object intel(Object message, String text, boolean hardSignal, String ruleDecision, com.fasterxml.jackson.databind.JsonNode features) throws Exception {
         Class<?> type = Class.forName("com.larbcorp.neuroinfogrinder2.replay.ReplayV2Service$Intel");
         Constructor<?> constructor = type.getDeclaredConstructor(long.class, message.getClass(), String.class, com.fasterxml.jackson.databind.JsonNode.class, boolean.class, String.class);
         constructor.setAccessible(true);
-        return constructor.newInstance(messageId, message, text, new ObjectMapper().createObjectNode(), hardSignal, ruleDecision);
+        Method id = message.getClass().getDeclaredMethod("id");
+        id.setAccessible(true);
+        return constructor.newInstance((Long) id.invoke(message), message, text, features, hardSignal, ruleDecision);
+    }
+
+    private static com.fasterxml.jackson.databind.JsonNode features(ReplayV2Service service, Object message, String text) throws Exception {
+        Method method = ReplayV2Service.class.getDeclaredMethod("features", message.getClass(), String.class);
+        method.setAccessible(true);
+        return (com.fasterxml.jackson.databind.JsonNode) method.invoke(service, message, text);
     }
 
     private static Object message(long id, String text) throws Exception {
+        return message(id, text, null, "{}");
+    }
+
+    private static Object message(long id, String text, String caption, String rawJson) throws Exception {
         Class<?> type = Class.forName("com.larbcorp.neuroinfogrinder2.replay.ReplayV2Service$Message");
         Constructor<?> constructor = type.getDeclaredConstructor(long.class, String.class, String.class, String.class, String.class, String.class, long.class, long.class, Long.class, Long.class, Timestamp.class, Timestamp.class);
         constructor.setAccessible(true);
         Timestamp now = Timestamp.from(Instant.parse("2026-06-26T00:00:00Z"));
-        return constructor.newInstance(id, text, null, "{}", "[]", "{}", 1L, -1L, 1L, 1L, now, now);
+        return constructor.newInstance(id, text, caption, rawJson, "[]", "{}", 1L, -1L, 1L, 1L, now, now);
     }
 
     private static Object embedding(long id, long messageId) throws Exception {
@@ -187,9 +237,35 @@ class ReplayV2ServiceSingleMessageDetectionTest {
         return (String) method.invoke(candidate);
     }
 
+    private static String requiredArtifactType(Object candidate) throws Exception {
+        Method method = candidate.getClass().getDeclaredMethod("requiredArtifactType");
+        method.setAccessible(true);
+        return (String) method.invoke(candidate);
+    }
+
     private static boolean approvedJudgeDecision(ReplayV2Service service, Object response) throws Exception {
         Method method = ReplayV2Service.class.getDeclaredMethod("approvedJudgeDecision", com.fasterxml.jackson.databind.JsonNode.class);
         method.setAccessible(true);
         return (boolean) method.invoke(service, response);
+    }
+
+    private static String singleMessageRejectionReason(ReplayV2Service service) throws Exception {
+        JdbcTemplate jdbc = (JdbcTemplate) field(service, "jdbc");
+        org.mockito.ArgumentCaptor<Object[]> arguments = org.mockito.ArgumentCaptor.forClass(Object[].class);
+        org.mockito.Mockito.verify(jdbc, org.mockito.Mockito.atLeastOnce()).update(anyString(), arguments.capture());
+        for (Object[] values : arguments.getAllValues()) {
+            for (Object value : values) {
+                if ("NEEDS_LINK_ENRICHMENT".equals(value) || "CHAT_CONTEXT_ONLY".equals(value)) {
+                    return (String) value;
+                }
+            }
+        }
+        return null;
+    }
+
+    private static Object field(Object target, String name) throws Exception {
+        java.lang.reflect.Field field = target.getClass().getDeclaredField(name);
+        field.setAccessible(true);
+        return field.get(target);
     }
 }

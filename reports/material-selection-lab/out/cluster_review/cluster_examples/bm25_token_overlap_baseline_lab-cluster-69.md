@@ -1,0 +1,5 @@
+# bm25_token_overlap_baseline / lab-cluster-69
+
+- `msg-02677` `SOCIAL_MEDIA_LINK` `NEEDS_LINK_ENRICHMENT` URL
+- `msg-03802` `SOCIAL_MEDIA_LINK` `NEEDS_LINK_ENRICHMENT` загружаю твит... URL
+- `msg-03804` `SOCIAL_MEDIA_LINK` `NEEDS_LINK_ENRICHMENT` URL

@@ -1,0 +1,33 @@
+hidden_url_messages=722
+hidden_url_total=1208
+route_counts={'CONTEXT_ONLY': 18856, 'REJECT_SAFE': 515, 'SIGNAL_ONLY': 286, 'NEEDS_ENRICHMENT': 128, 'REVIEW_HIGH_RECALL': 97, 'AGGREGATE_ONLY': 96, 'MANUAL_REVIEW': 22}
+decision_counts={'REVIEW_SINGLE_SIGNAL': 201, 'BLOCKED': 157, 'CONTEXT_ONLY': 50, 'SIGNAL_PAIR': 18, 'CONTEXT_GROUP': 13, 'SIGNAL_GROUP': 7, 'LINK_ENRICHMENT_FIRST': 7, 'WEAK_PAIR': 7, 'EVIDENCE_GROUP_REVIEW': 6, 'MANUAL_REVIEW': 2}
+material_candidates:
+v2c-00004 | Тема: droid | size=5 indep=4 convs=1 shared=['droid']
+  msg-15619 LOW_VALUE_CHATTER SIGNAL_ONLY | А на скрине на оборот droid cli, видимо от устройства к устройству зависит и ему пофиг где
+  msg-15593 LOW_VALUE_CHATTER SIGNAL_ONLY | такое бывает и не только в droid
+  msg-15627 LOW_VALUE_CHATTER SIGNAL_ONLY | у меня такая проблема встречалась в droid desktop, поэтому использую только cli
+  msg-15521 LOW_VALUE_CHATTER SIGNAL_ONLY | как мне правильно перенести сейчас проекты в Droid? нужно создать локально папку на компе?
+  msg-15718 LOW_VALUE_CHATTER SIGNAL_ONLY | Кто-нибудь сталкивался с тем, что droid обрезает часть ответа? Причем у меня и на omnirout
+v2c-00066 | Тема: senpis.xyz | size=5 indep=5 convs=1 shared=['senpis.xyz']
+  msg-05086 LOW_VALUE_CHATTER SIGNAL_ONLY | Senpi — новый проект на базе ИИ для торговли на Hyperliquid, предлагающий 100$ за регистра
+  msg-07790 LOW_VALUE_CHATTER SIGNAL_ONLY | Senpi — новый проект на базе ИИ для торговли на Hyperliquid, предлагающий 100$ за регистра
+  msg-06187 LOW_VALUE_CHATTER SIGNAL_ONLY | Senpi — новый проект на базе ИИ для торговли на Hyperliquid, предлагающий 100$ за регистра
+  msg-05189 LOW_VALUE_CHATTER SIGNAL_ONLY | Senpi — новый проект на базе ИИ для торговли на Hyperliquid, предлагающий 100$ за регистра
+  msg-04962 LOW_VALUE_CHATTER SIGNAL_ONLY | Senpi — новый проект на базе ИИ для торговли на Hyperliquid, предлагающий 100$ за регистра
+v2c-00039 | Тема: droid | size=3 indep=2 convs=1 shared=['droid']
+  msg-11287 LOW_VALUE_CHATTER SIGNAL_ONLY | Я посносил все кодексы, клод коды, опенкоды и прочую требуху после месяца юзания droid des
+  msg-11467 LOW_VALUE_CHATTER SIGNAL_ONLY | Лимитов не хватает на серьезные проекты, а так ещё тестирую комбинации. Droid нравится тем
+  msg-11479 LOW_VALUE_CHATTER SIGNAL_ONLY | Работа нужна для того, что бы дождаться пока droid завершит свою миссию:)
+v2c-00046 | Тема: codex | size=3 indep=2 convs=1 shared=['codex']
+  msg-18451 LOW_VALUE_CHATTER SIGNAL_ONLY | В Codex такие регулярные реконнекты
+  msg-18391 LOW_VALUE_CHATTER SIGNAL_ONLY | В Codex CLI
+  msg-18446 LOW_VALUE_CHATTER SIGNAL_ONLY | В Codex такие регулярные реконнекты
+v2c-00141 | Тема: senpi.one | size=3 indep=3 convs=2 shared=['senpi.one']
+  msg-14247 LOW_VALUE_CHATTER SIGNAL_ONLY | Senpi : залетаем оставлять заявку и получать бесплатные 100$ в тестовых токенах для Hyperl
+  msg-13804 LOW_VALUE_CHATTER SIGNAL_ONLY | Senpi : залетаем оставлять заявку и получать бесплатные 100$ в тестовых токенах для Hyperl
+  msg-13384 LOW_VALUE_CHATTER SIGNAL_ONLY | Senpi : залетаем оставлять заявку и получать бесплатные 100$ в тестовых токенах для Hyperl
+v2c-00154 | Техническое обсуждение: r-api | size=3 indep=2 convs=1 shared=['r-api']
+  msg-09720 TECH_SIGNAL REVIEW_HIGH_RECALL | а может вы сделаете балансировщик автоматический с r-api на api и наоборот?
+  msg-09735 TECH_SIGNAL REVIEW_HIGH_RECALL | r-api?
+  msg-09715 TECH_SIGNAL REVIEW_HIGH_RECALL | Да мы просто переведем r-api на api

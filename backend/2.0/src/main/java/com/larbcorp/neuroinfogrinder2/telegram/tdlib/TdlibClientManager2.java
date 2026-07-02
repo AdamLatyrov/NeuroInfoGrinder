@@ -85,6 +85,10 @@ public class TdlibClientManager2 {
         return properties.isEnabled();
     }
 
+    public void ensureLiveUpdatesStarted(long accountId) {
+        ensureReady(accountId);
+    }
+
     public TelegramAuthStateResponse submitPhone(long accountId, String phone) {
         ClientState state = ensureStarted(accountId);
         awaitAuthorizationState(state, authorizationState ->

@@ -14,16 +14,19 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
-  type PipelineResultItem,
+  type PipelineStageMessage,
   type PipelineStageSummary,
   usePipelineLiveStagesQuery,
   usePipelineLiveSummaryQuery,
-  usePipelineResultsQuery,
+  usePipelineStageMessagesQuery,
 } from "@/shared/api/pipelineApi";
 import { queryClient } from "@/shared/api/queryClient";
+import { usePipelineEvents } from "@/shared/api/pipelineEvents";
 
 type Tone = "blue" | "cyan" | "green" | "yellow" | "orange" | "purple" | "teal" | "red" | "gray";
 type StatTone = "passed" | "accepted" | "rejected" | "pending" | "failed" | "skipped" | "candidate";
+type PeriodFilter = "today" | "hour" | "day" | "all";
+type TableStatusFilter = "all" | "accepted" | "rejected" | "material";
 
 interface StageStat {
   label: string;
@@ -51,42 +54,48 @@ interface TableRow {
   reason: string;
   score: number | null;
   materialId: number | null;
+  model: string;
+  updatedAt: string | null;
 }
-
-const FILTERS = [
-  ["Период", "Сегодня 00:00 - сейчас"],
-  ["Чат", "Все чаты"],
-  ["Этап", "Все этапы"],
-  ["Статус", "Все статусы"],
-  ["Причина отклонения", "Все причины"],
-  ["Провайдер / Модель", "Все провайдеры"],
-] as const;
 
 export function PipelinePage() {
   const navigate = useNavigate();
+  const connectionState = usePipelineEvents();
   const [selectedStageId, setSelectedStageId] = useState("raw_messages");
+  const [periodFilter, setPeriodFilter] = useState<PeriodFilter>("all");
+  const [chatFilter, setChatFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState<TableStatusFilter>("all");
+  const [reasonFilter, setReasonFilter] = useState("all");
+  const [modelFilter, setModelFilter] = useState("all");
   const summaryQuery = usePipelineLiveSummaryQuery();
   const stagesQuery = usePipelineLiveStagesQuery();
-  const todayFrom = useMemo(() => startOfTodayIso(), []);
-  const resultsQuery = usePipelineResultsQuery(undefined, 0, 200, todayFrom, true);
+  const selectedBackendStageId = stageBackendId(selectedStageId);
+  const stageMessagesQuery = usePipelineStageMessagesQuery(selectedBackendStageId, "all", 200);
 
   const conveyorStages = useMemo(
     () => buildConveyorStages(stagesQuery.data ?? [], summaryQuery.data, selectedStageId),
     [selectedStageId, stagesQuery.data, summaryQuery.data],
   );
   const selectedStage = conveyorStages.find((stage) => stage.id === selectedStageId) ?? conveyorStages[0] ?? null;
+  const stageTableRows = useMemo(
+    () => buildRowsFromStageMessages(stageMessagesQuery.data ?? []),
+    [stageMessagesQuery.data],
+  );
   const tableRows = useMemo(
-    () => buildTableRows(resultsQuery.data?.content ?? [], selectedStageId),
-    [resultsQuery.data?.content, selectedStageId],
+    () => filterTableRows(stageTableRows, { chatFilter, statusFilter, reasonFilter, modelFilter, periodFilter }),
+    [chatFilter, modelFilter, periodFilter, reasonFilter, stageTableRows, statusFilter],
   );
   const reasonCounts = useMemo(() => topReasons(tableRows), [tableRows]);
   const summaryCards = useMemo(() => buildSummaryCards(summaryQuery.data), [summaryQuery.data]);
   const losses = useMemo(() => buildLosses(conveyorStages), [conveyorStages]);
+  const chatOptions = useMemo(() => optionValues(stageTableRows.map((row) => row.chat)), [stageTableRows]);
+  const reasonOptions = useMemo(() => optionValues(stageTableRows.map((row) => row.reason).filter((reason) => reason !== "—")), [stageTableRows]);
+  const modelOptions = useMemo(() => optionValues(stageTableRows.map((row) => row.model).filter((model) => model !== "—")), [stageTableRows]);
 
   const refresh = () => {
     queryClient.invalidateQueries({ queryKey: ["pipeline-live-summary"] });
     queryClient.invalidateQueries({ queryKey: ["pipeline-live-stages"] });
-    queryClient.invalidateQueries({ queryKey: ["pipeline-results"] });
+    queryClient.invalidateQueries({ queryKey: ["pipeline-stage-messages"] });
   };
 
   const openStageDetail = (stageId: string) => {
@@ -100,11 +109,17 @@ export function PipelinePage() {
       <div className="relative">
         <header className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h1 className="text-[30px] font-extrabold tracking-[-0.04em] text-text-strong lg:text-[34px]">
-              Конвейер сообщений
-            </h1>
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className="text-[30px] font-extrabold tracking-[-0.04em] text-text-strong lg:text-[34px]">
+                Конвейер сообщений
+              </h1>
+              <span className={cn("inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-bold", connectionTone(connectionState))}>
+                <span className="size-2 rounded-full bg-current" />
+                {connectionLabel(connectionState)}
+              </span>
+            </div>
             <p className="mt-1.5 text-[15px] leading-6 text-text-muted">
-              Визуальная воронка прохождения сообщений по этапам
+              Реальная воронка прохождения сообщений по этапам, обновляется через live events и polling
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -116,16 +131,16 @@ export function PipelinePage() {
               <ArrowClockwise size={18} weight="bold" />
               Обновить
             </Button>
-            <Button variant="outline" size="icon" className="h-10 w-10 rounded-2xl" aria-label="Обновить" onClick={refresh}>
-              <ArrowClockwise size={17} />
-            </Button>
           </div>
         </header>
 
-        <section className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-6" aria-label="Фильтры конвейера">
-          {FILTERS.map(([label, value]) => (
-            <FilterCard key={label} label={label} value={value} />
-          ))}
+        <section className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6" aria-label="Фильтры конвейера">
+          <FilterSelect label="Период" value={periodFilter} onChange={(value) => setPeriodFilter(value as PeriodFilter)} options={periodOptions()} />
+          <FilterSelect label="Чат" value={chatFilter} onChange={setChatFilter} options={[{ value: "all", label: "Все чаты" }, ...chatOptions]} />
+          <FilterSelect label="Этап" value={selectedStageId} onChange={setSelectedStageId} options={conveyorStages.map((stage) => ({ value: stage.id, label: stage.title }))} />
+          <FilterSelect label="Статус" value={statusFilter} onChange={(value) => setStatusFilter(value as TableStatusFilter)} options={statusOptions()} />
+          <FilterSelect label="Причина" value={reasonFilter} onChange={setReasonFilter} options={[{ value: "all", label: "Все причины" }, ...reasonOptions]} />
+          <FilterSelect label="Модель" value={modelFilter} onChange={setModelFilter} options={[{ value: "all", label: modelOptions.length ? "Все модели" : "Модель не указана" }, ...modelOptions]} />
         </section>
 
         <section className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4" aria-label="Сводные метрики">
@@ -151,28 +166,27 @@ export function PipelinePage() {
           stage={selectedStage}
           rows={tableRows}
           reasonCounts={reasonCounts}
-          loading={resultsQuery.isLoading}
-          error={resultsQuery.isError}
+          loading={stageMessagesQuery.isLoading}
+          error={stageMessagesQuery.isError}
         />
       </div>
     </div>
   );
 }
 
-function FilterCard({ label, value }: { label: string; value: string }) {
+function FilterSelect({ label, value, options, onChange }: { label: string; value: string; options: Array<{ value: string; label: string }>; onChange: (value: string) => void }) {
   return (
-    <button
-      type="button"
-      className="group flex h-[60px] min-w-0 items-center justify-between gap-3 rounded-[18px] border border-border-subtle bg-white/95 px-4 text-left shadow-[0_8px_20px_rgba(61,45,24,0.04)] transition hover:border-brand-blue/25 hover:bg-[#fffcf6]"
-    >
-      <div className="min-w-0">
-        <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-text-weak">{label}</div>
-        <div className="mt-1 truncate text-[15px] font-semibold text-text-strong">{value}</div>
-      </div>
-      <span className="shrink-0 text-text-muted transition group-hover:text-brand-blue">
-        <CaretDown size={16} />
-      </span>
-    </button>
+    <label className="relative block min-w-0 rounded-[18px] border border-border-subtle bg-white/95 px-4 py-3 shadow-[0_8px_20px_rgba(61,45,24,0.04)] transition focus-within:border-brand-blue/30 hover:border-brand-blue/25 hover:bg-[#fffcf6]">
+      <span className="block truncate text-[10px] font-bold uppercase tracking-[0.16em] text-text-weak">{label}</span>
+      <select
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="mt-1 block h-7 w-full appearance-none truncate rounded-none border-0 bg-transparent pr-7 text-[15px] font-semibold text-text-strong outline-none"
+      >
+        {options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+      </select>
+      <CaretDown size={16} className="pointer-events-none absolute bottom-4 right-4 text-text-muted" />
+    </label>
   );
 }
 
@@ -212,7 +226,7 @@ function FunnelDiagram({
         <span>Доля от общего потока</span>
         <span className="text-right">Прошло</span>
         <span className="text-right">Конверсия</span>
-        <span className="text-right">Потеря дальше</span>
+        <span className="text-right">Потеря</span>
         <span />
       </div>
 
@@ -271,7 +285,7 @@ function FunnelDiagram({
                 <span className="rounded-lg bg-success-soft px-2.5 py-1 text-xs font-bold text-success">{formatPercent(stage.pct)}</span>
               </div>
               <div className="flex items-center justify-between lg:col-start-5 lg:justify-end">
-                <span className="text-[11px] font-semibold uppercase tracking-[0.1em] text-text-weak lg:hidden">Потеря дальше</span>
+                <span className="text-[11px] font-semibold uppercase tracking-[0.1em] text-text-weak lg:hidden">Потеря</span>
                 {loss != null ? (
                   <span className="rounded-lg bg-danger-soft px-2.5 py-1 text-xs font-bold text-danger">-{formatCompactNumber(loss)}</span>
                 ) : (
@@ -414,7 +428,7 @@ function StageMessagesTable({
 
       <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-sm text-text-muted">
         <span>
-          Показано 1-{Math.min(rows.length, 10)} из {rows.length} сообщений
+          {rows.length ? `Показано 1-${Math.min(rows.length, 10)} из ${rows.length} сообщений` : "Нет сообщений под выбранные фильтры"}
         </span>
         <div className="flex items-center gap-2">
           <Page active>1</Page>
@@ -521,7 +535,7 @@ function buildConveyorStages(
     {
       id: "raw_messages",
       n: 1,
-      title: "Raw messages",
+      title: "Входящие сообщения",
       tone: "blue",
       fallback: {
         input: summary?.rawMessages ?? 0,
@@ -529,15 +543,15 @@ function buildConveyorStages(
         stats: [{ label: "Passed", value: summary?.rawMessages ?? 0, tone: "passed" }],
       },
     },
-    { id: "intake", n: 2, title: "Intake", tone: "cyan", source: find(["telegram_ingest", "db_cache", "normalization"], 1) },
-    { id: "queue", n: 3, title: "Queue", tone: "green", source: find(["cleanup", "dedupe", "rule_signals"], 6) },
-    { id: "run", n: 4, title: "Run", tone: "yellow", source: find(["bootstrap_classification"], 7) },
-    { id: "embeddings", n: 5, title: "Embeddings / BGE-M3", tone: "orange", source: find(["embeddings"], 8) },
-    { id: "single_message_detection", n: 6, title: "Single-message", tone: "orange", source: find(["single_message_detection"], 10) },
-    { id: "clustering", n: 7, title: "Clustering", tone: "purple", source: find(["clustering"], 9) },
-    { id: "llm_judge", n: 8, title: "LLM Judge", tone: "blue", source: find(["llm_judge"], 11) },
-    { id: "material_generation", n: 9, title: "Material generation", tone: "teal", source: find(["material_generation"], 12) },
-    { id: "materials_publish", n: 10, title: "Material created", tone: "green", source: find(["materials_publish"], 13) },
+    { id: "intake", n: 2, title: "Приём и нормализация", tone: "cyan", source: find(["telegram_ingest", "db_cache", "normalization"], 1) },
+    { id: "queue", n: 3, title: "Очередь и правила", tone: "green", source: find(["cleanup", "dedupe", "rule_signals"], 6) },
+    { id: "run", n: 4, title: "Первичная классификация", tone: "yellow", source: find(["bootstrap_classification"], 7) },
+    { id: "single_message_detection", n: 5, title: "Одиночные сообщения", tone: "orange", source: find(["single_message_detection"], 10) },
+    { id: "embeddings", n: 6, title: "Векторизация BGE-M3", tone: "orange", source: find(["embeddings"], 8) },
+    { id: "llm_judge", n: 7, title: "LLM-оценка", tone: "blue", source: find(["llm_judge"], 11) },
+    { id: "clustering", n: 8, title: "Кластеризация", tone: "purple", source: find(["clustering"], 9) },
+    { id: "material_generation", n: 9, title: "Генерация материала", tone: "teal", source: find(["material_generation"], 12) },
+    { id: "materials_publish", n: 10, title: "Материал создан", tone: "green", source: find(["materials_publish"], 13) },
   ];
 
   return mapped.map((item) => {
@@ -643,50 +657,49 @@ function compactStats(stats: StageStat[]) {
 
 function buildLosses(stages: ConveyorStage[]) {
   const losses: Array<number | null> = [];
-  for (let i = 0; i < stages.length - 1; i += 1) {
+  for (let i = 0; i < stages.length; i += 1) {
+    if (i === 0) {
+      losses.push(null);
+      continue;
+    }
+    const previous = stages[i - 1];
     const current = stages[i];
-    const next = stages[i + 1];
-    const loss = Math.max(current.value - next.value, 0);
+    const loss = Math.max(previous.value - current.value, 0);
     losses.push(loss > 0 ? loss : null);
   }
-  return losses.slice(0, 9);
+  return losses;
 }
 
-function buildTableRows(messages: PipelineResultItem[], selectedStageId: string): TableRow[] {
-  return messages
-    .filter((message) => matchesStage(message, selectedStageId))
-    .slice(0, 50)
-    .map((message) => ({
+function buildRowsFromStageMessages(messages: PipelineStageMessage[]): TableRow[] {
+  return messages.map((message) => {
+    const failed = message.status === "FAILED";
+    const skipped = message.status === "SKIPPED" || message.status === "PENDING" || message.status === "WAITING_FOR_WORKER";
+    return {
       rawId: message.id,
-      chat: message.author ?? "Неизвестный чат",
+      chat: message.chatTitle ?? "Неизвестный чат",
       preview: truncate(message.text || "Сообщение без текста", 42),
-      accepted: isAccepted(message, selectedStageId),
-      reason: normalizeReason(message.classifierReason),
-      score: message.classifierScore ?? message.signalScore ?? null,
-      materialId: message.guideId,
-    }));
+      accepted: !failed && !skipped,
+      reason: normalizeReason(message.blockedReason ?? message.errorCode),
+      score: null,
+      materialId: null,
+      model: "—",
+      updatedAt: message.updatedAt ?? message.createdAt ?? null,
+    };
+  });
 }
 
-function matchesStage(message: PipelineResultItem, selectedStageId: string) {
-  if (selectedStageId === "raw_messages") return true;
-  if (selectedStageId === "embeddings") return message.embeddingStatus != null && message.embeddingStatus !== "NONE";
-  if (selectedStageId === "single_message_detection") return message.clusterCandidate != null;
-  if (selectedStageId === "clustering") return message.clusterCandidate === true;
-  if (selectedStageId === "llm_judge") return ["GUIDE_FOUND", "CLASSIFIED", "SKIPPED", "ERROR"].includes(message.status);
-  if (selectedStageId === "material_generation" || selectedStageId === "materials_publish") {
-    return message.guideId != null || message.status === "GUIDE_FOUND";
-  }
-  return true;
-}
-
-function isAccepted(message: PipelineResultItem, selectedStageId: string) {
-  if (selectedStageId === "material_generation" || selectedStageId === "materials_publish") {
-    return message.guideId != null || message.status === "GUIDE_FOUND";
-  }
-  if (selectedStageId === "llm_judge") {
-    return message.guideId != null || message.status === "GUIDE_FOUND";
-  }
-  return !["SKIPPED", "ERROR"].includes(message.status);
+function filterTableRows(rows: TableRow[], filters: { chatFilter: string; statusFilter: TableStatusFilter; reasonFilter: string; modelFilter: string; periodFilter: PeriodFilter }) {
+  const since = periodStart(filters.periodFilter);
+  return rows.filter((row) => {
+    if (filters.chatFilter !== "all" && row.chat !== filters.chatFilter) return false;
+    if (filters.reasonFilter !== "all" && row.reason !== filters.reasonFilter) return false;
+    if (filters.modelFilter !== "all" && row.model !== filters.modelFilter) return false;
+    if (filters.statusFilter === "accepted" && !row.accepted) return false;
+    if (filters.statusFilter === "rejected" && row.accepted) return false;
+    if (filters.statusFilter === "material" && row.materialId == null) return false;
+    if (since && !isAfter(row.updatedAt, since)) return false;
+    return true;
+  });
 }
 
 function topReasons(rows: TableRow[]) {
@@ -704,10 +717,55 @@ function normalizeReason(reason: string | null) {
   return reason.replace(/\s+/g, "_").toUpperCase();
 }
 
-function startOfTodayIso() {
+function periodStart(period: PeriodFilter) {
   const now = new Date();
-  const date = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  return date.toISOString();
+  if (period === "hour") return new Date(now.getTime() - 60 * 60 * 1000);
+  if (period === "day") return new Date(now.getTime() - 24 * 60 * 60 * 1000);
+  if (period === "today") return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  return null;
+}
+
+function isAfter(value: string | null, since: Date) {
+  if (!value) return false;
+  const date = new Date(value);
+  return Number.isFinite(date.getTime()) && date >= since;
+}
+
+function periodOptions() {
+  return [
+    { value: "all", label: "Всё время" },
+    { value: "today", label: "Сегодня" },
+    { value: "hour", label: "Последний час" },
+    { value: "day", label: "24 часа" },
+  ];
+}
+
+function statusOptions() {
+  return [
+    { value: "all", label: "Все статусы" },
+    { value: "accepted", label: "Пройдено" },
+    { value: "rejected", label: "Отклонено / стоп" },
+    { value: "material", label: "Создан материал" },
+  ];
+}
+
+function optionValues(values: string[]) {
+  return Array.from(new Set(values.filter(Boolean))).sort((a, b) => a.localeCompare(b, "ru")).map((value) => ({ value, label: value }));
+}
+
+function stageBackendId(stageId: string) {
+  return {
+    raw_messages: "telegram_ingest",
+    intake: "normalization",
+    queue: "rule_signals",
+    run: "bootstrap_classification",
+    embeddings: "embeddings",
+    single_message_detection: "single_message_detection",
+    clustering: "clustering",
+    llm_judge: "llm_judge",
+    material_generation: "material_generation",
+    materials_publish: "materials_publish",
+  }[stageId] ?? stageId;
 }
 
 function truncate(value: string, length: number) {
@@ -720,6 +778,18 @@ function formatCompactNumber(value: number) {
 
 function formatPercent(value: number) {
   return `${value.toFixed(value >= 10 ? 1 : 1)}%`;
+}
+
+function connectionLabel(state: "connecting" | "connected" | "disconnected") {
+  if (state === "connected") return "real-time on";
+  if (state === "connecting") return "подключаем live";
+  return "polling fallback";
+}
+
+function connectionTone(state: "connecting" | "connected" | "disconnected") {
+  if (state === "connected") return "bg-success-soft text-success";
+  if (state === "connecting") return "bg-warning-soft text-warning";
+  return "bg-bg-card text-text-muted";
 }
 
 function stageHref(stageId: string) {

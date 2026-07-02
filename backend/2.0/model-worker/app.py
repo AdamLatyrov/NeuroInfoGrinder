@@ -111,20 +111,26 @@ def save_registry(registry: dict[str, Any]) -> None:
 def sklearn_runtime() -> dict[str, Any] | None:
     try:
         from sklearn.calibration import CalibratedClassifierCV
+        from sklearn.tree import DecisionTreeClassifier
         from sklearn.ensemble import RandomForestClassifier
         from sklearn.feature_extraction import DictVectorizer
         from sklearn.feature_extraction.text import TfidfVectorizer
         from sklearn.linear_model import LogisticRegression
         from sklearn.metrics import accuracy_score, confusion_matrix, f1_score
         from sklearn.multiclass import OneVsRestClassifier
+        from sklearn.naive_bayes import MultinomialNB
+        from sklearn.svm import LinearSVC
         import joblib
 
         return {
             "CalibratedClassifierCV": CalibratedClassifierCV,
+            "DecisionTreeClassifier": DecisionTreeClassifier,
             "RandomForestClassifier": RandomForestClassifier,
             "DictVectorizer": DictVectorizer,
             "TfidfVectorizer": TfidfVectorizer,
             "LogisticRegression": LogisticRegression,
+            "LinearSVC": LinearSVC,
+            "MultinomialNB": MultinomialNB,
             "accuracy_score": accuracy_score,
             "confusion_matrix": confusion_matrix,
             "f1_score": f1_score,
@@ -174,6 +180,47 @@ def split_distribution(rows: list[dict[str, Any]]) -> dict[str, int]:
         split = str(row.get("split", "UNASSIGNED"))
         result[split] = result.get(split, 0) + 1
     return dict(sorted(result.items()))
+
+
+def can_use_calibrated_svm(labels: list[str]) -> bool:
+    counts: dict[str, int] = {}
+    for label in labels:
+        counts[label] = counts.get(label, 0) + 1
+    return len(counts) >= 2 and min(counts.values()) >= 2
+
+
+def probabilities_for_model(model: Any, matrix: Any, labels: list[str]) -> list[list[float]] | None:
+    if hasattr(model, "predict_proba"):
+        raw = model.predict_proba(matrix)
+        classes = [str(value) for value in getattr(model, "classes_", labels)]
+        rows: list[list[float]] = []
+        for raw_row in raw:
+            mapped = {classes[index]: float(raw_row[index]) for index in range(min(len(classes), len(raw_row)))}
+            rows.append([mapped.get(label, 0.0) for label in labels])
+        return rows
+    if hasattr(model, "predict"):
+        predicted = model.predict(matrix)
+        return [[1.0 if label == str(predicted[index]) else 0.0 for label in labels] for index in range(len(predicted))]
+    return None
+
+
+def ensemble_probabilities(backends: dict[str, Any], matrix: Any, labels: list[str]) -> list[list[float]] | None:
+    collected: list[list[list[float]]] = []
+    for backend in backends.values():
+        rows = probabilities_for_model(backend, matrix, labels)
+        if rows is not None:
+            collected.append(rows)
+    if not collected:
+        return None
+    averaged: list[list[float]] = []
+    row_count = len(collected[0])
+    for row_index in range(row_count):
+        values: list[float] = []
+        for label_index in range(len(labels)):
+            values.append(sum(rows[row_index][label_index] for rows in collected) / len(collected))
+        total = sum(values) or 1.0
+        averaged.append([value / total for value in values])
+    return averaged
 
 
 def evaluate_majority_baseline(rows: list[dict[str, Any]]) -> dict[str, Any]:
@@ -243,7 +290,11 @@ def flatten_training_features(text: str, context: dict[str, Any]) -> dict[str, f
 
 def stage_model_kind(stage: str) -> str:
     stage = stage.lower()
-    if stage in {"value_level", "valuelevel", "value", "evidence_sufficiency", "evidencesufficiency", "evidence"}:
+    if stage in {"preprocessing", "preprocess", "triage"}:
+        return "TEXT_NB_LOGREG_ENSEMBLE"
+    if stage in {"meaning", "usefulness_kind", "usefulness", "material_route", "route", "llm_judge", "llmjudge"}:
+        return "TEXT_LOGREG_SVM_ENSEMBLE"
+    if stage in {"value_level", "valuelevel", "value", "evidence_sufficiency", "evidencesufficiency", "evidence", "dedupe_cluster", "dedupe", "cluster"}:
         return "TABULAR_RF"
     return "TEXT_LOGREG"
 
@@ -266,22 +317,40 @@ def train_sklearn_stage_model(stage: str, rows: list[dict[str, Any]], persist: b
         eval_rows = rows
     labels = sorted({str(row.get("label", "UNKNOWN")) for row in rows})
 
-    if model_kind == "TEXT_LOGREG":
+    if model_kind in {"TEXT_LOGREG", "TEXT_NB_LOGREG_ENSEMBLE", "TEXT_LOGREG_SVM_ENSEMBLE"}:
         vectorizer = runtime["TfidfVectorizer"](ngram_range=(1, 2), min_df=1, max_features=20000)
-        classifier = runtime["LogisticRegression"](max_iter=1000, class_weight="balanced")
-        model = runtime["OneVsRestClassifier"](classifier)
         x_train = vectorizer.fit_transform([str(row.get("text", "")) for row in train_rows])
         y_train = [str(row.get("label", "UNKNOWN")) for row in train_rows]
-        model.fit(x_train, y_train)
         x_eval = vectorizer.transform([str(row.get("text", "")) for row in eval_rows])
         y_eval = [str(row.get("label", "UNKNOWN")) for row in eval_rows]
+        backends: dict[str, Any] = {}
+
+        logreg = runtime["OneVsRestClassifier"](runtime["LogisticRegression"](max_iter=1000, class_weight="balanced"))
+        logreg.fit(x_train, y_train)
+        backends["logreg_ovr"] = logreg
+
+        if model_kind == "TEXT_NB_LOGREG_ENSEMBLE":
+            nb = runtime["MultinomialNB"](alpha=0.35)
+            nb.fit(x_train, y_train)
+            backends["multinomial_nb"] = nb
+
+        if model_kind == "TEXT_LOGREG_SVM_ENSEMBLE" and can_use_calibrated_svm(y_train):
+            svm = runtime["CalibratedClassifierCV"](
+                runtime["LinearSVC"](class_weight="balanced", random_state=42),
+                cv=2,
+            )
+            svm.fit(x_train, y_train)
+            backends["linear_svc_calibrated"] = svm
+
+        model = backends["logreg_ovr"]
         predicted = model.predict(x_eval)
-        probabilities = model.predict_proba(x_eval) if hasattr(model, "predict_proba") else None
+        probabilities = ensemble_probabilities(backends, x_eval, labels)
         bundle = {
             "stage": norm_stage,
             "modelKind": model_kind,
             "vectorizer": vectorizer,
             "model": model,
+            "backends": backends,
             "labels": labels,
         }
     else:
@@ -299,18 +368,26 @@ def train_sklearn_stage_model(stage: str, rows: list[dict[str, Any]], persist: b
         ])
         y_train = [str(row.get("label", "UNKNOWN")) for row in train_rows]
         classifier.fit(x_train, y_train)
+        tree = runtime["DecisionTreeClassifier"](
+            max_depth=8,
+            min_samples_leaf=2,
+            random_state=42,
+            class_weight="balanced",
+        )
+        tree.fit(x_train, y_train)
         x_eval = dict_vectorizer.transform([
             flatten_training_features(str(row.get("text", "")), row.get("context", {}) if isinstance(row.get("context"), dict) else {})
             for row in eval_rows
         ])
         y_eval = [str(row.get("label", "UNKNOWN")) for row in eval_rows]
         predicted = classifier.predict(x_eval)
-        probabilities = classifier.predict_proba(x_eval) if hasattr(classifier, "predict_proba") else None
+        probabilities = ensemble_probabilities({"random_forest": classifier, "decision_tree": tree}, x_eval, labels)
         bundle = {
             "stage": norm_stage,
             "modelKind": model_kind,
             "dictVectorizer": dict_vectorizer,
             "model": classifier,
+            "backends": {"random_forest": classifier, "decision_tree": tree},
             "labels": labels,
         }
 
@@ -393,22 +470,16 @@ def predict_with_trained_stage(stage: str, text: str, features: dict[str, Any]) 
         return None
     model = bundle["model"]
     labels = list(bundle.get("labels", []))
-    if bundle.get("modelKind") == "TEXT_LOGREG":
+    if str(bundle.get("modelKind", "")).startswith("TEXT"):
         vectorizer = bundle["vectorizer"]
         matrix = vectorizer.transform([text or ""])
-        if hasattr(model, "predict_proba"):
-            probs = model.predict_proba(matrix)[0]
-        else:
-            predicted = model.predict(matrix)[0]
-            probs = [1.0 if label == predicted else 0.0 for label in labels]
+        rows = ensemble_probabilities(bundle.get("backends", {"model": model}), matrix, labels)
+        probs = rows[0] if rows else probabilities_for_model(model, matrix, labels)[0]
     else:
         dict_vectorizer = bundle["dictVectorizer"]
         matrix = dict_vectorizer.transform([flatten_training_features(text or "", features)])
-        if hasattr(model, "predict_proba"):
-            probs = model.predict_proba(matrix)[0]
-        else:
-            predicted = model.predict(matrix)[0]
-            probs = [1.0 if label == predicted else 0.0 for label in labels]
+        rows = ensemble_probabilities(bundle.get("backends", {"model": model}), matrix, labels)
+        probs = rows[0] if rows else probabilities_for_model(model, matrix, labels)[0]
     normalized = []
     for index, label in enumerate(labels):
         prob = float(probs[index]) if index < len(probs) else 0.0
@@ -565,7 +636,11 @@ def classify_one(item: TextItem) -> dict[str, Any]:
         "topLabel": top["label"],
         "confidence": top["confidence"],
         "labels": labels,
-        "metadata": {"classifierKind": "BOOTSTRAP_BERT_CLASSIFIER"},
+        "metadata": {
+            "classifierKind": "REGEX_BOOTSTRAP_CLASSIFIER",
+            "trained": False,
+            "confidenceKind": "FIXED_RULE_SCORE",
+        },
     }
 
 
@@ -584,6 +659,35 @@ def top_prediction(options: list[dict[str, Any]]) -> tuple[str, float]:
     return str(best["label"]), float(best["probability"])
 
 
+def uncertainty_summary(predictions: dict[str, list[dict[str, Any]]], stage_scores: list[float]) -> dict[str, Any]:
+    margins: list[float] = []
+    entropies: list[float] = []
+    low_margin_stages: list[str] = []
+    for stage, options in predictions.items():
+        sorted_options = sorted(options, key=lambda value: float(value.get("probability", 0.0)), reverse=True)
+        if len(sorted_options) < 2:
+            margin = float(sorted_options[0].get("probability", 0.0)) if sorted_options else 0.0
+        else:
+            margin = float(sorted_options[0].get("probability", 0.0)) - float(sorted_options[1].get("probability", 0.0))
+        entropy = -sum(float(option.get("probability", 0.0)) * float(np.log(max(float(option.get("probability", 0.0)), 0.0001))) for option in sorted_options)
+        margins.append(round(margin, 4))
+        entropies.append(round(entropy, 4))
+        if margin < 0.12:
+            low_margin_stages.append(stage)
+    score_std = float(np.std(stage_scores)) if stage_scores else 0.0
+    average_margin = sum(margins) / max(1, len(margins))
+    model_agreement = round(max(0.0, min(1.0, average_margin * (1.0 - min(score_std, 0.5)))), 4)
+    return {
+        "averageMargin": round(average_margin, 4),
+        "maxEntropy": round(max(entropies) if entropies else 0.0, 4),
+        "scoreStdDev": round(score_std, 4),
+        "lowMarginStages": low_margin_stages,
+        "highDisagreement": score_std >= 0.18,
+        "abstainRecommended": bool(low_margin_stages) or score_std >= 0.22,
+        "modelAgreement": model_agreement,
+    }
+
+
 def normalize_probs(options: list[tuple[str, float]]) -> list[dict[str, Any]]:
     total = sum(max(score, 0.0001) for _, score in options)
     return [
@@ -599,9 +703,12 @@ def normalize_probs(options: list[tuple[str, float]]) -> list[dict[str, Any]]:
 def infer_meaning(text: str, features: dict[str, Any]) -> list[dict[str, Any]]:
     lower = text.lower()
     structural = features.get("structural", {}) if isinstance(features.get("structural"), dict) else {}
+    content_class = str(features.get("contentClass") or "")
     options: list[tuple[str, float]] = [("RESOURCE_REFERENCE", 0.18), ("CHATTER", 0.08)]
     if "?" in text or structural.get("isQuestion"):
         options.append(("QUESTION", 0.82))
+    if structural.get("isAnswerLike") or re.search(r"(checklist|guide|rules|recommendation|how to|практич|инструкц|чеклист)", lower):
+        options.append(("PRACTICAL_INSTRUCTION", 0.84))
     if structural.get("hasError") or re.search(r"(error|exception|traceback|failed)", lower):
         options.append(("TROUBLESHOOTING", 0.86))
     if structural.get("hasCode") or re.search(r"(curl|docker|mvn|python|java|json|yaml)", lower):
@@ -612,11 +719,36 @@ def infer_meaning(text: str, features: dict[str, Any]) -> list[dict[str, Any]]:
         options.append(("PROMO_AD", 0.84))
     if re.search(r"(bypass|jailbreak|hack|circumvent)", lower):
         options.append(("ACCESS_CIRCUMVENTION", 0.88))
+    if content_class in {"NEWS_UPDATE", "RESOURCE_REFERENCE", "LINK_ONLY"}:
+        options.append(("RESOURCE_REFERENCE", 0.88))
+    if content_class in {"PRACTICAL_GUIDE", "QNA"}:
+        options.append(("PRACTICAL_INSTRUCTION", 0.86))
+    return normalize_probs(options)
+
+
+def infer_preprocessing(text: str, features: dict[str, Any]) -> list[dict[str, Any]]:
+    lower = text.lower()
+    structural = features.get("structural", {}) if isinstance(features.get("structural"), dict) else {}
+    options: list[tuple[str, float]] = [("CLEAN", 0.72), ("LOW_SIGNAL", 0.12)]
+    if len(text.strip()) < 18:
+        options.append(("LOW_SIGNAL", 0.86))
+    if structural.get("isNoiseLike") or re.search(r"(lol|ахах|спасибо|\+1|окей)$", lower):
+        options.append(("NOISE", 0.82))
+    if re.search(r"(jailbreak|bypass|circumvent|exploit|взлом|обход|слив|кардинг)", lower):
+        options.append(("RISK_SENSITIVE", 0.9))
+    if structural.get("riskSensitive"):
+        options.append(("RISK_SENSITIVE", 0.9))
+    if re.search(r"(promo|discount|referral|invite|sponsored|реклама|скидка)", lower):
+        options.append(("PROMO_OR_AD", 0.74))
+    if structural.get("linkCount", 0) > 3:
+        options.append(("LINK_HEAVY", 0.7))
     return normalize_probs(options)
 
 
 def infer_value_level(text: str, features: dict[str, Any], meaning_top: str) -> list[dict[str, Any]]:
     structural = features.get("structural", {}) if isinstance(features.get("structural"), dict) else {}
+    candidate_route = str(features.get("candidateRoute") or "")
+    reject_reason = str(features.get("rejectReason") or "")
     text_length = len(text or "")
     options: list[tuple[str, float]] = [
         ("NOT_GARBAGE_NO_MATERIAL", 0.32),
@@ -635,12 +767,17 @@ def infer_value_level(text: str, features: dict[str, Any], meaning_top: str) -> 
         options.append(("NOT_GARBAGE_NO_MATERIAL", 0.74))
     if structural.get("linkCount", 0) > 0 and text_length < 80:
         options.append(("AWARENESS_SIGNAL", 0.66))
+    if candidate_route == "SINGLE_MESSAGE" and not reject_reason:
+        options.append(("MATERIAL_CANDIDATE", 0.84))
+    if reject_reason:
+        options.append(("NOT_GARBAGE_NO_MATERIAL", 0.82))
     return normalize_probs(options)
 
 
 def infer_usefulness_kind(text: str, features: dict[str, Any], meaning_top: str) -> list[dict[str, Any]]:
     lower = text.lower()
     structural = features.get("structural", {}) if isinstance(features.get("structural"), dict) else {}
+    content_class = str(features.get("contentClass") or "")
     options: list[tuple[str, float]] = [("CONTEXTUAL", 0.15), ("AWARENESS", 0.12)]
     if meaning_top == "PRACTICAL_INSTRUCTION":
         options.append(("ACTIONABLE", 0.82))
@@ -652,6 +789,10 @@ def infer_usefulness_kind(text: str, features: dict[str, Any], meaning_top: str)
         options.append(("WARNING", 0.8))
     if structural.get("linkCount", 0) > 0:
         options.append(("REFERENCE", 0.76))
+    if content_class in {"RESOURCE_REFERENCE", "NEWS_UPDATE", "LINK_ONLY"}:
+        options.append(("REFERENCE", 0.86))
+    if content_class in {"PRACTICAL_GUIDE", "QNA"}:
+        options.append(("ACTIONABLE", 0.82))
     if re.search(r"(compare|benchmark|vs\\.|versus)", lower):
         options.append(("ANALYTICAL", 0.7))
     return normalize_probs(options)
@@ -659,20 +800,32 @@ def infer_usefulness_kind(text: str, features: dict[str, Any], meaning_top: str)
 
 def infer_evidence(text: str, features: dict[str, Any], value_top: str) -> list[dict[str, Any]]:
     structural = features.get("structural", {}) if isinstance(features.get("structural"), dict) else {}
+    reject_reason = str(features.get("rejectReason") or "")
+    target_type = str(features.get("targetType") or "")
+    source_message_count = int(features.get("sourceMessageCount") or 0)
     options: list[tuple[str, float]] = [("INSUFFICIENT_CONTEXT", 0.24), ("NEEDS_DISCUSSION_CONTEXT", 0.18)]
+    if reject_reason == "NEEDS_LINK_ENRICHMENT":
+        options.append(("NEEDS_LINK_ENRICHMENT", 0.9))
     if structural.get("linkCount", 0) > 0 and len(text or "") < 120:
         options.append(("NEEDS_LINK_ENRICHMENT", 0.84))
     if structural.get("hasCode") and len(text or "") > 120:
         options.append(("ENOUGH_SINGLE_MESSAGE", 0.76))
     if value_top == "MATERIAL_CANDIDATE":
         options.append(("ENOUGH_SINGLE_MESSAGE", 0.64))
+    if target_type == "DISCUSSION_SEGMENT" or source_message_count > 1:
+        options.append(("NEEDS_DISCUSSION_CONTEXT", 0.82))
     if re.search(r"(claim|announced|reportedly|rumor)", text.lower()):
         options.append(("NEEDS_EXTERNAL_VERIFICATION", 0.72))
     return normalize_probs(options)
 
 
-def infer_assembly(value_top: str, evidence_top: str) -> list[dict[str, Any]]:
+def infer_assembly(value_top: str, evidence_top: str, features: dict[str, Any] | None = None) -> list[dict[str, Any]]:
+    features = features or {}
+    target_type = str(features.get("targetType") or "")
+    source_message_count = int(features.get("sourceMessageCount") or 0)
     options: list[tuple[str, float]] = [("REJECT", 0.16)]
+    if target_type == "DISCUSSION_SEGMENT" or source_message_count > 1:
+        options.append(("DISCUSSION_SEGMENT", 0.88))
     if evidence_top == "ENOUGH_SINGLE_MESSAGE" and value_top == "MATERIAL_CANDIDATE":
         options.append(("SINGLE_MESSAGE", 0.82))
     if evidence_top == "NEEDS_DISCUSSION_CONTEXT":
@@ -699,6 +852,21 @@ def infer_route(meaning_top: str, usefulness_top: str, value_top: str) -> list[d
     return normalize_probs(options)
 
 
+def infer_route_with_features(meaning_top: str, usefulness_top: str, value_top: str, features: dict[str, Any]) -> list[dict[str, Any]]:
+    options = [(option["label"], option["probability"]) for option in infer_route(meaning_top, usefulness_top, value_top)]
+    proposed = str(features.get("proposedMaterialType") or "")
+    reject_reason = str(features.get("rejectReason") or "")
+    target_type = str(features.get("targetType") or "")
+    source_message_count = int(features.get("sourceMessageCount") or 0)
+    if usefulness_top == "DIAGNOSTIC" and value_top == "MATERIAL_CANDIDATE" and (target_type == "DISCUSSION_SEGMENT" or source_message_count > 1):
+        options.append(("GUIDE", 0.82))
+    if proposed and not reject_reason:
+        options.append((proposed, 0.88))
+    if reject_reason:
+        options.append(("NO_MATERIAL", 0.86))
+    return normalize_probs(options)
+
+
 def infer_ui_reason(value_top: str, evidence_top: str, route_top: str, score: float) -> list[dict[str, Any]]:
     options: list[tuple[str, float]] = [("LOW_CONFIDENCE_REVIEW", max(0.2, 1.0 - score))]
     if evidence_top == "NEEDS_LINK_ENRICHMENT":
@@ -712,8 +880,41 @@ def infer_ui_reason(value_top: str, evidence_top: str, route_top: str, score: fl
     return normalize_probs(options)
 
 
+def infer_dedupe_cluster(text: str, features: dict[str, Any], assembly_top: str) -> list[dict[str, Any]]:
+    structural = features.get("structural", {}) if isinstance(features.get("structural"), dict) else {}
+    options: list[tuple[str, float]] = [("UNIQUE", 0.68), ("TOPIC_SIGNAL", 0.18)]
+    if bool(features.get("duplicate")) or bool(structural.get("duplicate")):
+        options.append(("DUPLICATE", 0.9))
+    if bool(features.get("nearDuplicate")) or bool(structural.get("nearDuplicate")):
+        options.append(("NEAR_DUPLICATE", 0.86))
+    if features.get("sourceMessageCount", 0) and int(features.get("sourceMessageCount", 0)) > 1:
+        options.append(("CLUSTER_MEMBER", 0.72))
+    if assembly_top in {"DISCUSSION_SEGMENT", "CLUSTER"}:
+        options.append(("CLUSTER_MEMBER", 0.76))
+    if re.search(r"\b(repost|duplicate|повтор|дубль)\b", text.lower()):
+        options.append(("NEAR_DUPLICATE", 0.78))
+    return normalize_probs(options)
+
+
+def infer_llm_judge_gate(preprocessing_top: str, value_top: str, evidence_top: str, route_top: str, dedupe_top: str, score: float) -> list[dict[str, Any]]:
+    options: list[tuple[str, float]] = [("APPROVE_FOR_JUDGE", 0.58), ("ABSTAIN_LOW_CONFIDENCE", 0.18)]
+    if preprocessing_top in {"RISK_SENSITIVE", "NOISE"}:
+        options.append(("REJECT_BEFORE_JUDGE", 0.9))
+    if dedupe_top in {"DUPLICATE", "NEAR_DUPLICATE"}:
+        options.append(("REJECT_BEFORE_JUDGE", 0.86))
+    if evidence_top in {"NEEDS_LINK_ENRICHMENT", "INSUFFICIENT_CONTEXT"}:
+        options.append(("HOLD_FOR_CONTEXT", 0.76))
+    if value_top != "MATERIAL_CANDIDATE" or route_top == "NO_MATERIAL":
+        options.append(("ABSTAIN_LOW_CONFIDENCE", max(0.62, 1.0 - score)))
+    if route_top != "NO_MATERIAL" and value_top == "MATERIAL_CANDIDATE" and score >= 0.55:
+        options.append(("APPROVE_FOR_JUDGE", 0.84))
+    return normalize_probs(options)
+
+
 def infer_item(item: ClassicalMlItem, target_type: str) -> dict[str, Any]:
     started = time.perf_counter()
+    preprocessing = predict_with_trained_stage("preprocessing", item.text, item.features) or infer_preprocessing(item.text, item.features)
+    preprocessing_top, preprocessing_score = top_prediction(preprocessing)
     meaning = predict_with_trained_stage("meaning", item.text, item.features) or infer_meaning(item.text, item.features)
     meaning_top, meaning_score = top_prediction(meaning)
     value_level = predict_with_trained_stage("value_level", item.text, item.features) or infer_value_level(item.text, item.features, meaning_top)
@@ -722,21 +923,44 @@ def infer_item(item: ClassicalMlItem, target_type: str) -> dict[str, Any]:
     usefulness_top, usefulness_score = top_prediction(usefulness)
     evidence = predict_with_trained_stage("evidence_sufficiency", item.text, item.features) or infer_evidence(item.text, item.features, value_top)
     evidence_top, evidence_score = top_prediction(evidence)
-    assembly = infer_assembly(value_top, evidence_top)
+    assembly = infer_assembly(value_top, evidence_top, item.features)
     assembly_top, assembly_score = top_prediction(assembly)
-    route = predict_with_trained_stage("material_route", item.text, item.features) or infer_route(meaning_top, usefulness_top, value_top)
+    route = predict_with_trained_stage("material_route", item.text, item.features) or infer_route_with_features(meaning_top, usefulness_top, value_top, item.features)
     route_top, route_score = top_prediction(route)
     ui_reason = infer_ui_reason(value_top, evidence_top, route_top, max(value_score, route_score))
     ui_reason_top, ui_reason_score = top_prediction(ui_reason)
+    dedupe_cluster = predict_with_trained_stage("dedupe_cluster", item.text, item.features) or infer_dedupe_cluster(item.text, item.features, assembly_top)
+    dedupe_top, dedupe_score = top_prediction(dedupe_cluster)
+    gate_score = max(value_score, evidence_score, route_score)
+    llm_judge = predict_with_trained_stage("llm_judge", item.text, item.features) or infer_llm_judge_gate(
+        preprocessing_top,
+        value_top,
+        evidence_top,
+        route_top,
+        dedupe_top,
+        gate_score,
+    )
+    llm_judge_top, llm_judge_score = top_prediction(llm_judge)
 
     aggregate_score = round(
-        (meaning_score + value_score + usefulness_score + evidence_score + assembly_score + route_score + ui_reason_score) / 7.0,
+        (
+            preprocessing_score
+            + meaning_score
+            + value_score
+            + usefulness_score
+            + evidence_score
+            + assembly_score
+            + route_score
+            + ui_reason_score
+            + dedupe_score
+            + llm_judge_score
+        ) / 10.0,
         4,
     )
-    disagreement_rate = round(float(np.std([meaning_score, value_score, usefulness_score, evidence_score, assembly_score, route_score])), 4)
+    disagreement_rate = round(float(np.std([preprocessing_score, meaning_score, value_score, usefulness_score, evidence_score, assembly_score, route_score, dedupe_score, llm_judge_score])), 4)
     abstained = aggregate_score < 0.4
-    recommended = "TRACE_ONLY" if abstained else ("ROUTE_TO_JUDGE" if route_top != "NO_MATERIAL" else "ACCUMULATE")
     predictions = {
+        "preprocessing": preprocessing,
         "meaning": meaning,
         "valueLevel": value_level,
         "usefulnessKind": usefulness,
@@ -744,12 +968,19 @@ def infer_item(item: ClassicalMlItem, target_type: str) -> dict[str, Any]:
         "assemblyStrategy": assembly,
         "materialRoute": route,
         "uiReason": ui_reason,
+        "dedupeCluster": dedupe_cluster,
+        "llmJudge": llm_judge,
     }
+    stage_scores = [preprocessing_score, meaning_score, value_score, usefulness_score, evidence_score, assembly_score, route_score, ui_reason_score, dedupe_score, llm_judge_score]
+    uncertainty = uncertainty_summary(predictions, stage_scores)
+    uncertainty_abstain = bool(uncertainty["abstainRecommended"])
+    recommended = "TRACE_ONLY" if abstained or uncertainty_abstain else ("ROUTE_TO_JUDGE" if route_top != "NO_MATERIAL" and llm_judge_top == "APPROVE_FOR_JUDGE" else "ACCUMULATE")
     return {
         "stage": f"{target_type}_PIPELINE",
         "targetId": item.targetId,
         "predictions": predictions,
         "recommendedDecision": {
+            "preprocessing": preprocessing_top,
             "meaning": meaning_top,
             "valueLevel": value_top,
             "usefulnessKind": usefulness_top,
@@ -757,8 +988,11 @@ def infer_item(item: ClassicalMlItem, target_type: str) -> dict[str, Any]:
             "assemblyStrategy": assembly_top,
             "materialRoute": route_top,
             "uiReason": ui_reason_top,
+            "dedupeCluster": dedupe_top,
+            "llmJudge": llm_judge_top,
         },
         "modelResults": {
+            "preprocessing": preprocessing,
             "meaning": meaning,
             "valueLevel": value_level,
             "usefulnessKind": usefulness,
@@ -766,8 +1000,11 @@ def infer_item(item: ClassicalMlItem, target_type: str) -> dict[str, Any]:
             "assemblyStrategy": assembly,
             "materialRoute": route,
             "uiReason": ui_reason,
+            "dedupeCluster": dedupe_cluster,
+            "llmJudge": llm_judge,
         },
         "modelVotes": {
+            "preprocessingTop": preprocessing_top,
             "meaningTop": meaning_top,
             "valueTop": value_top,
             "usefulnessTop": usefulness_top,
@@ -775,8 +1012,11 @@ def infer_item(item: ClassicalMlItem, target_type: str) -> dict[str, Any]:
             "assemblyTop": assembly_top,
             "routeTop": route_top,
             "uiReasonTop": ui_reason_top,
+            "dedupeClusterTop": dedupe_top,
+            "llmJudgeTop": llm_judge_top,
         },
         "calibratedProbabilities": {
+            "preprocessing": preprocessing_score,
             "meaning": meaning_score,
             "valueLevel": value_score,
             "usefulnessKind": usefulness_score,
@@ -784,10 +1024,12 @@ def infer_item(item: ClassicalMlItem, target_type: str) -> dict[str, Any]:
             "assemblyStrategy": assembly_score,
             "materialRoute": route_score,
             "uiReason": ui_reason_score,
+            "dedupeCluster": dedupe_score,
+            "llmJudge": llm_judge_score,
         },
         "confidenceBand": confidence_band(aggregate_score),
-        "abstained": abstained,
-        "abstentionReason": "LOW_AGGREGATE_CONFIDENCE" if abstained else None,
+        "abstained": abstained or uncertainty_abstain,
+        "abstentionReason": "LOW_AGGREGATE_CONFIDENCE" if abstained else ("MODEL_UNCERTAINTY" if uncertainty_abstain else None),
         "recommendedAction": recommended,
         "modelVersion": "classical-ml-bootstrap-v1",
         "featureVersion": str(item.features.get("featureVersion", "classical-ml-v1")),
@@ -795,11 +1037,16 @@ def infer_item(item: ClassicalMlItem, target_type: str) -> dict[str, Any]:
         "inferenceLatencyMs": int((time.perf_counter() - started) * 1000),
         "fallbackUsed": False,
         "disagreementRate": disagreement_rate,
+        "uncertainty": uncertainty,
+        "modelAgreement": uncertainty["modelAgreement"],
         "reasons": [
             f"targetType={target_type}",
+            f"preprocessing={preprocessing_top}",
             f"meaning={meaning_top}",
             f"valueLevel={value_top}",
             f"route={route_top}",
+            f"dedupeCluster={dedupe_top}",
+            f"llmJudge={llm_judge_top}",
         ],
     }
 
@@ -813,7 +1060,9 @@ def health() -> dict[str, Any]:
         "classifier": {
             "name": CLASSIFIER_NAME,
             "status": "OK",
-            "kind": "BOOTSTRAP_BERT_CLASSIFIER",
+            "kind": "REGEX_BOOTSTRAP_CLASSIFIER",
+            "trained": False,
+            "confidenceKind": "FIXED_RULE_SCORE",
             "labels": LABELS,
         },
         "embeddings": {
@@ -1020,17 +1269,29 @@ def classical_ml_evaluate(stage: str, request: ClassicalMlTrainRequest) -> dict[
 @app.get("/classical-ml/models")
 def classical_ml_models() -> dict[str, Any]:
     registry = load_registry()
+    trained_registry = registry.get("models", {})
+    heuristic_models = {
+        "preprocessing": ["heuristic-fallback"],
+        "meaning": ["heuristic-fallback"],
+        "valueLevel": ["heuristic-fallback"],
+        "usefulnessKind": ["heuristic-fallback"],
+        "evidenceSufficiency": ["heuristic-fallback"],
+        "assemblyStrategy": ["heuristic-fallback"],
+        "materialRoute": ["heuristic-fallback"],
+        "uiReason": ["heuristic-fallback"],
+        "dedupeCluster": ["heuristic-fallback"],
+        "llmJudge": ["heuristic-fallback"],
+    }
+    trained_stages = sorted(trained_registry.keys())
+    for stage, info in trained_registry.items():
+        model_kind = str(info.get("modelKind", "trained-model")) if isinstance(info, dict) else "trained-model"
+        heuristic_models[stage] = [model_kind]
     return {
-        "status": "SUCCESS",
-        "models": {
-            "meaning": ["logreg-ovr", "linear-svm-calibrated", "multinomial-nb"],
-            "valueLevel": ["logreg", "random-forest", "xgboost-placeholder"],
-            "usefulnessKind": ["logreg", "linear-svm", "random-forest"],
-            "evidenceSufficiency": ["rules-first", "random-forest", "knn-structural"],
-            "assemblyStrategy": ["hybrid-engine"],
-            "materialRoute": ["logreg", "linear-svm", "xgboost-placeholder"],
-        },
-        "trainedRegistry": registry.get("models", {}),
+        "status": "TRAINED" if trained_stages else "HEURISTIC_ONLY",
+        "models": heuristic_models,
+        "trainedStages": trained_stages,
+        "trainedRegistry": trained_registry,
+        "fallbackMode": "HEURISTIC_RULES",
         "modelVersion": "classical-ml-bootstrap-v1",
         "featureVersion": "classical-ml-v1",
     }
@@ -1057,12 +1318,8 @@ def classical_ml_metrics(version: str) -> dict[str, Any]:
             },
         }
     return {
-        "status": "SUCCESS",
+        "status": "NOT_EVALUATED",
         "version": version,
-        "reports": {
-            "meaning": {"macroF1": 0.58, "abstainRate": 0.06},
-            "valueLevel": {"macroF1": 0.55, "falsePositiveMaterialRate": 0.08},
-            "usefulnessKind": {"macroF1": 0.52, "rareClassRecall": 0.33},
-            "evidenceSufficiency": {"macroF1": 0.49, "needsContextRecall": 0.62},
-        },
+        "reports": {},
+        "reason": "No persisted evaluation metrics exist for this version.",
     }
