@@ -24,6 +24,10 @@ const MaterialsPage = lazy(() =>
 );
 const TopicSignalsPage = lazy(() =>
   import("@/pages/materials/TopicSignalsPage").then((module) => ({ default: module.TopicSignalsPage }))
+)
+
+const SignalDetailPage = lazy(() =>
+  import("@/pages/materials/SignalDetailPage").then((module) => ({ default: module.SignalDetailPage }))
 );
 const GuideDetailPage = lazy(() =>
   import("@/pages/guides/GuideDetailPage").then((module) => ({ default: module.GuideDetailPage }))
@@ -128,6 +132,7 @@ export function AppRouter() {
             <Route path="/pipeline" element={<PipelinePage />} />
             <Route path="/materials" element={<MaterialsPage />} />
             <Route path="/materials/topics/:slug" element={<TopicSignalsPage />} />
+            <Route path="/materials/signals/:id" element={<SignalDetailPage />} />
             <Route path="/materials/:guideId" element={<GuideDetailPage />} />
             <Route path="/guides" element={<Navigate to="/materials?contentType=GUIDE" replace />} />
             <Route path="/guides/:guideId" element={<GuideDetailPage />} />

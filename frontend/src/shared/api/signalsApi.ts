@@ -1,5 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
-import { getJsonAuth } from "./http";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { getJsonAuth, postJsonAuth } from "./http";
 
 export interface KnowledgeTopic {
   id: number;
@@ -65,4 +65,40 @@ export function useKnowledgeTopicQuery(slug: string | undefined, tab = "signals"
     enabled: Boolean(slug),
     staleTime: 20_000,
   });
+}
+
+export interface SignalSource {
+  rawId: number | null;
+  datasetMessageId: number | null;
+  text: string | null;
+  senderId: number | null;
+  senderName: string | null;
+  chatTitle: string | null;
+  messageDate: string | null;
+  appMessageUrl: string | null;
+}
+
+export function useSignalSourcesQuery(signalId: number | undefined) {
+  return useQuery({
+    queryKey: ["signal-sources", signalId],
+    queryFn: () => getJsonAuth<SignalSource[]>(`/api/v1/signals/${signalId}/sources`),
+    enabled: signalId != null,
+    staleTime: 15_000,
+  });
+}
+
+export async function promoteSignalToMaterial(signalId: number): Promise<{ materialId: number; signalId: number; status: string }> {
+  return postJsonAuth<{ materialId: number; signalId: number; status: string }>(`/api/v1/signals/${signalId}/promote`, {});
+}
+
+export function usePromoteSignal() {
+  const qc = useQueryClient();
+  return {
+    async promote(signalId: number) {
+      const res = await promoteSignalToMaterial(signalId);
+      await qc.invalidateQueries({ queryKey: ["knowledge-topic"] });
+      await qc.invalidateQueries({ queryKey: ["knowledge-topics"] });
+      return res;
+    },
+  };
 }

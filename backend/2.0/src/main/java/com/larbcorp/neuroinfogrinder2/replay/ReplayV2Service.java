@@ -763,8 +763,8 @@ public class ReplayV2Service {
             double judgeConfidence = lightweightOverride ? Math.max(gateScore, request.minJudgeConfidenceForGenerationOrDefault()) : judge.responseJson().path("confidence").asDouble();
             if (judgeConfidence < request.minJudgeConfidenceForGenerationOrDefault()) { clusterLowConf++; continue; }
             var generation = provider.callJson(runId, "KNOWLEDGE_GENERATION", prompt(c, intel, "generation", routeDecision), budget, true);
-            if (generation.success() && generationUsable(generation.responseJson())) { long id = knowledge(runId, c, generation.responseJson(), judgeConfidence); generated++; }
-            else if (lightweightOverride) { long id = knowledge(runId, c, lightweightMaterial(c, intel, judge.responseJson()), judgeConfidence); generated++; }
+            if (generation.success() && generationUsable(generation.responseJson())) { long id = knowledge(runId, c, generation.responseJson(), judgeConfidence, budget); generated++; }
+            else if (lightweightOverride) { long id = knowledge(runId, c, lightweightMaterial(c, intel, judge.responseJson()), judgeConfidence, budget); generated++; }
             else if ("BUDGET_BLOCKED".equals(generation.status())) { clusterBudget = Math.max(0, clusters.size() - clusterSent); break; }
         }
         for (SingleMessageCandidate sc : singleCandidates) {
@@ -799,11 +799,11 @@ public class ReplayV2Service {
             if (judgeConfidence < request.minJudgeConfidenceForGenerationOrDefault()) { singleLowConf++; continue; }
             var generation = provider.callJson(runId, "KNOWLEDGE_GENERATION", promptSingle(sc, match, intel, "generation", routeDecision), budget, true);
             if (generation.success() && generationUsable(generation.responseJson())) {
-                long id = knowledgeSingle(runId, sc, match, generation.responseJson(), judgeConfidence);
+                long id = knowledgeSingle(runId, sc, match, generation.responseJson(), judgeConfidence, budget);
                 decisionCoreLedger(decisionCoreMessageId(runId, sc.messageId()), runId, "message:" + sc.messageId(), "single:" + sc.messageId(), DecisionCoreEnums.CandidateType.SINGLE_MESSAGE, DecisionCoreEnums.LedgerEventType.WINNER_SELECTED, true, List.of(), null, generation.providerCallId(), BigDecimal.valueOf(sc.score()), DecisionCoreEnums.FinalRoute.ROUTE_TO_LLM_JUDGE, DecisionCoreEnums.FinalRoute.MATERIAL_DRAFT_ALLOWED, sc.requiredArtifactType(), sc.requiredArtifactType(), List.of("DRAFT_CREATED_BY_LEGACY_SINGLE_PATH"), List.of(), List.of(), object("knowledgeItemId", id));
                 generated++;
             } else if (lightweightOverride || approvedJudgeDecision(judge.responseJson())) {
-                long id = knowledgeSingle(runId, sc, match, lightweightMaterial(sc, match, judge.responseJson()), judgeConfidence);
+                long id = knowledgeSingle(runId, sc, match, lightweightMaterial(sc, match, judge.responseJson()), judgeConfidence, budget);
                 decisionCoreLedger(decisionCoreMessageId(runId, sc.messageId()), runId, "message:" + sc.messageId(), "single:" + sc.messageId(), DecisionCoreEnums.CandidateType.SINGLE_MESSAGE, DecisionCoreEnums.LedgerEventType.FALLBACK_DRAFT_ALLOWED, true, List.of(), null, null, BigDecimal.valueOf(sc.score()), DecisionCoreEnums.FinalRoute.ROUTE_TO_LLM_JUDGE, DecisionCoreEnums.FinalRoute.DRAFT_FALLBACK_NEEDS_REVIEW, sc.requiredArtifactType(), sc.requiredArtifactType(), List.of("LEGACY_LIGHTWEIGHT_FALLBACK_CREATED", "REVIEW_REQUIRED_IN_DECISION_CORE"), List.of(), List.of(), object("knowledgeItemId", id));
                 generated++;
             }
@@ -834,7 +834,7 @@ public class ReplayV2Service {
             markDiscussionStage(runId, dc, "DISCUSSION_SEGMENT_DEDUPE", "PASSED", object("duplicate", false), null, null);
             var generation = provider.callJson(runId, "KNOWLEDGE_GENERATION", promptDiscussion(dc, "generation", judge.responseJson(), routeDecision), budget, true);
             if (generation.success() && generationUsable(generation.responseJson())) {
-                long id = knowledgeDiscussion(runId, dc, generation.responseJson(), judge.responseJson().path("confidence").asDouble());
+                long id = knowledgeDiscussion(runId, dc, generation.responseJson(), judge.responseJson().path("confidence").asDouble(), budget);
                 decisionCoreLedger(decisionCoreDiscussionId(runId, dc.segmentId()), runId, "discussion:" + dc.segmentId(), "discussion:" + dc.segmentId(), DecisionCoreEnums.CandidateType.DISCUSSION_SEGMENT, DecisionCoreEnums.LedgerEventType.WINNER_SELECTED, true, List.of(), null, generation.providerCallId(), BigDecimal.valueOf(dc.score()), DecisionCoreEnums.FinalRoute.ROUTE_TO_LLM_JUDGE, DecisionCoreEnums.FinalRoute.MATERIAL_DRAFT_ALLOWED, dc.proposedMaterialType(), dc.proposedMaterialType(), List.of("DISCUSSION_DRAFT_CREATED_BY_LEGACY_PATH"), List.of(), List.of(), object("knowledgeItemId", id));
                 markDiscussionStage(runId, dc, "MATERIAL_CREATED", "COMPLETED", object("knowledgeItemId", id), generation.providerCallId(), null);
                 generated++;
@@ -2500,7 +2500,7 @@ public class ReplayV2Service {
     private ArrayNode labels(JsonNode f, String decision) { ArrayNode a = json.createArrayNode(); if (f.path("hasError").asBoolean()) a.add("ERROR_LOG_WITH_FIX"); if (f.path("hasCode").asBoolean()) a.add("API_OR_CONFIG_SNIPPET"); if (f.path("hasPriceOrAccess").asBoolean()) a.add("PRICING_OR_ACCESS_SIGNAL"); if (f.path("linkCount").asInt() > 0) a.add("RESOURCE_LINK_COLLECTION"); if (f.path("isQuestion").asBoolean()) a.add("QUESTION_WITH_VALUABLE_ANSWER"); if (a.isEmpty() && decision.equals("SUPPRESS")) a.add("NOISE_OR_CHAT"); return a; }
     private String prompt(Cluster c, List<Intel> intel, String type) { return prompt(c, intel, type, null); }
     private String prompt(Cluster c, List<Intel> intel, String type, RouteIntelligenceDecision routeDecision) { ArrayNode evidence = json.createArrayNode(); Set<Long> ids = new HashSet<>(c.members()); for (Intel i : intel) if (ids.contains(i.message().id())) evidence.addObject().put("datasetMessageId", i.message().id()).put("text", i.normalizedText()); return "Return strict JSON. Type=" + type + ". Required artifactType=" + c.artifactType() + ". For judge use {decision,artifactType,title,summary,evidenceIds,confidence,safetyNotes}. For generation use {artifactType,title,summary,body,sources}; artifactType MUST equal required artifactType. " + generationStyleInstructions() + " Cluster=" + c.title() + routePromptHint(routeDecision) + " evidence=" + write(evidence); }
-    private long knowledge(long runId, Cluster c, JsonNode g, double confidence) { JsonNode material = materialWithRequiredArtifactType(g, c.artifactType()); long id = JdbcIds.insertReturningId(jdbc, "INSERT INTO knowledge_items (run_id, source_cluster_type, source_cluster_id, artifact_type, vertical, title, summary, body_json, knowledge_value_score, status) VALUES (?, 'MACRO', ?, ?, 'telegram-intelligence', ?, ?, ?::jsonb, ?, 'DRAFT')", runId, c.id(), material.path("artifactType").asText("NOTE"), material.path("title").asText(c.title()), material.path("summary").asText(""), write(material), confidence); for (Long member : materialSourceMembers(runId, c).stream().limit(5).toList()) jdbc.update("INSERT INTO knowledge_item_sources (knowledge_item_id, dataset_message_id, source_role, quote, confidence) VALUES (?, ?, 'EVIDENCE', '', ?)", id, member, confidence); assignKnowledgeItemTopics(id, material.path("artifactType").asText(""), c.members(), confidence); return id; }
+    private long knowledge(long runId, Cluster c, JsonNode g, double confidence, ModelhubProviderGateway.ReplayBudget budget) { JsonNode material = materialWithRequiredArtifactType(g, c.artifactType()); long id = JdbcIds.insertReturningId(jdbc, "INSERT INTO knowledge_items (run_id, source_cluster_type, source_cluster_id, artifact_type, vertical, title, summary, body_json, knowledge_value_score, status) VALUES (?, 'MACRO', ?, ?, 'telegram-intelligence', ?, ?, ?::jsonb, ?, 'DRAFT')", runId, c.id(), material.path("artifactType").asText("NOTE"), material.path("title").asText(c.title()), material.path("summary").asText(""), write(material), confidence); for (Long member : materialSourceMembers(runId, c).stream().limit(5).toList()) jdbc.update("INSERT INTO knowledge_item_sources (knowledge_item_id, dataset_message_id, source_role, quote, confidence) VALUES (?, ?, 'EVIDENCE', '', ?)", id, member, confidence); assignKnowledgeItemTopics(runId, id, material.path("artifactType").asText(""), c.members(), confidence, budget); return id; }
 
     private ObjectNode lightweightMaterial(Cluster c, List<Intel> intel, JsonNode judge) {
         JsonNode payload = judgePayload(judge);
@@ -2639,27 +2639,27 @@ public class ReplayV2Service {
         }
         return body.toString();
     }
-    private long knowledgeSingle(long runId, SingleMessageCandidate sc, Intel intel, JsonNode g, double confidence) {
+    private long knowledgeSingle(long runId, SingleMessageCandidate sc, Intel intel, JsonNode g, double confidence, ModelhubProviderGateway.ReplayBudget budget) {
         JsonNode material = materialWithRequiredArtifactType(g, sc.requiredArtifactType());
         long id = JdbcIds.insertReturningId(jdbc, "INSERT INTO knowledge_items (run_id, source_cluster_type, source_cluster_id, artifact_type, vertical, title, summary, body_json, knowledge_value_score, status) VALUES (?, 'SINGLE_MESSAGE', ?, ?, 'telegram-intelligence', ?, ?, ?::jsonb, ?, 'DRAFT')", runId, sc.messageId(), material.path("artifactType").asText("NOTE"), material.path("title").asText(material.path("recommendedTitle").asText("Single message")), material.path("summary").asText(""), write(material), confidence);
         jdbc.update("INSERT INTO knowledge_item_sources (knowledge_item_id, dataset_message_id, source_role, quote, confidence) VALUES (?, ?, 'EVIDENCE', '', ?)", id, sc.messageId(), confidence);
-        assignKnowledgeItemTopics(id, material.path("artifactType").asText(""), List.of(sc.messageId()), confidence);
+        assignKnowledgeItemTopics(runId, id, material.path("artifactType").asText(""), List.of(sc.messageId()), confidence, budget);
         jdbc.update("UPDATE replay_run_messages SET llm_used = true, updated_at = now() WHERE run_id = ? AND dataset_message_id = ?", runId, sc.messageId());
         return id;
     }
-    private long knowledgeDiscussion(long runId, DiscussionSegmentCandidate dc, JsonNode g, double confidence) {
+    private long knowledgeDiscussion(long runId, DiscussionSegmentCandidate dc, JsonNode g, double confidence, ModelhubProviderGateway.ReplayBudget budget) {
         JsonNode material = materialWithRequiredArtifactType(g, dc.proposedMaterialType());
         long id = JdbcIds.insertReturningId(jdbc, "INSERT INTO knowledge_items (run_id, source_cluster_type, source_cluster_id, artifact_type, vertical, title, summary, body_json, knowledge_value_score, status) VALUES (?, 'DISCUSSION_SEGMENT', ?, ?, 'telegram-intelligence', ?, ?, ?::jsonb, ?, 'DRAFT')", runId, dc.segmentId(), material.path("artifactType").asText(dc.proposedMaterialType()), material.path("title").asText(material.path("recommendedTitle").asText("Discussion segment")), material.path("summary").asText(""), write(material), confidence);
         for (Intel source : dc.messages()) {
             jdbc.update("INSERT INTO knowledge_item_sources (knowledge_item_id, dataset_message_id, source_role, quote, confidence) VALUES (?, ?, ?, ?, ?)", id, source.message().id(), roleFor(source).toUpperCase(Locale.ROOT), preview(normalized(source), 500), confidence);
             jdbc.update("UPDATE replay_run_messages SET llm_used = true, knowledge_item_id = ?, updated_at = now() WHERE run_id = ? AND dataset_message_id = ?", id, runId, source.message().id());
         }
-        assignKnowledgeItemTopics(id, material.path("artifactType").asText(""), dc.messages().stream().map(i -> i.message().id()).toList(), confidence);
+        assignKnowledgeItemTopics(runId, id, material.path("artifactType").asText(""), dc.messages().stream().map(i -> i.message().id()).toList(), confidence, budget);
         if (dc.segmentId() != null) jdbc.update("UPDATE discussion_segments SET decision = 'DISCUSSION_SEGMENT_MATERIAL_CANDIDATE', updated_at = now() WHERE id = ?", dc.segmentId());
         return id;
     }
 
-    private void assignKnowledgeItemTopics(long knowledgeItemId, String artifactType, List<Long> sourceMessageIds, double confidence) {
+    private void assignKnowledgeItemTopics(long runId, long knowledgeItemId, String artifactType, List<Long> sourceMessageIds, double confidence, ModelhubProviderGateway.ReplayBudget budget) {
         Set<String> slugs = new LinkedHashSet<>();
         StringBuilder text = new StringBuilder(normalizeArtifactType(artifactType)).append(' ');
         for (Long messageId : sourceMessageIds) {
@@ -2682,16 +2682,107 @@ public class ReplayV2Service {
             case "REFERENCE" -> "tools-repos";
             default -> "api-integrations";
         });
+        replaceKnowledgeItemTopics(knowledgeItemId, slugs, Math.max(0.50, Math.min(0.95, confidence)), "RULE", "material topic keyword match");
+        LlmTopicAssignment llm = assignTopicsWithLlm(runId, "material", normalizeArtifactType(artifactType), text.toString(), budget);
+        if (llm != null && !llm.slugs().isEmpty()) {
+            replaceKnowledgeItemTopics(knowledgeItemId, llm.slugs(), llm.confidence(), "LLM", llm.reason());
+        }
+    }
+
+    private void replaceKnowledgeItemTopics(long knowledgeItemId, Set<String> slugs, double confidence, String source, String reason) {
+        jdbc.update("DELETE FROM knowledge_item_topics WHERE knowledge_item_id = ?", knowledgeItemId);
         for (String slug : slugs) {
             jdbc.update("""
                     INSERT INTO knowledge_item_topics (knowledge_item_id, topic_id, confidence, source, reason)
-                    SELECT ?, id, ?, 'RULE', ?
+                    SELECT ?, id, ?, ?, ?
                     FROM knowledge_topics
                     WHERE slug = ?
                     ON CONFLICT DO NOTHING
-                    """, knowledgeItemId, Math.max(0.50, Math.min(0.95, confidence)), "material topic keyword match", slug);
+                    """, knowledgeItemId, Math.max(0.50, Math.min(0.95, confidence)), source, reason, slug);
         }
     }
+
+    private void replaceKnowledgeSignalTopics(long signalId, Set<String> slugs, double confidence, String source, String reason) {
+        jdbc.update("DELETE FROM knowledge_signal_topics WHERE signal_id = ?", signalId);
+        for (String slug : slugs) {
+            jdbc.update("""
+                    INSERT INTO knowledge_signal_topics (signal_id, topic_id, confidence, source, reason)
+                    SELECT ?, id, ?, ?, ?
+                    FROM knowledge_topics
+                    WHERE slug = ?
+                    ON CONFLICT DO NOTHING
+                    """, signalId, Math.max(0.50, Math.min(0.95, confidence)), source, reason, slug);
+        }
+    }
+
+    private LlmTopicAssignment assignTopicsWithLlm(long runId, String entityType, String artifactOrSignalType, String text, ModelhubProviderGateway.ReplayBudget budget) {
+        if (!providerConfigured() || provider == null) return null;
+        try {
+            var result = provider.callJson(runId, "TOPIC_ASSIGNMENT", topicAssignmentPrompt(entityType, artifactOrSignalType, text), budget, true);
+            if (!result.success()) return null;
+            return parseTopicAssignment(result.responseJson());
+        } catch (RuntimeException ex) {
+            log.warn("topic assignment LLM skipped runId={} entityType={} error={}", runId, entityType, ex.getMessage());
+            return null;
+        }
+    }
+
+    private String topicAssignmentPrompt(String entityType, String artifactOrSignalType, String text) {
+        return """
+                Choose topics for this %s from the closed canonical pool only.
+
+                Allowed topic slugs:
+                - models-releases: model releases, benchmarks, model capabilities
+                - free-tokens-quotas: free tiers, quotas, credits, token allowances
+                - providers-routers: providers, routers, gateways, fallback routing
+                - api-integrations: API setup, SDKs, endpoints, auth headers, webhooks
+                - outages-limits: outages, degraded service, errors, rate limits, fallback incidents
+                - tools-repos: GitHub repos, OSS tools, libraries, MCP servers
+                - agents-prompts: prompts, agents, automation workflows, templates
+                - abuse-risk: abuse, fraud, bypass, farming, referral abuse, unsafe operations
+                - security-privacy: secrets, credentials, privacy, leaks, security controls
+                - pricing-costs: pricing, billing, cache cost, token spend
+
+                Return strict JSON only:
+                {"primaryTopic":"api-integrations","secondaryTopics":["providers-routers"],"confidence":0.84,"reason":"short reason","evidence":["short quote"]}
+
+                Rules:
+                - primaryTopic must be exactly one allowed slug.
+                - secondaryTopics may contain at most two allowed slugs.
+                - Do not invent topics.
+                - Prefer 1 topic unless the content is clearly cross-cutting.
+                - If risk/abuse/bypass is material, include abuse-risk.
+
+                Entity type: %s
+                Artifact or signal type: %s
+                Text:
+                %s
+                """.formatted(entityType, entityType, artifactOrSignalType == null ? "" : artifactOrSignalType, preview(text, 3000));
+    }
+
+    private LlmTopicAssignment parseTopicAssignment(JsonNode node) {
+        if (node == null || node.isMissingNode() || node.isNull()) return null;
+        Set<String> slugs = new LinkedHashSet<>();
+        addAllowedTopic(slugs, node.path("primaryTopic").asText(""));
+        JsonNode secondary = node.path("secondaryTopics");
+        if (secondary.isArray()) {
+            for (JsonNode item : secondary) {
+                if (slugs.size() >= 3) break;
+                addAllowedTopic(slugs, item.asText(""));
+            }
+        }
+        double confidence = node.path("confidence").asDouble(0.0);
+        if (slugs.isEmpty() || confidence < 0.50) return null;
+        return new LlmTopicAssignment(slugs, Math.min(0.95, Math.max(0.50, confidence)), node.path("reason").asText("LLM topic assignment"));
+    }
+
+    private void addAllowedTopic(Set<String> slugs, String slug) {
+        if (slug == null) return;
+        String normalized = slug.trim().toLowerCase(Locale.ROOT);
+        if (Set.of("models-releases", "free-tokens-quotas", "providers-routers", "api-integrations", "outages-limits", "tools-repos", "agents-prompts", "abuse-risk", "security-privacy", "pricing-costs").contains(normalized)) slugs.add(normalized);
+    }
+
+    private record LlmTopicAssignment(Set<String> slugs, double confidence, String reason) {}
     private List<SingleMessageCandidate> singleMessageDetection(long runId, List<Intel> intel, List<Embedding> embeddings, Map<String, BigDecimal> metrics) {
         long started = System.nanoTime();
         int minTextLen = settings.getInt("minSingleMessageTextLength", 500);
@@ -2735,7 +2826,13 @@ public class ReplayV2Service {
             evaluatedCount++;
             if (embedded.contains(i.message().id())) embeddedSingletonEvaluatedCount++;
             if (topLabel.equals("NOISE_OR_CHAT") && !i.hardSignal() && !"SINGLE_MESSAGE".equals(usefulness.candidateRoute())) { rejectedChatContextCount++; rejectSingleMessage(runId, i.message().id(), 0.0, "CHAT_CONTEXT_ONLY", usefulnessSignals(usefulness), usefulnessJson); continue; }
-            if (text.length() < Math.min(minTextLen, 80)) { rejectedTooShortCount++; rejectSingleMessage(runId, i.message().id(), 0.0, "TOO_SHORT", json.createArrayNode()); continue; }
+            if (text.length() < Math.min(minTextLen, 80)) {
+                rejectedTooShortCount++;
+                // Short pricing/free-tier/model announcements are still worth a signal even when too short.
+                if (isShortPricingOrFreeAnnouncement(text, "TOO_SHORT")) persistRejectedSignal(runId, i, text, "TOO_SHORT", usefulness);
+                rejectSingleMessage(runId, i.message().id(), 0.0, "TOO_SHORT", json.createArrayNode());
+                continue;
+            }
             String lowerText = text.toLowerCase(Locale.ROOT);
             double textLen = Math.min(1.0, text.length() / (double) minTextLen);
             boolean hasStructure = text.matches("(?is).*(?:^|\\n|[.!?]\\s*)(?:проблема|причина|решение|шаг \\d|1\\.|2\\.|если).*");
@@ -3646,10 +3743,16 @@ public class ReplayV2Service {
         if (route == DecisionCoreEnums.FinalRoute.RETAIN_FOR_CONTEXT) decisionCoreRetain(runId, messageId, decisionObjectId, "context", reason);
     }
     private void persistRejectedSignal(long runId, Intel intel, String text, String rejectionReason, MessageUsefulnessResult usefulness) {
-        if (knowledgeSignalService == null || "LOW_VALUE".equals(rejectionReason)) return;
+        if (knowledgeSignalService == null) return;
+        // LOW_VALUE chatter is not a useful signal unless it carries model/price/free-tier markers
+        // (short pricing/free announcements from bot channels like the modelhub Store are still worth
+        // keeping as signals even though the classifier rejected them as LOW_VALUE/PROMO_ALONE).
+        boolean shortPricingAnonuncement = isShortPricingOrFreeAnnouncement(text, rejectionReason);
+        if ("LOW_VALUE".equals(rejectionReason) && !shortPricingAnonuncement) return;
         try {
             JsonNode source = oneOrNull("""
-                    SELECT rm.id AS raw_id, rrm.id AS replay_run_message_id
+                    SELECT rm.id AS raw_id, rm.sender_id AS sender_id, rm.sender_name AS sender_name,
+                           rm.telegram_message_id AS telegram_message_id, rrm.id AS replay_run_message_id
                     FROM dataset_messages dm
                     LEFT JOIN raw_messages rm ON rm.account_id = dm.account_id
                         AND rm.telegram_chat_id = dm.telegram_chat_id
@@ -3659,7 +3762,10 @@ public class ReplayV2Service {
                     """, runId, intel.message().id());
             Long rawId = jsonLong(source, "raw_id");
             Long replayRunMessageId = jsonLong(source, "replay_run_message_id");
-            knowledgeSignalService.upsertRejectedSingleMessageSignal(new KnowledgeSignalService.RejectedSingleMessageSignal(
+            Long senderId = jsonLong(source, "sender_id");
+            String senderName = source == null ? null : source.path("sender_name").asText(null);
+            Long telegramMessageId = jsonLong(source, "telegram_message_id");
+            Long signalId = knowledgeSignalService.upsertRejectedSingleMessageSignal(new KnowledgeSignalService.RejectedSingleMessageSignal(
                     rawId,
                     intel.message().id(),
                     runId,
@@ -3669,8 +3775,16 @@ public class ReplayV2Service {
                     text,
                     rejectionReason,
                     intel.features(),
-                    usefulness
+                    usefulness,
+                    senderId,
+                    senderName,
+                    telegramMessageId,
+                    shortPricingAnonuncement
             ));
+            if (signalId != null) {
+                LlmTopicAssignment llm = assignTopicsWithLlm(runId, "signal", rejectionReason, text, new ModelhubProviderGateway.ReplayBudget(1, BigDecimal.valueOf(0.05)));
+                if (llm != null && !llm.slugs().isEmpty()) replaceKnowledgeSignalTopics(signalId, llm.slugs(), llm.confidence(), "LLM", llm.reason());
+            }
         } catch (RuntimeException ex) {
             log.warn("knowledge signal persistence skipped runId={} datasetMessageId={} reason={} error={}", runId, intel.message().id(), rejectionReason, ex.getMessage());
         }
@@ -3679,6 +3793,17 @@ public class ReplayV2Service {
         if (node == null || node.isMissingNode() || node.isNull()) return null;
         JsonNode value = node.path(field);
         return value.isNumber() ? value.asLong() : null;
+    }
+
+    /** True for short pricing/free-tier/model-availability announcements (e.g. modelhub Store bot:
+     *  "Claude пул пополнен, цены вдвое", "gpt-5.4-mini и gpt-5.3-codex-spark полностью бесплатны").
+     *  These are rejected as LOW_VALUE/PROMO_ALONE/TOO_SHORT but are worth keeping as signals. */
+    private boolean isShortPricingOrFreeAnnouncement(String text, String rejectionReason) {
+        if (text == null || text.isBlank()) return false;
+        String lower = text.toLowerCase(Locale.ROOT);
+        boolean hasModelOrVendor = lower.matches(".*\\b(gpt|claude|fable|sonnet|opus|haiku|gemini|qwen|deepseek|llama|mistral|grok|hermes|codex|anthropic|openai)\\b.*");
+        boolean hasPricingOrFree = lower.matches(".*\\b(бесплатн|цена|цену|тариф|пул|пополн|доступн|повыш|скидк|free|price|pricing|quota|лимит)\\w*.*");
+        return hasModelOrVendor && hasPricingOrFree;
     }
     private ObjectNode usefulnessJson(MessageUsefulnessResult result) {
         ObjectNode node = json.createObjectNode();

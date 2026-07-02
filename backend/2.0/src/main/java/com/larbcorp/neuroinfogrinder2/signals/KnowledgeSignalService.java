@@ -70,9 +70,9 @@ public class KnowledgeSignalService {
         this.json = json;
     }
 
-    public void upsertRejectedSingleMessageSignal(RejectedSingleMessageSignal input) {
-        if (input == null || input.datasetMessageId() == null || input.text() == null || input.text().isBlank()) return;
-        if (!shouldStore(input)) return;
+    public Long upsertRejectedSingleMessageSignal(RejectedSingleMessageSignal input) {
+        if (input == null || input.datasetMessageId() == null || input.text() == null || input.text().isBlank()) return null;
+        if (!shouldStore(input)) return null;
 
         SignalClassification classification = classify(input);
         Long signalId = existingSignalId(input);
@@ -82,7 +82,14 @@ public class KnowledgeSignalService {
             updateSignal(signalId, input, classification);
         }
 
-        if (signalId == null) return;
+        if (signalId == null) return null;
+        // Record this message as a source of the signal (multi-source: sender-series grouping
+        // appends additional source rows to the same signal).
+        jdbc.update("""
+                INSERT INTO knowledge_signal_sources (signal_id, raw_message_id, dataset_message_id, text, sender_id, sender_name, message_date)
+                VALUES (?, ?, ?, ?, ?, ?, now())
+                ON CONFLICT DO NOTHING
+                """, signalId, input.rawMessageId(), input.datasetMessageId(), truncate(input.text(), 2000), input.senderId(), input.senderName());
         jdbc.update("DELETE FROM knowledge_signal_topics WHERE signal_id = ?", signalId);
         for (TopicAssignment topic : classification.topics()) {
             jdbc.update("""
@@ -92,9 +99,16 @@ public class KnowledgeSignalService {
                     WHERE slug = ?
                     """, signalId, BigDecimal.valueOf(topic.confidence()), topic.reason(), topic.slug());
         }
+        return signalId;
+    }
+
+    private String truncate(String value, int max) {
+        if (value == null) return null;
+        return value.length() <= max ? value : value.substring(0, max);
     }
 
     private Long existingSignalId(RejectedSingleMessageSignal input) {
+        // Exact match first (same dataset_message_id+run or same raw_message_id).
         List<Long> ids = jdbc.query("""
                 SELECT id
                 FROM knowledge_signals
@@ -103,7 +117,24 @@ public class KnowledgeSignalService {
                 ORDER BY id
                 LIMIT 1
                 """, (rs, rowNum) -> rs.getLong("id"), input.datasetMessageId(), input.runId(), input.rawMessageId(), input.rawMessageId());
-        return ids.isEmpty() ? null : ids.get(0);
+        if (!ids.isEmpty()) return ids.get(0);
+        // Sender-series grouping: merge into a recent signal from the SAME sender in the SAME chat
+        // within the sender-series window (default 60 min). This turns short bot announcement posts
+        // (e.g. modelhub Store: "Claude пул пополнен" + "gpt-5.4-mini бесплатны" 45 min apart) into
+        // one multi-source signal instead of two isolated ones.
+        if (input.senderId() == null || input.sourceChatId() == null) return null;
+        int windowMin = 60;
+        List<Long> series = jdbc.query("""
+                SELECT ks.id
+                FROM knowledge_signals ks
+                LEFT JOIN raw_messages rm ON rm.id = ks.raw_message_id
+                WHERE ks.source_chat_id = ?
+                  AND rm.sender_id = ?
+                  AND ks.updated_at >= now() - (? || ' minutes')::interval
+                ORDER BY ks.updated_at DESC
+                LIMIT 1
+                """, (rs, rowNum) -> rs.getLong("id"), input.sourceChatId(), input.senderId(), String.valueOf(windowMin));
+        return series.isEmpty() ? null : series.get(0);
     }
 
     private Long insertSignal(RejectedSingleMessageSignal input, SignalClassification classification) {
@@ -259,7 +290,11 @@ public class KnowledgeSignalService {
         // Non-material noise: never persist as a signal (ported from v2 gate + 20k audit).
         if (isNonMaterialNoise(text)) return false;
         if (isCommunityWelcomeMessage(text)) return false;
+        // Short pricing/free-tier/model announcements are worth a signal even if rejected as
+        // PROMO_ALONE/LOW_VALUE/TOO_SHORT (e.g. modelhub Store bot: "gpt-5.4-mini полностью бесплатны").
+        if (input.shortPricingAnnouncement()) return true;
         if ("PROMO_ALONE".equals(reason)) return false;
+        if ("TOO_SHORT".equals(reason)) return false;
         if (Set.of("NEEDS_LINK_ENRICHMENT", "ABUSE_OR_FRAUD", "RISK_SENSITIVE_MANUAL_ONLY", "RISK_SENSITIVE_MANUAL_REVIEW", "ENTITY_ONLY").contains(reason)) return true;
         MessageUsefulnessResult usefulness = input.usefulness();
         if (usefulness == null) return false;
@@ -300,35 +335,67 @@ public class KnowledgeSignalService {
     }
 
     private TopicAssignment primaryTopic(String lower, JsonNode links, JsonNode risks) {
+        // 1. Security/privacy first (credentials, leaks, logs).
         if (containsAny(lower, "privacy", "приват", "лог", "логи", "leak", "утеч", "secret", "password", "парол", "credential", "ключ утек", "token leak", "безопас")) {
             return new TopicAssignment("security-privacy", 0.86, "security/privacy signal");
         }
-        if (containsAny(lower, "outage", "сбой", "не работает", "degraded", "429", "timeout", "исчерпан", "упал", "недоступ", "rate limit", "лимит", "quota exhausted")) {
+        // 2. Real abuse/circumvention next — so "бесплатно без карты" / "накрутка" / "фарм" -> abuse-risk,
+        // not free-tokens-quotas. Only when explicit abuse keywords are present (not just a HIDDEN_LINK
+        // flag, which news digests also carry). "обход" alone is not enough — riskyBypassMention handles
+        // it with negation exclusions ("не инструкция по обход").
+        if (containsAny(lower, "накрут", "фарм", "без карты", "без sms", "без подтвержд", "bypass", "carding", "слив карт", "cvv", "bin ", "накрутк", "звёзд на github", "звезд на github", "abuse") || riskyBypassMention(lower)) {
+            return new TopicAssignment("abuse-risk", 0.90, "abuse/circumvention signal");
+        }
+        // 3. Model/vendor news — expanded keywords so digests ("Дайджест нейросетей", "Fable 5 вернулся",
+        // "Sonnet 5 вышел", "Anthropic закрыла", "Grok 4.5", "Hermes", "Cline", "Codex") route here, not abuse.
+        if (isModelOrVendorNews(lower)) {
+            return new TopicAssignment("models-releases", 0.82, "model/vendor release signal");
+        }
+        // 4. Outages/limits.
+        if (containsAny(lower, "outage", "сбой", "не работает", "degraded", "429", "timeout", "исчерпан", "упал", "недоступ", "rate limit", "quota exhausted")) {
             return new TopicAssignment("outages-limits", 0.84, "outage/limit/fallback signal");
         }
+        // 5. Tools/repos.
         if (containsAny(lower, "github", "gitlab", "repo", "repository", "open-source", "opensource", "library", "framework", "sdk repo", "npm package", "pypi", "docker image")) {
             return new TopicAssignment("tools-repos", 0.82, "resource/repository signal");
         }
+        // 6. Agents/prompts.
         if (containsAny(lower, "prompt", "промпт", "agent", "агент", "cursor", "claude code", "codex", "workflow", "orchestration", "шаблон промп", "system prompt")) {
             return new TopicAssignment("agents-prompts", 0.80, "agent/prompt workflow signal");
         }
+        // 7. Free tokens/quotas (only when not already matched as model news above).
         if (containsAny(lower, "free-tier", "free tier", "бесплат", "бонус", "free", "daily quota", "квот", "quota", "миллион токен", "токенов в сутки")) {
-            return new TopicAssignment("free-tokens-quotas", 0.88, "free-tier/quota/token signal");
+            return new TopicAssignment("free-tokens-quotas", 0.84, "free-tier/quota/token signal");
         }
+        // 8. Providers/routers.
         if (containsAny(lower, "provider", "router", "роутер", "openrouter", "modelhub", "litellm", "gateway", "model routing", "маршрутизац", "fallback endpoint")) {
             return new TopicAssignment("providers-routers", 0.74, "provider/router signal");
         }
+        // 9. API integrations.
         if (containsAny(lower, "api", "endpoint", "/v1", "openai-compatible", "sdk", "auth", "bearer", "ключ", "webhook", "rest", "graphql")) {
             return new TopicAssignment("api-integrations", 0.78, "API/config signal");
         }
-        if (containsAny(lower, "gpt", "claude", "gemini", "qwen", "deepseek", "llama", "mistral", "benchmark", "context window", "release", "релиз", "новая модель")) {
-            return new TopicAssignment("models-releases", 0.76, "model/vendor signal");
+        // 10. Pricing/costs.
+        if (containsAny(lower, "pricing", "billing", "стоим", "цена", "тариф", "cost", "cache cost", "token spend", "оплата", "счёт", "invoice", "пул пополн", "повыш", "скидк")) {
+            return new TopicAssignment("pricing-costs", 0.78, "pricing/cost signal");
         }
-        if (containsAny(lower, "pricing", "billing", "стоим", "цена", "тариф", "cost", "cache cost", "token spend", "оплата", "счёт", "invoice")) {
-            return new TopicAssignment("pricing-costs", 0.72, "pricing/cost signal");
-        }
-        if (risks.size() > 0) return new TopicAssignment("abuse-risk", 0.70, "risk flag present");
+        // 11. Risk flag present (fallback — secondary, since real abuse was caught at step 2).
+        if (risks.size() > 0) return new TopicAssignment("abuse-risk", 0.65, "risk flag present");
         return null;
+    }
+
+    /** Model/vendor news: a SPECIFIC model or vendor name PLUS a release/news/availability marker.
+     *  Generic words like "модель"/"нейросеть" are intentionally excluded so that "бесплатные модели"
+     *  (free-tier) does not get misrouted to models-releases. */
+    private boolean isModelOrVendorNews(String lower) {
+        boolean hasModelOrVendor = containsAny(lower,
+            "gpt", "claude", "fable", "sonnet", "opus", "haiku", "gemini", "qwen", "deepseek", "llama",
+            "mistral", "grok", "hermes", "codex", "cline", "droid", "anthropic", "openai", "meta ", "google");
+        boolean hasNewsMarker = containsAny(lower,
+            "релиз", "выпустил", "вышел", "запустил", "анонс", "представил", "дропнул", "вернул", "вернулась",
+            "доступн", "новая модель", "release", "launch", "benchmark", "context window", "дайджест",
+            "главное за", "пул пополн", "цены повыш", "tariff", "pricing");
+        return hasModelOrVendor && hasNewsMarker;
     }
 
     private String signalType(RejectedSingleMessageSignal input, JsonNode risks) {
@@ -504,6 +571,104 @@ public class KnowledgeSignalService {
         return value == null ? null : value.toString();
     }
 
+    /** Return all source messages assembled into a signal (for the signal detail page). */
+    public List<Map<String, Object>> signalSources(long signalId) {
+        return jdbc.query("""
+                SELECT kss.raw_message_id, kss.dataset_message_id, kss.text, kss.sender_id, kss.sender_name,
+                       kss.message_date, COALESCE(rm.chat_title, dm.chat_title) AS chat_title,
+                       COALESCE(rm.telegram_chat_id, dm.telegram_chat_id) AS telegram_chat_id,
+                       COALESCE(rm.telegram_message_id, dm.telegram_message_id) AS telegram_message_id
+                FROM knowledge_signal_sources kss
+                LEFT JOIN raw_messages rm ON rm.id = kss.raw_message_id
+                LEFT JOIN dataset_messages dm ON dm.id = kss.dataset_message_id
+                WHERE kss.signal_id = ?
+                ORDER BY kss.message_date NULLS LAST, kss.created_at
+                """, (rs, rowNum) -> {
+            Map<String, Object> row = new java.util.LinkedHashMap<>();
+            row.put("rawId", nullableLong(rs, "raw_message_id"));
+            row.put("datasetMessageId", nullableLong(rs, "dataset_message_id"));
+            row.put("text", rs.getString("text"));
+            row.put("senderId", nullableLong(rs, "sender_id"));
+            row.put("senderName", rs.getString("sender_name"));
+            row.put("chatTitle", rs.getString("chat_title"));
+            row.put("messageDate", iso(rs.getObject("message_date", OffsetDateTime.class)));
+            Long chatId = nullableLong(rs, "telegram_chat_id");
+            Long msgId = nullableLong(rs, "telegram_message_id");
+            Long rawId = nullableLong(rs, "raw_message_id");
+            row.put("appMessageUrl", chatId == null || rawId == null ? null
+                : "/groups?chatId=" + chatId + "&message=" + rawId + "&rawId=" + rawId);
+            return row;
+        }, signalId);
+    }
+
+    /** Promote a signal to a DRAFT material: insert a knowledge_items row sourced from the signal's
+     *  source messages. Returns the new material id. Used by the manual "В материал" action. */
+    public Long promoteToMaterial(long signalId) {
+        Map<String, Object> sig = signalMeta(signalId);
+        if (sig == null) throw new IllegalArgumentException("Signal not found: " + signalId);
+        List<Map<String, Object>> sources = signalSources(signalId);
+        if (sources.isEmpty()) throw new IllegalStateException("Signal has no source messages: " + signalId);
+        String title = (String) sig.get("title");
+        String body = sources.stream()
+            .map(s -> {
+                String t = (String) s.get("text");
+                String sender = (String) s.get("senderName");
+                return (sender == null ? "" : "[" + sender + "] ") + (t == null ? "" : t);
+            })
+            .filter(t -> t != null && !t.isBlank())
+            .collect(java.util.stream.Collectors.joining("\n\n"));
+        String artifactType = artifactTypeForSignal((String) sig.get("signalType"));
+        com.fasterxml.jackson.databind.node.ObjectNode bodyJson = json.createObjectNode();
+        bodyJson.put("text", body);
+        bodyJson.put("promotedFromSignalId", signalId);
+        bodyJson.put("sourceCount", sources.size());
+        Long materialId = jdbc.queryForObject("""
+                INSERT INTO knowledge_items (status, artifact_type, title, body_json, knowledge_value_score, source_cluster_type)
+                VALUES (?, ?, ?, ?::jsonb, 0.5, 'SIGNAL_PROMOTED')
+                RETURNING id
+                """, Long.class, "DRAFT", artifactType, title, write(bodyJson));
+        // Link the material to the signal's topics + source messages.
+        jdbc.update("DELETE FROM knowledge_item_topics WHERE knowledge_item_id = ?", materialId);
+        jdbc.update("""
+                INSERT INTO knowledge_item_topics (knowledge_item_id, topic_id, confidence, source, reason)
+                SELECT ?, kt.id, 0.8, 'MANUAL', 'promoted from signal'
+                FROM knowledge_signal_topics kst
+                JOIN knowledge_topics kt ON kt.id = kst.topic_id
+                WHERE kst.signal_id = ?
+                """, materialId, signalId);
+        for (Map<String, Object> src : sources) {
+            Long rawId = (Long) src.get("rawId");
+            Long dsId = (Long) src.get("datasetMessageId");
+            jdbc.update("""
+                    INSERT INTO knowledge_item_sources (knowledge_item_id, raw_message_id, dataset_message_id, contribution)
+                    VALUES (?, ?, ?, 'PRIMARY')
+                    ON CONFLICT DO NOTHING
+                    """, materialId, rawId, dsId);
+        }
+        return materialId;
+    }
+
+    private String artifactTypeForSignal(String signalType) {
+        if (signalType == null) return "NOTE";
+        return switch (signalType) {
+            case "PROVIDER_FREE_TIER_CLAIM", "RISK_OR_REFERRAL_SIGNAL" -> "RISK_NOTE";
+            case "LINK_ONLY" -> "REFERENCE";
+            default -> "NOTE";
+        };
+    }
+
+    private Map<String, Object> signalMeta(long signalId) {
+        return jdbc.query("SELECT id, title, signal_type, status FROM knowledge_signals WHERE id = ?", rs -> {
+            if (!rs.next()) return null;
+            Map<String, Object> m = new java.util.LinkedHashMap<>();
+            m.put("id", rs.getLong("id"));
+            m.put("title", rs.getString("title"));
+            m.put("signalType", rs.getString("signal_type"));
+            m.put("status", rs.getString("status"));
+            return m;
+        }, signalId);
+    }
+
     public record RejectedSingleMessageSignal(
             Long rawMessageId,
             Long datasetMessageId,
@@ -514,8 +679,20 @@ public class KnowledgeSignalService {
             String text,
             String rejectionReason,
             JsonNode features,
-            MessageUsefulnessResult usefulness
-    ) {}
+            MessageUsefulnessResult usefulness,
+            Long senderId,
+            String senderName,
+            Long telegramMessageId,
+            boolean shortPricingAnnouncement
+    ) {
+        /** Backwards-compatible constructor for callers that do not supply sender info. */
+        public RejectedSingleMessageSignal(Long rawMessageId, Long datasetMessageId, Long runId, Long replayRunMessageId,
+                                           Long sourceChatId, Long sourceTopicId, String text, String rejectionReason,
+                                           JsonNode features, MessageUsefulnessResult usefulness) {
+            this(rawMessageId, datasetMessageId, runId, replayRunMessageId, sourceChatId, sourceTopicId, text,
+                 rejectionReason, features, usefulness, null, null, null, false);
+        }
+    }
 
     private record SignalClassification(String title, String summary, String signalType, String status, String reason,
                                         ArrayNode riskFlags, List<TopicAssignment> topics, double confidence) {}

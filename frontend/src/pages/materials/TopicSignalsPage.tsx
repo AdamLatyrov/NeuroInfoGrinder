@@ -1,5 +1,5 @@
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { ArrowLeft, ArrowSquareOut, Funnel, ShieldWarning, Sparkle, Tag, WarningCircle } from "@phosphor-icons/react";
+import { ArrowLeft, ArrowSquareOut, ArrowUp, Funnel, ShieldWarning, Sparkle, Tag, WarningCircle } from "@phosphor-icons/react";
 import { EmptyState } from "@/components/domain/empty-state";
 import { PageHeaderCard } from "@/components/domain/page-header-card";
 import { Badge } from "@/components/ui/badge";
@@ -8,8 +8,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
-import { useKnowledgeTopicQuery, type KnowledgeSignal } from "@/shared/api/signalsApi";
-import { useMemo } from "react";
+import { useKnowledgeTopicQuery, usePromoteSignal, type KnowledgeSignal } from "@/shared/api/signalsApi";
+import { useMemo, useState } from "react";
 
 type TopicTab = "signals" | "review" | "risk";
 
@@ -45,11 +45,28 @@ function entitiesOf(signal: KnowledgeSignal): string[] {
 
 function SignalCard({ signal, activeEntity }: { signal: KnowledgeSignal; activeEntity: string | null }) {
   const navigate = useNavigate();
+  const promote = usePromoteSignal();
+  const [promoting, setPromoting] = useState(false);
   const risks = riskFlags(signal);
   const ents = entitiesOf(signal);
 
+  const handlePromote = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setPromoting(true);
+    try {
+      const res = await promote.promote(signal.id);
+      navigate(`/materials/${res.materialId}`);
+    } catch (err) {
+      console.error(err);
+      setPromoting(false);
+    }
+  };
+
   return (
-    <Card className="border-border-subtle bg-bg-card transition hover:-translate-y-0.5 hover:border-amber-400/50 hover:shadow-[0_18px_50px_rgba(245,158,11,0.12)]">
+    <Card
+      className="cursor-pointer border-border-subtle bg-bg-card transition hover:-translate-y-0.5 hover:border-amber-400/50 hover:shadow-[0_18px_50px_rgba(245,158,11,0.12)]"
+      onClick={() => navigate(`/materials/signals/${signal.id}`)}
+    >
       <CardContent className="p-5">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="min-w-0 flex-1">
@@ -100,7 +117,7 @@ function SignalCard({ signal, activeEntity }: { signal: KnowledgeSignal; activeE
                 ))}
               </div>
             ) : null}
-            <details className="mt-4 rounded-xl border border-border-subtle bg-bg-app/60 p-3 text-sm">
+            <details className="mt-4 rounded-xl border border-border-subtle bg-bg-app/60 p-3 text-sm" onClick={(e) => e.stopPropagation()}>
               <summary className="cursor-pointer font-semibold text-text-strong">Полный текст сигнала</summary>
               <div className="mt-3 whitespace-pre-wrap break-words leading-6 text-text-default">
                 {signal.sourceText?.trim() || signal.title || "Текст источника не найден"}
@@ -108,15 +125,16 @@ function SignalCard({ signal, activeEntity }: { signal: KnowledgeSignal; activeE
             </details>
           </div>
 
-          <div className="flex shrink-0 flex-wrap gap-2 lg:flex-col">
+          <div className="flex shrink-0 flex-wrap gap-2 lg:flex-col" onClick={(e) => e.stopPropagation()}>
             {signal.appMessageUrl ? (
               <Button variant="outline" size="sm" onClick={() => navigate(signal.appMessageUrl!)}>
                 <ArrowSquareOut size={15} />
                 Открыть в чате
               </Button>
             ) : null}
-            <Button variant="ghost" size="sm" disabled>
-              Материала нет
+            <Button variant="default" size="sm" onClick={handlePromote} disabled={promoting}>
+              <ArrowUp size={15} />
+              {promoting ? "Создаю…" : "В материал"}
             </Button>
           </div>
         </div>
